@@ -31,6 +31,13 @@ sudo ufw default allow outgoing
 sudo ufw allow 22/tcp    # SSH
 sudo ufw allow 80/tcp    # HTTP (Para certificados SSL)
 sudo ufw allow 443/tcp   # HTTPS
+
+# Si además montas el Servidor de Correos (ver Módulo 02.4), habilita sus puertos:
+# sudo ufw allow 25/tcp    # SMTP entrante entre servidores
+# sudo ufw allow 465/tcp   # SMTPS (Implicit TLS)
+# sudo ufw allow 587/tcp   # Submission (STARTTLS)
+# sudo ufw allow 993/tcp   # IMAPS (lectura de buzones)
+
 sudo ufw enable
 ```
 

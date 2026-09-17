@@ -47,10 +47,11 @@ Te recomendamos seguir los módulos en el siguiente orden:
 * **[01_setup_supabase_auth.md](./01_autenticacion_supabase/01_setup_supabase_auth.md)**: Configuración en el panel de Supabase, credenciales y emisión de JWTs.
 * **[02_validacion_jwt_en_backend.md](./01_autenticacion_supabase/02_validacion_jwt_en_backend.md)**: Verificación criptográfica asimétrica (JWKS) en tu propio servidor sin hacer llamadas lentas a Supabase.
 
-### [02. API y Base de Datos en Hosting Propio](./02_api_y_base_de_datos_hosting/)
+### [02. API, Base de Datos y Correo en Hosting Propio](./02_api_y_base_de_datos_hosting/)
 * **[01_diseno_api_dockerizada.md](./02_api_y_base_de_datos_hosting/01_diseno_api_dockerizada.md)**: Patrón de arquitectura limpia, middlewares, y Dockerización lista para producción.
 * **[02_postgresql_esquema_y_migraciones.md](./02_api_y_base_de_datos_hosting/02_postgresql_esquema_y_migraciones.md)**: Creación de esquemas con migraciones reproducibles y soporte multi-tenant nativo.
 * **[03_despliegue_en_hosting_propio.md](./02_api_y_base_de_datos_hosting/03_despliegue_en_hosting_propio.md)**: Configuración de VPS, Reverse Proxy con SSL automático (Caddy/Nginx) y seguridad de puertos.
+* **[04_servidor_de_correos_docker.md](./02_api_y_base_de_datos_hosting/04_servidor_de_correos_docker.md)**: Servidor de correo contenerizado (Mailpit en local y Docker Mailserver en VPS), configuración DNS (SPF, DKIM, DMARC, rDNS) e integración con Supabase y Backend.
 
 ### [03. Frontend en Cloudflare](./03_frontend_cloudflare/)
 * **[01_cloudflare_pages_workers.md](./03_frontend_cloudflare/01_cloudflare_pages_workers.md)**: Despliegue en el Edge global, routing y configuración de cabeceras HTTP de seguridad.

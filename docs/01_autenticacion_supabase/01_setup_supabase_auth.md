@@ -66,6 +66,21 @@ as $$
 $$;
 ```
 
+### 4. Configuración de Custom SMTP (Eliminar el límite de 3 correos/hora)
+
+Por defecto, la infraestructura de Supabase limita las confirmaciones y restablecimientos de contraseña a **3 emails por hora**. Para levantar un entorno real sin bloqueos, debes conectar Supabase a tu propio servidor de correos (Mailpit en local o Docker Mailserver en tu VPS).
+
+1. En el panel de Supabase, navega a **Project Settings > Authentication > SMTP Settings**.
+2. Activa la casilla **"Enable Custom SMTP"**.
+3. Introduce los parámetros de tu servidor:
+   - **Sender Email**: `noreply@tu-dominio.com` (o la dirección que hayas creado en tu servidor).
+   - **Sender Name**: El nombre comercial de tu aplicación.
+   - **Host**: `mail.tu-dominio.com` (o `localhost` si usas Supabase CLI local con Mailpit).
+   - **Port**: `587` (con STARTTLS) o `465` (con SSL/TLS).
+   - **Username**: `noreply@tu-dominio.com`.
+   - **Password**: La contraseña configurada al crear el buzón.
+4. Consulta la guía detallada [04_servidor_de_correos_docker.md](../02_api_y_base_de_datos_hosting/04_servidor_de_correos_docker.md) para aprender a levantar el contenedor y validar los registros DNS (SPF, DKIM, DMARC, rDNS).
+
 ---
 
 ## 🔒 Variables de Entorno Seguras

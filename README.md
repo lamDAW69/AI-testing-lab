@@ -7,9 +7,10 @@ Bienvenido a **AI Testing Lab**. Este repositorio está especialmente diseñado 
 ## 🏗️ Pila Tecnológica del Proyecto (Stack)
 
 * **Autenticación y Credenciales**: [Supabase Auth](https://supabase.com/docs/guides/auth) (Manejo de usuarios, sesiones seguras, emisión de JWT con claves asimétricas JWKS).
-* **Backend y Base de Datos**: Alojados en **Hosting Propio** (VPS / Contenedor) mediante **Docker & Docker Compose**:
+* **Backend, Base de Datos y Correo**: Alojados en **Hosting Propio** (VPS / Contenedor) mediante **Docker & Docker Compose**:
   * **API**: Arquitectura limpia y modular (TypeScript con Hono/Fastify/Express o Python con FastAPI).
   * **Base de Datos**: PostgreSQL con migraciones versionadas y Row Level Security (RLS).
+  * **Servidor de Correos**: Mailpit en desarrollo local y Docker Mailserver en VPS (evita el límite de 3 emails/hora de Supabase y ahorra costes en SaaS externos).
 * **Frontend**: Desplegado en el Edge con **Cloudflare Pages / Workers** (alto rendimiento, protección DDoS, CDN global y soporte SSR para indexación).
 * **Seguridad Defensiva**: Protección activa contra BOLA/IDOR, inyecciones, manipulación de JWT, Mass Assignment y OWASP API Top 10.
 * **Indexación & Rendimiento**: SEO técnico con SSR/SSG en Cloudflare e indexación avanzada en PostgreSQL mediante `EXPLAIN ANALYZE`.
@@ -36,7 +37,7 @@ Toda la documentación técnica y pedagógica está organizada en la carpeta [`d
 
 * **[00. Fundamentos y Arquitectura](./docs/00_fundamentos_y_arquitectura/01_arquitectura_del_sistema.md)**: Visión global del sistema y cómo aprender con IA sin copiar a ciegas.
 * **[01. Autenticación con Supabase](./docs/01_autenticacion_supabase/01_setup_supabase_auth.md)**: Integración de Supabase Auth y validación de tokens JWT en el backend propio.
-* **[02. API y Base de Datos en Hosting Propio](./docs/02_api_y_base_de_datos_hosting/01_diseno_api_dockerizada.md)**: Dockerización completa, PostgreSQL, migraciones y despliegue en VPS.
+* **[02. API, Base de Datos y Correo en Hosting Propio](./docs/02_api_y_base_de_datos_hosting/01_diseno_api_dockerizada.md)**: Dockerización completa, PostgreSQL, migraciones, servidor de correos y despliegue en VPS.
 * **[03. Frontend en Cloudflare](./docs/03_frontend_cloudflare/01_cloudflare_pages_workers.md)**: Cloudflare Pages, Edge rendering y manejo seguro de sesiones.
 * **[04. Seguridad Extrema Anti-Hack](./docs/04_seguridad_extrema_antihack/01_prevencion_bola_idor.md)**: Defensa contra BOLA, OWASP API Top 10, prevención de bypass y auditoría.
 * **[05. Arquitectura Multi-Tenant](./docs/05_multitenancy/01_estrategia_multitenant_aislamiento.md)**: Estrategias de aislamiento estricto, contexto de inquilino y RLS.

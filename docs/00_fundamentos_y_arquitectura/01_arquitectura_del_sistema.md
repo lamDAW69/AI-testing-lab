@@ -43,16 +43,22 @@ Este documento describe la arquitectura distribuida del proyecto, los componente
                          │  │  - Valida JWT con JWKS    │  │
                          │  │  - Inyecta Contexto Tenant│  │
                          │  │  - Control Anti-BOLA/IDOR │  │
-                         │  └─────────────┬─────────────┘  │
-                         │                │                │
-                         │                ▼                │
-                         │  ┌───────────────────────────┐  │
-                         │  │     POSTGRESQL MULTITENANT│  │
-                         │  │      (Dockerizado)        │  │
-                         │  │  - Row Level Security     │  │
-                         │  │  - Índices (tenant_id,..) │  │
-                         │  └───────────────────────────┘  │
-                         └─────────────────────────────────┘
+                         │  └───────┬─────────────┬─────┘  │
+                         │          │             │        │
+                         │          ▼             │ SMTP   │
+                         │  ┌──────────────┐      │ Trans. │
+                         │  │  POSTGRESQL  │      ▼        │
+                         │  │ MULTI-TENANT │  ┌─────────┐  │
+                         │  │  - RLS       │  │  MAIL   │◄─┼─── (Custom SMTP Supabase)
+                         │  │  - Índices   │  │ SERVER  │  │
+                         │  └──────────────┘  └────┬────┘  │
+                         └─────────────────────────┼───────┘
+                                                   │ Envíos (SPF/DKIM/DMARC)
+                                                   ▼
+                                         ┌───────────────────┐
+                                         │ BUZONES RECEPTORES│
+                                         │ (Gmail, MS, etc.) │
+                                         └───────────────────┘
 ```
 
 ---
@@ -85,6 +91,12 @@ Este documento describe la arquitectura distribuida del proyecto, los componente
 * **Doble barrera de protección**:
   - Primera barrera: Las consultas de la API filtran explícitamente por `tenant_id`.
   - Segunda barrera: Políticas de Row Level Security (RLS) en Postgres impiden cualquier fuga de datos incluso si un programador comete un error en una consulta.
+
+### 5. Servidor de Correos Propio (Mail Server en Docker)
+* **Función**: Gestionar el envío y recepción de correos transaccionales y de autenticación.
+* **Soporte de Supabase Auth**: Al vincular Supabase con nuestro servidor SMTP propio (*Custom SMTP*), eliminamos la restricción por defecto de 3 emails/hora de la capa gratuita, asegurando que todos los correos de confirmación y cambio de contraseña se envíen al instante.
+* **Soporte de la API Backend**: Envía notificaciones de negocio (facturas, alertas, invitaciones de equipo) con aislamiento de cabeceras multi-tenant y coste marginal cero.
+* **Seguridad Criptográfica**: Configurado con firmas DKIM, directivas SPF y políticas DMARC para garantizar una reputación óptima ante proveedores como Gmail y Microsoft.
 
 ---
 
