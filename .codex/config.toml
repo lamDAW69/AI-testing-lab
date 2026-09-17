@@ -1,0 +1,21 @@
+# Configuración para OpenAI Codex CLI
+# Este archivo define los ajustes técnicos y las fuentes de documentación para el agente de Codex.
+
+# Documentos que Codex debe cargar como contexto de proyecto prioritario
+project_doc_fallback_filenames = [
+    "AGENTS.md",
+    "docs/README.md",
+    "docs/00_fundamentos_y_arquitectura/01_arquitectura_del_sistema.md"
+]
+
+[agent]
+# Modo estricto de lectura de reglas
+enforce_rules = true
+explain_rationale = true
+language = "es"
+
+[security]
+# Prohibir ejecución de comandos destructivos automáticos sin confirmación
+safe_mode = true
+prevent_cross_tenant_queries = true
+require_schema_validation = true
