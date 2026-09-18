@@ -1,0 +1,63 @@
+services:
+  # 1. Reverse Proxy con SSL Automático y Headers de Seguridad
+  caddy:
+    image: caddy:2-alpine
+    container_name: app_caddy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - app_internal_network
+    depends_on:
+      - api
+
+  # 2. Base de Datos PostgreSQL (100% aislada de Internet)
+  postgres:
+    image: postgres:16-alpine
+    container_name: app_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER:-app_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME:-app_db}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app_internal_network
+    # NOTA: En producción NO se publica ningún puerto hacia el host ni hacia Internet
+
+  # 3. API Backend en Node.js / TypeScript
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: app_api
+    restart: always
+    depends_on:
+      - postgres
+    environment:
+      PORT: 3000
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${DB_USER:-app_user}:${DB_PASSWORD}@postgres:5432/${DB_NAME:-app_db}
+      SUPABASE_PROJECT_URL: ${SUPABASE_PROJECT_URL}
+      CORS_ORIGIN: ${CORS_ORIGIN}
+    networks:
+      - app_internal_network
+    # La API no expone puertos a Internet; Caddy gestiona todo el tráfico entrante
+
+volumes:
+  postgres_data:
+    driver: local
+  caddy_data:
+    driver: local
+  caddy_config:
+    driver: local
+
+networks:
+  app_internal_network:
+    driver: bridge
