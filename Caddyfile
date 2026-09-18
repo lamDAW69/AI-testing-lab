@@ -1,0 +1,14 @@
+# Caddyfile para Producción
+# Reemplaza api.tu-dominio.com por tu dominio o subdominio real una vez configurados los registros DNS
+:80 {
+    # Headers de seguridad para defensa en profundidad
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+
+    # Proxy inverso al contenedor de la API dentro de la red privada de Docker
+    reverse_proxy api:3000
+}
