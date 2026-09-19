@@ -1,6 +1,7 @@
 import cors from 'cors';
 import helmet from 'helmet';
 import { env } from '../config/env.js';
+import { AppError } from './error.middleware.js';
 
 const allowedOrigins = env.CORS_ORIGIN.split(',').map((origin) => origin.trim());
 
@@ -29,11 +30,13 @@ export const corsMiddleware = cors({
       return callback(null, true);
     }
 
-    if (allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
+    // No se admite '*' en ningún entorno: las rutas presentes o futuras pueden
+    // requerir credenciales y el origen debe estar permitido explícitamente.
+    if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
 
-    return callback(new Error(`Origen ${origin} no permitido por la política CORS`));
+    return callback(new AppError(403, 'Origen no permitido por la política CORS'));
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],

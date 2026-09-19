@@ -11,6 +11,7 @@ RUN npm ci
 # Copiar código fuente y compilar TypeScript a JavaScript
 COPY tsconfig.json ./
 COPY src ./src
+COPY drizzle ./drizzle
 RUN npm run build
 
 # Eliminar dependencias de desarrollo para aligerar la imagen
@@ -32,6 +33,7 @@ RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 COPY --from=builder --chown=appuser:appgroup /app/package*.json ./
 COPY --from=builder --chown=appuser:appgroup /app/node_modules ./node_modules
 COPY --from=builder --chown=appuser:appgroup /app/dist ./dist
+COPY --from=builder --chown=appuser:appgroup /app/drizzle ./drizzle
 
 # Cambiar a usuario sin privilegios
 USER appuser
