@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { createRemoteJWKSet, jwtVerify } from 'jose';
+import { z } from 'zod';
 import { env } from '../config/env.js';
 
 export interface AuthenticatedUser {
@@ -18,6 +19,11 @@ declare global {
 }
 
 let jwks: ReturnType<typeof createRemoteJWKSet> | null = null;
+
+const TenantClaimsSchema = z.object({
+  tenant_id: z.string().uuid(),
+  role: z.enum(['owner', 'admin', 'member']).default('member'),
+});
 
 if (env.SUPABASE_PROJECT_URL) {
   const jwksUrl = new URL(`${env.SUPABASE_PROJECT_URL}/auth/v1/.well-known/jwks.json`);
@@ -68,14 +74,12 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
     }
 
     const email = typeof payload['email'] === 'string' ? payload['email'] : undefined;
-    const appMetadata = (payload['app_metadata'] as Record<string, unknown> | undefined) ?? {};
-    const tenantId = (appMetadata['tenant_id'] as string | undefined) ?? (req.headers['x-tenant-id'] as string | undefined);
-    const role = (appMetadata['role'] as string | undefined) ?? 'member';
+    const tenantClaims = TenantClaimsSchema.safeParse(payload['app_metadata']);
 
-    if (!tenantId) {
+    if (!tenantClaims.success) {
       res.status(403).json({
         error: 'Forbidden',
-        message: 'El usuario no tiene ningún tenant_id asignado en sus credenciales ni en cabecera autorizada',
+        message: 'El usuario no tiene claims de tenant válidos en sus credenciales',
       });
       return;
     }
@@ -83,8 +87,8 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
     // 2. Inyección inmutable del contexto en Request (Anti-Tampering)
     req.user = Object.freeze({
       userId,
-      tenantId,
-      role,
+      tenantId: tenantClaims.data.tenant_id,
+      role: tenantClaims.data.role,
       email,
     });
 
