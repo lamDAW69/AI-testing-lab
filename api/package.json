@@ -12,8 +12,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "node dist/db/migrate.js",
     "test": "npm run test:integration",
-    "test:integration": "tsx --test test/integration/**/*.test.ts",
-    "test:coverage": "tsx --test --experimental-test-coverage test/integration/**/*.test.ts"
+    "test:integration": "tsx --test test/integration/*.test.ts",
+    "test:coverage": "tsx --test --experimental-test-coverage test/integration/*.test.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",
