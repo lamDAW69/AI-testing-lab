@@ -8,6 +8,27 @@
       "when": 1789809833840,
       "tag": "0000_charming_blizzard",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790187490625,
+      "tag": "0001_enable_rls_tenant_isolation",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790187661411,
+      "tag": "0002_create_runtime_db_role",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1790188003366,
+      "tag": "0003_add_immutable_audit_events",
+      "breakpoints": true
     }
   ]
 }

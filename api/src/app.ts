@@ -3,6 +3,7 @@ import { securityHeadersMiddleware, corsMiddleware } from './middleware/security
 import { errorMiddleware, AppError } from './middleware/error.middleware.js';
 import { healthRouter } from './modules/health/health.controller.js';
 import { productsRouter } from './modules/products/products.controller.js';
+import { requestContextMiddleware } from './middleware/request-context.middleware.js';
 
 export function createApp(): Express {
   const app = express();
@@ -10,6 +11,7 @@ export function createApp(): Express {
   // 1. Cabeceras de seguridad y defensa perimetral
   app.use(securityHeadersMiddleware);
   app.use(corsMiddleware);
+  app.use(requestContextMiddleware);
 
   // 2. Parser JSON con límite estricto para prevenir DoS por payloads masivos
   app.use(express.json({ limit: '100kb' }));
