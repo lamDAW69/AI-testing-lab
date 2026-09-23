@@ -43,7 +43,9 @@ services:
     environment:
       PORT: 3000
       NODE_ENV: production
-      DATABASE_URL: postgresql://${DB_USER:-app_user}:${DB_PASSWORD}@postgres:5432/${DB_NAME:-app_db}
+      # Cuenta de mínimo privilegio distinta del propietario administrativo de
+      # PostgreSQL. Debe existir antes de arrancar la API en producción.
+      DATABASE_URL: postgresql://${APP_DB_USER:-app_runtime}:${APP_DB_PASSWORD}@postgres:5432/${DB_NAME:-app_db}
       SUPABASE_PROJECT_URL: ${SUPABASE_PROJECT_URL}
       CORS_ORIGIN: ${CORS_ORIGIN}
     networks:

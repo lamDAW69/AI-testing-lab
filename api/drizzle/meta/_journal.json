@@ -15,6 +15,13 @@
       "when": 1790187490625,
       "tag": "0001_enable_rls_tenant_isolation",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790187661411,
+      "tag": "0002_create_runtime_db_role",
+      "breakpoints": true
     }
   ]
 }
