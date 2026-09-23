@@ -1,0 +1,70 @@
+name: CI - Integración Continua y Calidad
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  quality-and-security:
+    name: Tipos, compilación y dependencias
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: api/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run build
+      - run: npm audit --audit-level=high
+
+  test-suite:
+    name: Pruebas de aislamiento multi-tenant
+    runs-on: ubuntu-latest
+    needs: quality-and-security
+    defaults:
+      run:
+        working-directory: api
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U test_user -d test_db"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: api/package-lock.json
+      - run: npm ci
+      - run: npm run build
+      - name: Aplicar migraciones sobre PostgreSQL real
+        env:
+          DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db
+          SUPABASE_PROJECT_URL: https://mock-project.supabase.co
+        run: npm run db:migrate
+      - name: Verificar RLS y anti-BOLA
+        env:
+          TEST_ADMIN_DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db
+          TEST_RUNTIME_DATABASE_URL: postgresql://app_runtime:test_runtime_password@localhost:5432/test_db
+          NODE_ENV: test
+          SUPABASE_PROJECT_URL: https://mock-project.supabase.co
+        run: npm run test:coverage
