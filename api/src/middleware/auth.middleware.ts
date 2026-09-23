@@ -3,7 +3,7 @@ import { and, eq } from 'drizzle-orm';
 import { createRemoteJWKSet, jwtVerify } from 'jose';
 import { z } from 'zod';
 import { env } from '../config/env.js';
-import { db } from '../db/client.js';
+import { withAuthenticatedUserTransaction } from '../db/client.js';
 import { tenantMemberships } from '../db/schema.js';
 
 export interface AuthenticatedUser {
@@ -61,11 +61,11 @@ async function resolveMembership(req: Request, userId: string): Promise<Membersh
       };
     }
 
-    const rows = await db
+    const rows = await withAuthenticatedUserTransaction(userId, (tx) => tx
       .select({ tenantId: tenantMemberships.tenantId, role: tenantMemberships.role })
       .from(tenantMemberships)
       .where(and(eq(tenantMemberships.userId, userId), eq(tenantMemberships.tenantId, parsedTenantId.data)))
-      .limit(1);
+      .limit(1));
 
     const membership = MembershipSchema.safeParse(rows[0]);
     if (!membership.success) {
@@ -79,11 +79,11 @@ async function resolveMembership(req: Request, userId: string): Promise<Membersh
     return { ok: true, membership: membership.data };
   }
 
-  const rows = await db
+  const rows = await withAuthenticatedUserTransaction(userId, (tx) => tx
     .select({ tenantId: tenantMemberships.tenantId, role: tenantMemberships.role })
     .from(tenantMemberships)
     .where(eq(tenantMemberships.userId, userId))
-    .limit(2);
+    .limit(2));
 
   if (rows.length === 0) {
     return {

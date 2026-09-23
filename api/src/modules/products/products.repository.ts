@@ -1,5 +1,5 @@
 import { eq, and, desc } from 'drizzle-orm';
-import { db } from '../../db/client.js';
+import type { TenantTransaction } from '../../db/client.js';
 import { products, type Product, type NewProduct } from '../../db/schema.js';
 import type { CreateProductInput, UpdateProductInput } from './products.schema.js';
 
@@ -8,8 +8,8 @@ export class ProductsRepository {
    * Obtiene la lista de productos pertenecientes exclusivamente al tenant autenticado.
    * Regla Anti-BOLA: El tenant_id es el filtro primario del índice compuesto.
    */
-  async listByTenant(tenantId: string, limit: number, offset: number): Promise<Product[]> {
-    return db
+  async listByTenant(database: TenantTransaction, tenantId: string, limit: number, offset: number): Promise<Product[]> {
+    return database
       .select()
       .from(products)
       .where(eq(products.tenantId, tenantId))
@@ -22,8 +22,8 @@ export class ProductsRepository {
    * Busca un producto por ID asegurando incondicionalmente el aislamiento de tenant.
    * Si el producto existe pero pertenece a otro tenant, la consulta retorna undefined (404 seguro).
    */
-  async findByIdAndTenant(id: string, tenantId: string): Promise<Product | undefined> {
-    const rows = await db
+  async findByIdAndTenant(database: TenantTransaction, id: string, tenantId: string): Promise<Product | undefined> {
+    const rows = await database
       .select()
       .from(products)
       .where(
@@ -40,7 +40,7 @@ export class ProductsRepository {
   /**
    * Crea un producto asignando el tenant_id inyectado por el middleware (nunca desde el body).
    */
-  async create(tenantId: string, input: CreateProductInput): Promise<Product> {
+  async create(database: TenantTransaction, tenantId: string, input: CreateProductInput): Promise<Product> {
     const newProduct: NewProduct = {
       tenantId,
       name: input.name,
@@ -49,7 +49,7 @@ export class ProductsRepository {
       sku: input.sku,
     };
 
-    const rows = await db.insert(products).values(newProduct).returning();
+    const rows = await database.insert(products).values(newProduct).returning();
     const created = rows[0];
     if (!created) {
       throw new Error('Fallo al insertar el producto en la base de datos');
@@ -61,11 +61,12 @@ export class ProductsRepository {
    * Actualiza un producto verificando incondicionalmente tenant_id e id en la cláusula WHERE.
    */
   async updateByIdAndTenant(
+    database: TenantTransaction,
     id: string,
     tenantId: string,
     input: UpdateProductInput
   ): Promise<Product | undefined> {
-    const rows = await db
+    const rows = await database
       .update(products)
       .set({
         ...input,
@@ -85,8 +86,8 @@ export class ProductsRepository {
   /**
    * Elimina un producto garantizando que pertenece al tenant solicitante.
    */
-  async deleteByIdAndTenant(id: string, tenantId: string): Promise<boolean> {
-    const result = await db
+  async deleteByIdAndTenant(database: TenantTransaction, id: string, tenantId: string): Promise<boolean> {
+    const result = await database
       .delete(products)
       .where(
         and(
