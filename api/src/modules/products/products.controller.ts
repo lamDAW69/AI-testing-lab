@@ -8,6 +8,7 @@ import {
 } from './products.schema.js';
 import { authMiddleware } from '../../middleware/auth.middleware.js';
 import { withTenantTransaction } from '../../db/client.js';
+import { auditService } from '../audit/audit.service.js';
 
 export const productsRouter = Router();
 
@@ -58,8 +59,18 @@ productsRouter.post('/', async (req: Request, res: Response, next: NextFunction)
     // .strict() garantiza que ningún campo inesperado en req.body sobreescriba propiedades internas
     const body = CreateProductSchema.parse(req.body);
 
-    const created = await withTenantTransaction(tenantId, (tx) =>
-      productsService.createProduct(tx, tenantId, body));
+    const created = await withTenantTransaction(tenantId, async (tx) => {
+      const product = await productsService.createProduct(tx, tenantId, body);
+      await auditService.recordProductMutation(tx, {
+        tenantId,
+        actorId: req.user!.userId,
+        requestId: req.requestId,
+        action: 'product.created',
+        productId: product.id,
+        changedFields: ['name', 'description', 'priceCents', 'sku'],
+      });
+      return product;
+    });
 
     res.status(201).json({
       message: 'Producto creado exitosamente',
@@ -77,8 +88,18 @@ productsRouter.patch('/:id', async (req: Request, res: Response, next: NextFunct
     const params = ProductParamsSchema.parse(req.params);
     const body = UpdateProductSchema.parse(req.body);
 
-    const updated = await withTenantTransaction(tenantId, (tx) =>
-      productsService.updateProduct(tx, params.id, tenantId, body));
+    const updated = await withTenantTransaction(tenantId, async (tx) => {
+      const product = await productsService.updateProduct(tx, params.id, tenantId, body);
+      await auditService.recordProductMutation(tx, {
+        tenantId,
+        actorId: req.user!.userId,
+        requestId: req.requestId,
+        action: 'product.updated',
+        productId: product.id,
+        changedFields: Object.keys(body),
+      });
+      return product;
+    });
 
     res.status(200).json({
       message: 'Producto actualizado exitosamente',
@@ -95,8 +116,17 @@ productsRouter.delete('/:id', async (req: Request, res: Response, next: NextFunc
     const tenantId = req.user!.tenantId;
     const params = ProductParamsSchema.parse(req.params);
 
-    await withTenantTransaction(tenantId, (tx) =>
-      productsService.deleteProduct(tx, params.id, tenantId));
+    await withTenantTransaction(tenantId, async (tx) => {
+      await productsService.deleteProduct(tx, params.id, tenantId);
+      await auditService.recordProductMutation(tx, {
+        tenantId,
+        actorId: req.user!.userId,
+        requestId: req.requestId,
+        action: 'product.deleted',
+        productId: params.id,
+        changedFields: [],
+      });
+    });
 
     res.status(200).json({
       message: 'Producto eliminado exitosamente',
