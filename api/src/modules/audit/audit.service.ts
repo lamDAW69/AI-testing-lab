@@ -12,6 +12,16 @@ export interface ProductMutationAudit {
   readonly changedFields: readonly string[];
 }
 
+export interface TenantMutationAudit {
+  readonly tenantId: string;
+  readonly actorId: string;
+  readonly requestId: string;
+  readonly action: string;
+  readonly entityType: string;
+  readonly entityId: string;
+  readonly changedFields: readonly string[];
+}
+
 /**
  * Registra únicamente metadatos seguros y estructurales. Los valores de bodies
  * o documentos nunca se guardan aquí, porque la auditoría no debe convertirse
@@ -19,13 +29,21 @@ export interface ProductMutationAudit {
  */
 export class AuditService {
   async recordProductMutation(tx: TenantTransaction, event: ProductMutationAudit): Promise<void> {
+    return this.recordMutation(tx, {
+      ...event,
+      entityType: 'product',
+      entityId: event.productId,
+    });
+  }
+
+  async recordMutation(tx: TenantTransaction, event: TenantMutationAudit): Promise<void> {
     await tx.insert(auditEvents).values({
       tenantId: event.tenantId,
       actorType: 'user',
       actorId: event.actorId,
       action: event.action,
-      entityType: 'product',
-      entityId: event.productId,
+      entityType: event.entityType,
+      entityId: event.entityId,
       correlationId: event.requestId,
       metadata: { changedFields: [...event.changedFields].sort() },
     });

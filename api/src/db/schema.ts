@@ -42,7 +42,46 @@ export const products = pgTable('products', {
   uqTenantSku: uniqueIndex('uq_products_tenant_sku').on(table.tenantId, table.sku),
 }));
 
-// 4. Auditoría append-only: no contiene tokens, secretos ni contenido documental.
+// 4. Dossier privado de la empresa. Una organización tiene un único perfil
+// canónico; las evidencias se modelan aparte para que no se marquen como
+// verificadas por el simple hecho de ser declaradas por un usuario.
+export const companyProfiles = pgTable('company_profiles', {
+  tenantId: uuid('tenant_id')
+    .primaryKey()
+    .references(() => tenants.id, { onDelete: 'cascade' }),
+  legalName: varchar('legal_name', { length: 255 }).notNull(),
+  taxId: varchar('tax_id', { length: 32 }),
+  website: varchar('website', { length: 2048 }),
+  description: text('description'),
+  cpvCodes: text('cpv_codes').array().notNull().default([]),
+  territories: text('territories').array().notNull().default([]),
+  minContractCents: integer('min_contract_cents'),
+  maxContractCents: integer('max_contract_cents'),
+  capacitySummary: text('capacity_summary'),
+  evidenceStatus: varchar('evidence_status', { length: 24 }).notNull().default('DECLARED'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const companyCertifications = pgTable('company_certifications', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  tenantId: uuid('tenant_id')
+    .notNull()
+    .references(() => tenants.id, { onDelete: 'cascade' }),
+  name: varchar('name', { length: 255 }).notNull(),
+  issuer: varchar('issuer', { length: 255 }).notNull(),
+  certificateNumber: varchar('certificate_number', { length: 255 }),
+  validFrom: timestamp('valid_from', { withTimezone: true }),
+  validUntil: timestamp('valid_until', { withTimezone: true }),
+  documentReference: varchar('document_reference', { length: 500 }),
+  evidenceStatus: varchar('evidence_status', { length: 24 }).notNull().default('DECLARED'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  idxTenantValidity: index('idx_company_certifications_tenant_validity').on(table.tenantId, table.validUntil),
+}));
+
+// 5. Auditoría append-only: no contiene tokens, secretos ni contenido documental.
 export const auditEvents = pgTable('audit_events', {
   id: uuid('id').defaultRandom().primaryKey(),
   tenantId: uuid('tenant_id')
@@ -61,7 +100,7 @@ export const auditEvents = pgTable('audit_events', {
   idxCorrelation: index('idx_audit_events_correlation').on(table.correlationId),
 }));
 
-// 5. Trazas append-only de agentes. Un executionId agrupa sus eventos sin
+// 6. Trazas append-only de agentes. Un executionId agrupa sus eventos sin
 // permitir que una ejecución ya registrada sea reescrita silenciosamente.
 export const agentExecutionEvents = pgTable('agent_execution_events', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -95,6 +134,11 @@ export type NewTenantMembership = typeof tenantMemberships.$inferInsert;
 
 export type Product = typeof products.$inferSelect;
 export type NewProduct = typeof products.$inferInsert;
+
+export type CompanyProfile = typeof companyProfiles.$inferSelect;
+export type NewCompanyProfile = typeof companyProfiles.$inferInsert;
+export type CompanyCertification = typeof companyCertifications.$inferSelect;
+export type NewCompanyCertification = typeof companyCertifications.$inferInsert;
 
 export type AuditEvent = typeof auditEvents.$inferSelect;
 export type NewAuditEvent = typeof auditEvents.$inferInsert;

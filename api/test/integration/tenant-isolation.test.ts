@@ -35,7 +35,7 @@ let closeApplicationPool: (() => Promise<void>) | undefined;
 before(async () => {
   await adminPool.query(`ALTER ROLE app_runtime LOGIN PASSWORD '${RUNTIME_PASSWORD}'`);
   await adminPool.query(
-    'TRUNCATE TABLE agent_execution_events, audit_events, products, tenant_memberships, tenants CASCADE',
+    'TRUNCATE TABLE agent_execution_events, audit_events, company_certifications, company_profiles, products, tenant_memberships, tenants CASCADE',
   );
 
   await adminPool.query(
@@ -52,6 +52,11 @@ before(async () => {
     `INSERT INTO products (id, tenant_id, name, price_cents, sku)
      VALUES ($1, $2, 'Producto privado A', 1000, 'PRIVATE-A')`,
     [PRODUCT_A, TENANT_A],
+  );
+  await adminPool.query(
+    `INSERT INTO company_profiles (tenant_id, legal_name, cpv_codes, territories)
+     VALUES ($1, 'Empresa privada A', ARRAY['72262000'], ARRAY['ES'])`,
+    [TENANT_A],
   );
 });
 
@@ -94,6 +99,11 @@ test('RLS no expone recursos privados sin contexto ni a otro tenant', async () =
     client.query('SELECT id FROM products WHERE id = $1', [PRODUCT_A]),
   );
   assert.equal(otherTenantProducts.rowCount, 0);
+
+  const otherTenantProfile = await withRuntimeSetting('app.current_tenant_id', TENANT_B, (client) =>
+    client.query('SELECT tenant_id FROM company_profiles WHERE tenant_id = $1', [TENANT_A]),
+  );
+  assert.equal(otherTenantProfile.rowCount, 0);
 });
 
 test('anti-BOLA: el repositorio no puede borrar un recurso de otro tenant', async () => {
