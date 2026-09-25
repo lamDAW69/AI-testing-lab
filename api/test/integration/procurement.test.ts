@@ -1,9 +1,7 @@
 import assert from 'node:assert/strict';
 import { after, before, test } from 'node:test';
 import pg from 'pg';
-import { createApp } from '../../src/app.js';
-import { procurementService } from '../../src/modules/procurement/procurement.service.js';
-import { placspConnector, RawPlacspEntry } from '../../src/modules/procurement/connectors/placsp.connector.js';
+import type { RawPlacspEntry } from '../../src/modules/procurement/connectors/placsp.connector.js';
 
 const { Pool } = pg;
 
@@ -24,6 +22,23 @@ process.env.INGEST_SECRET = 'super_secret_test_token_12345';
 
 const adminPool = new Pool({ connectionString: adminDatabaseUrl });
 const runtimePool = new Pool({ connectionString: runtimeDatabaseUrl });
+
+/**
+ * No se cargan módulos de la API al evaluar este archivo: config/env valida
+ * DATABASE_URL durante el import y las variables de test se fijan arriba.
+ */
+async function loadProcurementModules() {
+  const [serviceModule, connectorModule, appModule] = await Promise.all([
+    import('../../src/modules/procurement/procurement.service.js'),
+    import('../../src/modules/procurement/connectors/placsp.connector.js'),
+    import('../../src/app.js'),
+  ]);
+  return {
+    procurementService: serviceModule.procurementService,
+    placspConnector: connectorModule.placspConnector,
+    createApp: appModule.createApp,
+  };
+}
 
 const TEST_ENTRY_1: RawPlacspEntry = {
   id: 'EXP-TEST-2026-001',
@@ -93,6 +108,7 @@ after(async () => {
 });
 
 test('Ingesta inicial e idempotencia estricta (no duplicación)', async () => {
+  const { placspConnector, procurementService } = await loadProcurementModules();
   const normalized1 = placspConnector.normalizeEntry(TEST_ENTRY_1);
   const normalized2 = placspConnector.normalizeEntry(TEST_ENTRY_2);
 
@@ -119,6 +135,7 @@ test('Ingesta inicial e idempotencia estricta (no duplicación)', async () => {
 });
 
 test('Detección de enmienda y versionado inmutable de pliegos sin sobrescritura', async () => {
+  const { placspConnector, procurementService } = await loadProcurementModules();
   // Simulamos que el órgano convocante publica una actualización del pliego administrativo con nuevo contenido
   const modifiedEntry: RawPlacspEntry = {
     ...TEST_ENTRY_1,
@@ -170,6 +187,7 @@ test('Detección de enmienda y versionado inmutable de pliegos sin sobrescritura
 });
 
 test('Catálogo con filtros deterministas por CPV, importes y detalle de expediente', async () => {
+  const { procurementService } = await loadProcurementModules();
   // Filtro por prefijo de software TIC (CPV 72)
   const ticTenders = await procurementService.listTenders({
     cpv: '72',
@@ -198,6 +216,7 @@ test('Catálogo con filtros deterministas por CPV, importes y detalle de expedie
 });
 
 test('Endpoints HTTP: consulta pública y seguridad en job de ingesta', async () => {
+  const { createApp } = await loadProcurementModules();
   const app = createApp();
   const server = app.listen(0);
   const address = server.address();
