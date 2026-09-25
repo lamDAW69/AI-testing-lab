@@ -16,6 +16,8 @@ const envSchema = z.object({
     .or(z.literal('').transform(() => undefined)),
   CORS_ORIGIN: z.string().default('http://localhost:3000'),
   INGEST_SECRET: z.string().min(8).optional().default('dev_ingest_secret_change_in_prod'),
+  // Volumen local aislado: los binarios no se sirven directamente desde la API.
+  DOCUMENT_STORAGE_DIR: z.string().min(1).default('/app/data/documents'),
 });
 
 const parseEnv = () => {

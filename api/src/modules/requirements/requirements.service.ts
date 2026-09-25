@@ -30,9 +30,13 @@ export class RequirementsService {
     const extraction = await this.repository.createExtraction(database, {
       tenantId,
       input,
-      // La entrada se ata a una versión concreta del documento y, cuando existe,
-      // a su hash inmutable; no al texto que el agente afirme haber visto.
-      inputHash: hash({ documentVersionId: documentVersion.id, contentHash: documentVersion.contentHash }),
+      // La entrada se ata al snapshot inmutable realmente analizado; nunca al
+      // texto que el agente afirme haber visto en su salida.
+      inputHash: hash({
+        documentVersionId: documentVersion.id,
+        contentHash: documentVersion.contentHash,
+        extractedTextSha256: documentVersion.extractedTextSha256,
+      }),
       outputHash: hash(input.requirements),
     });
     await this.repository.createRequirements(database, tenantId, extraction, input.requirements);

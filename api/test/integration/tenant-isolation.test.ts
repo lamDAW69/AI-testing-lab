@@ -93,6 +93,13 @@ before(async () => {
     [DOCUMENT_VERSION_A, DOCUMENT_A],
   );
   await adminPool.query(
+    `INSERT INTO document_content_snapshots
+       (document_version_id, raw_storage_path, raw_sha256, raw_byte_size, extracted_text, extracted_text_sha256, extraction_engine)
+     VALUES ($1, '/test/documents/pliego.bin', repeat('e', 64), 42, 'El licitador debe acreditar experiencia.', repeat('f', 64), 'test-engine')
+     ON CONFLICT (document_version_id) DO NOTHING`,
+    [DOCUMENT_VERSION_A],
+  );
+  await adminPool.query(
     `INSERT INTO requirement_extractions (id, tenant_id, idempotency_key, tender_id, document_version_id, agent_name, prompt_version, input_hash, output_hash)
      VALUES ($1, $2, 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', $3, $4, 'extractor-test', 'v1', repeat('c', 64), repeat('d', 64))`,
     [EXTRACTION_A, TENANT_A, TENDER_A, DOCUMENT_VERSION_A],

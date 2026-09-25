@@ -249,6 +249,13 @@ test('Endpoints HTTP: consulta pública y seguridad en job de ingesta', async ()
       body: JSON.stringify({ tenders: [] }),
     });
     assert.equal(forbiddenIngest.status, 403);
+
+    // El job que descarga documentos tampoco se expone como un proxy público.
+    const unauthDocumentFetch = await fetch(
+      `${baseUrl}/api/internal/documents/versions/88888888-8888-4888-8888-888888888888/fetch`,
+      { method: 'POST' },
+    );
+    assert.equal(unauthDocumentFetch.status, 401);
   } finally {
     server.close();
   }

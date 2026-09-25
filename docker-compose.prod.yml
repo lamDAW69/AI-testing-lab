@@ -51,6 +51,9 @@ services:
       # Se exige explícitamente en producción: protege el endpoint interno de
       # ingesta contra ejecuciones no autorizadas.
       INGEST_SECRET: ${INGEST_SECRET}
+      DOCUMENT_STORAGE_DIR: /app/data/documents
+    volumes:
+      - document_storage:/app/data/documents
     networks:
       - app_internal_network
     # La API no expone puertos a Internet; Caddy gestiona todo el tráfico entrante
@@ -61,6 +64,8 @@ volumes:
   caddy_data:
     driver: local
   caddy_config:
+    driver: local
+  document_storage:
     driver: local
 
 networks:

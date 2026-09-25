@@ -24,6 +24,12 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm run build
+      - name: Pruebas unitarias sin servicios externos
+        env:
+          DATABASE_URL: postgresql://test:test@127.0.0.1:5432/test
+          SUPABASE_PROJECT_URL: https://mock-project.supabase.co
+          NODE_ENV: test
+        run: npm run test:unit
       - run: npm audit --audit-level=high
 
   test-suite:

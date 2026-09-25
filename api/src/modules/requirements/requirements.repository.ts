@@ -5,6 +5,7 @@ import {
   requirementCitations,
   requirementExtractions,
   requirements,
+  documentContentSnapshots,
   tenderDocumentVersions,
   tenderDocuments,
   type Requirement,
@@ -16,6 +17,7 @@ import type { ExtractedRequirementInput, ListRequirementsQuery, SubmitExtraction
 export interface VerifiedDocumentVersion {
   readonly id: string;
   readonly contentHash: string | null;
+  readonly extractedTextSha256: string;
 }
 
 export class RequirementsRepository {
@@ -25,8 +27,13 @@ export class RequirementsRepository {
     const rows = await database.select({
       id: tenderDocumentVersions.id,
       contentHash: tenderDocumentVersions.contentHash,
+      extractedTextSha256: documentContentSnapshots.extractedTextSha256,
     }).from(tenderDocumentVersions)
       .innerJoin(tenderDocuments, eq(tenderDocumentVersions.documentId, tenderDocuments.id))
+      .innerJoin(
+        documentContentSnapshots,
+        eq(documentContentSnapshots.documentVersionId, tenderDocumentVersions.id),
+      )
       .where(and(eq(tenderDocumentVersions.id, documentVersionId), eq(tenderDocuments.tenderId, tenderId)))
       .limit(1);
     return rows[0];

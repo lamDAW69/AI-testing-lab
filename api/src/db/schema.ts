@@ -247,6 +247,26 @@ export const tenderDocumentVersions = pgTable('tender_document_versions', {
   idxContentHash: index('idx_tender_doc_versions_hash').on(table.contentHash),
 }));
 
+// Snapshot inmutable del contenido que realmente vio el extractor. El binario
+// original reside fuera de PostgreSQL en un volumen privado; en la base se
+// conserva su huella y el texto trazable sobre el que se calculan las citas.
+export const documentContentSnapshots = pgTable('document_content_snapshots', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  documentVersionId: uuid('document_version_id')
+    .notNull().references(() => tenderDocumentVersions.id, { onDelete: 'restrict' }),
+  rawStoragePath: varchar('raw_storage_path', { length: 1024 }).notNull(),
+  rawSha256: varchar('raw_sha256', { length: 64 }).notNull(),
+  rawByteSize: integer('raw_byte_size').notNull(),
+  extractedText: text('extracted_text').notNull(),
+  extractedTextSha256: varchar('extracted_text_sha256', { length: 64 }).notNull(),
+  extractionEngine: varchar('extraction_engine', { length: 100 }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  uqDocumentVersion: uniqueIndex('uq_document_content_snapshots_document_version')
+    .on(table.documentVersionId),
+  idxRawSha256: index('idx_document_content_snapshots_raw_sha256').on(table.rawSha256),
+}));
+
 // 13. Histórico de eventos del expediente
 export const tenderEvents = pgTable('tender_events', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -372,6 +392,7 @@ export type NewTenderDocument = typeof tenderDocuments.$inferInsert;
 
 export type TenderDocumentVersion = typeof tenderDocumentVersions.$inferSelect;
 export type NewTenderDocumentVersion = typeof tenderDocumentVersions.$inferInsert;
+export type DocumentContentSnapshot = typeof documentContentSnapshots.$inferSelect;
 
 export type TenderEvent = typeof tenderEvents.$inferSelect;
 export type NewTenderEvent = typeof tenderEvents.$inferInsert;
