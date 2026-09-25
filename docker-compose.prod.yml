@@ -48,6 +48,9 @@ services:
       DATABASE_URL: postgresql://${APP_DB_USER:-app_runtime}:${APP_DB_PASSWORD}@postgres:5432/${DB_NAME:-app_db}
       SUPABASE_PROJECT_URL: ${SUPABASE_PROJECT_URL}
       CORS_ORIGIN: ${CORS_ORIGIN}
+      # Se exige explícitamente en producción: protege el endpoint interno de
+      # ingesta contra ejecuciones no autorizadas.
+      INGEST_SECRET: ${INGEST_SECRET}
     networks:
       - app_internal_network
     # La API no expone puertos a Internet; Caddy gestiona todo el tráfico entrante
