@@ -10,6 +10,13 @@ const TENANT_B = '22222222-2222-4222-8222-222222222222';
 const USER_A = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const USER_B = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
 const PRODUCT_A = '33333333-3333-4333-8333-333333333333';
+const SOURCE_A = '44444444-4444-4444-8444-444444444444';
+const AUTHORITY_A = '55555555-5555-4555-8555-555555555555';
+const TENDER_A = '66666666-6666-4666-8666-666666666666';
+const DOCUMENT_A = '77777777-7777-4777-8777-777777777777';
+const DOCUMENT_VERSION_A = '88888888-8888-4888-8888-888888888888';
+const EXTRACTION_A = '99999999-9999-4999-8999-999999999999';
+const REQUIREMENT_A = 'aaaaaaaa-1111-4111-8111-111111111111';
 const RUNTIME_PASSWORD = 'test_runtime_password';
 
 const adminDatabaseUrl = process.env.TEST_ADMIN_DATABASE_URL ?? process.env.DATABASE_URL;
@@ -58,6 +65,48 @@ before(async () => {
      VALUES ($1, 'Empresa privada A', ARRAY['72262000'], ARRAY['ES'])`,
     [TENANT_A],
   );
+  await adminPool.query(
+    `INSERT INTO procurement_sources (id, code, name, base_url)
+     VALUES ($1, 'TEST_REQUIREMENTS', 'Fuente de test', 'https://example.test')
+     ON CONFLICT (code) DO NOTHING`,
+    [SOURCE_A],
+  );
+  await adminPool.query(
+    `INSERT INTO contracting_authorities (id, source_id, name)
+     VALUES ($1, $2, 'Órgano de test') ON CONFLICT (id) DO NOTHING`,
+    [AUTHORITY_A, SOURCE_A],
+  );
+  await adminPool.query(
+    `INSERT INTO tenders (id, source_id, authority_id, source_tender_id, title, budget_amount_cents, main_cpv_code, raw_payload_hash)
+     VALUES ($1, $2, $3, 'REQ-TEST-1', 'Expediente para aislamiento', 100000, '72000000', repeat('a', 64))
+     ON CONFLICT (id) DO NOTHING`,
+    [TENDER_A, SOURCE_A, AUTHORITY_A],
+  );
+  await adminPool.query(
+    `INSERT INTO tender_documents (id, tender_id, document_type, name)
+     VALUES ($1, $2, 'PCAP', 'Pliego de test') ON CONFLICT (id) DO NOTHING`,
+    [DOCUMENT_A, TENDER_A],
+  );
+  await adminPool.query(
+    `INSERT INTO tender_document_versions (id, document_id, version_number, url, content_hash)
+     VALUES ($1, $2, 1, 'https://example.test/pliego.pdf', repeat('b', 64)) ON CONFLICT (id) DO NOTHING`,
+    [DOCUMENT_VERSION_A, DOCUMENT_A],
+  );
+  await adminPool.query(
+    `INSERT INTO requirement_extractions (id, tenant_id, idempotency_key, tender_id, document_version_id, agent_name, prompt_version, input_hash, output_hash)
+     VALUES ($1, $2, 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', $3, $4, 'extractor-test', 'v1', repeat('c', 64), repeat('d', 64))`,
+    [EXTRACTION_A, TENANT_A, TENDER_A, DOCUMENT_VERSION_A],
+  );
+  await adminPool.query(
+    `INSERT INTO requirements (id, tenant_id, extraction_id, tender_id, document_version_id, category, requirement_type, source_status, review_status, summary, extracted_text, confidence)
+     VALUES ($1, $2, $3, $4, $5, 'TECHNICAL', 'MANDATORY', 'CITED', 'EXTRACTED', 'Requisito aislado de test', 'El licitador debe acreditar experiencia.', 90)`,
+    [REQUIREMENT_A, TENANT_A, EXTRACTION_A, TENDER_A, DOCUMENT_VERSION_A],
+  );
+  await adminPool.query(
+    `INSERT INTO requirement_citations (tenant_id, requirement_id, document_version_id, page_number, quoted_text)
+     VALUES ($1, $2, $3, 2, 'El licitador debe acreditar experiencia.')`,
+    [TENANT_A, REQUIREMENT_A, DOCUMENT_VERSION_A],
+  );
 });
 
 after(async () => {
@@ -104,6 +153,11 @@ test('RLS no expone recursos privados sin contexto ni a otro tenant', async () =
     client.query('SELECT tenant_id FROM company_profiles WHERE tenant_id = $1', [TENANT_A]),
   );
   assert.equal(otherTenantProfile.rowCount, 0);
+
+  const otherTenantRequirements = await withRuntimeSetting('app.current_tenant_id', TENANT_B, (client) =>
+    client.query('SELECT id FROM requirements WHERE id = $1', [REQUIREMENT_A]),
+  );
+  assert.equal(otherTenantRequirements.rowCount, 0);
 });
 
 test('anti-BOLA: el repositorio no puede borrar un recurso de otro tenant', async () => {
@@ -134,4 +188,20 @@ test('RLS solo permite descubrir las membresías del usuario autenticado', async
     client.query('SELECT tenant_id FROM tenant_memberships WHERE user_id = $1', [USER_A]),
   );
   assert.equal(forgedMembershipLookup.rowCount, 0);
+});
+
+test('el contrato del agente exige citas estructuradas y rechaza campos privilegiados', async () => {
+  const { SubmitExtractionSchema } = await import('../../src/modules/requirements/requirements.schema.js');
+  const invalid = SubmitExtractionSchema.safeParse({
+    idempotencyKey: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+    tenderId: TENDER_A,
+    documentVersionId: DOCUMENT_VERSION_A,
+    tenantId: TENANT_B,
+    agent: { name: 'extractor', promptVersion: 'v1' },
+    requirements: [{
+      category: 'TECHNICAL', requirementType: 'MANDATORY', sourceStatus: 'CITED',
+      summary: 'Requisito sin cita suficiente', extractedText: 'Texto', confidence: 90, citations: [],
+    }],
+  });
+  assert.equal(invalid.success, false);
 });

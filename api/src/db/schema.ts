@@ -270,6 +270,72 @@ export const cpvCodes = pgTable('cpv_codes', {
   parentCode: varchar('parent_code', { length: 20 }),
 });
 
+// ============================================================================
+// ANÁLISIS DOCUMENTAL PRIVADO POR TENANT (Fase 3)
+// ============================================================================
+export const requirementExtractions = pgTable('requirement_extractions', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  tenantId: uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  idempotencyKey: uuid('idempotency_key').notNull(),
+  tenderId: uuid('tender_id').notNull().references(() => tenders.id, { onDelete: 'cascade' }),
+  documentVersionId: uuid('document_version_id')
+    .notNull().references(() => tenderDocumentVersions.id, { onDelete: 'restrict' }),
+  agentName: varchar('agent_name', { length: 100 }).notNull(),
+  model: varchar('model', { length: 100 }),
+  promptVersion: varchar('prompt_version', { length: 100 }).notNull(),
+  toolVersion: varchar('tool_version', { length: 100 }),
+  inputHash: varchar('input_hash', { length: 64 }).notNull(),
+  outputHash: varchar('output_hash', { length: 64 }).notNull(),
+  durationMs: integer('duration_ms'),
+  costMicrounits: integer('cost_microunits'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  uqTenantIdempotency: uniqueIndex('uq_requirement_extractions_tenant_idempotency')
+    .on(table.tenantId, table.idempotencyKey),
+  idxTenantDocument: index('idx_requirement_extractions_tenant_document')
+    .on(table.tenantId, table.documentVersionId),
+}));
+
+export const requirements = pgTable('requirements', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  tenantId: uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  extractionId: uuid('extraction_id')
+    .notNull().references(() => requirementExtractions.id, { onDelete: 'cascade' }),
+  tenderId: uuid('tender_id').notNull().references(() => tenders.id, { onDelete: 'cascade' }),
+  documentVersionId: uuid('document_version_id')
+    .notNull().references(() => tenderDocumentVersions.id, { onDelete: 'restrict' }),
+  category: varchar('category', { length: 32 }).notNull(),
+  requirementType: varchar('requirement_type', { length: 32 }).notNull(),
+  sourceStatus: varchar('source_status', { length: 32 }).notNull(),
+  reviewStatus: varchar('review_status', { length: 32 }).notNull(),
+  summary: text('summary').notNull(),
+  extractedText: text('extracted_text').notNull(),
+  confidence: integer('confidence').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  idxTenantTender: index('idx_requirements_tenant_tender').on(table.tenantId, table.tenderId),
+  idxTenantExtraction: index('idx_requirements_tenant_extraction').on(table.tenantId, table.extractionId),
+}));
+
+export const requirementCitations = pgTable('requirement_citations', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  tenantId: uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  requirementId: uuid('requirement_id').notNull().references(() => requirements.id, { onDelete: 'cascade' }),
+  documentVersionId: uuid('document_version_id')
+    .notNull().references(() => tenderDocumentVersions.id, { onDelete: 'restrict' }),
+  pageNumber: integer('page_number'),
+  sectionReference: varchar('section_reference', { length: 255 }),
+  startOffset: integer('start_offset'),
+  endOffset: integer('end_offset'),
+  quotedText: text('quoted_text').notNull(),
+  verificationStatus: varchar('verification_status', { length: 32 }).notNull().default('PENDING_REVIEW'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  idxTenantRequirement: index('idx_requirement_citations_tenant_requirement')
+    .on(table.tenantId, table.requirementId),
+  idxDocumentVersion: index('idx_requirement_citations_document_version').on(table.documentVersionId),
+}));
+
 export type Tenant = typeof tenants.$inferSelect;
 export type NewTenant = typeof tenants.$inferInsert;
 
@@ -312,3 +378,7 @@ export type NewTenderEvent = typeof tenderEvents.$inferInsert;
 
 export type CpvCode = typeof cpvCodes.$inferSelect;
 export type NewCpvCode = typeof cpvCodes.$inferInsert;
+
+export type RequirementExtraction = typeof requirementExtractions.$inferSelect;
+export type Requirement = typeof requirements.$inferSelect;
+export type RequirementCitation = typeof requirementCitations.$inferSelect;
