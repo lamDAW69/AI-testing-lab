@@ -20,6 +20,10 @@ export interface VerifiedDocumentVersion {
   readonly extractedTextSha256: string;
 }
 
+export interface VerifiedDocumentSnapshot extends VerifiedDocumentVersion {
+  readonly extractedText: string;
+}
+
 export class RequirementsRepository {
   async verifyDocumentVersion(
     database: TenantTransaction, tenderId: string, documentVersionId: string,
@@ -34,6 +38,22 @@ export class RequirementsRepository {
         documentContentSnapshots,
         eq(documentContentSnapshots.documentVersionId, tenderDocumentVersions.id),
       )
+      .where(and(eq(tenderDocumentVersions.id, documentVersionId), eq(tenderDocuments.tenderId, tenderId)))
+      .limit(1);
+    return rows[0];
+  }
+
+  async getDocumentSnapshot(
+    database: TenantTransaction, tenderId: string, documentVersionId: string,
+  ): Promise<VerifiedDocumentSnapshot | undefined> {
+    const rows = await database.select({
+      id: tenderDocumentVersions.id,
+      contentHash: tenderDocumentVersions.contentHash,
+      extractedTextSha256: documentContentSnapshots.extractedTextSha256,
+      extractedText: documentContentSnapshots.extractedText,
+    }).from(tenderDocumentVersions)
+      .innerJoin(tenderDocuments, eq(tenderDocumentVersions.documentId, tenderDocuments.id))
+      .innerJoin(documentContentSnapshots, eq(documentContentSnapshots.documentVersionId, tenderDocumentVersions.id))
       .where(and(eq(tenderDocumentVersions.id, documentVersionId), eq(tenderDocuments.tenderId, tenderId)))
       .limit(1);
     return rows[0];

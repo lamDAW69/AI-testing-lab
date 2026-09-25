@@ -198,7 +198,7 @@ test('RLS solo permite descubrir las membresías del usuario autenticado', async
 });
 
 test('el contrato del agente exige citas estructuradas y rechaza campos privilegiados', async () => {
-  const { SubmitExtractionSchema } = await import('../../src/modules/requirements/requirements.schema.js');
+  const { RunExtractionSchema, SubmitExtractionSchema } = await import('../../src/modules/requirements/requirements.schema.js');
   const invalid = SubmitExtractionSchema.safeParse({
     idempotencyKey: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
     tenderId: TENDER_A,
@@ -211,4 +211,8 @@ test('el contrato del agente exige citas estructuradas y rechaza campos privileg
     }],
   });
   assert.equal(invalid.success, false);
+  assert.equal(RunExtractionSchema.safeParse({
+    idempotencyKey: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', tenderId: TENDER_A,
+    documentVersionId: DOCUMENT_VERSION_A, agent: { model: 'forged' },
+  }).success, false);
 });

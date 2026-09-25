@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
 import type { TenantTransaction } from '../../db/client.js';
 import { AppError } from '../../middleware/error.middleware.js';
-import type { ListRequirementsQuery, SubmitExtractionInput } from './requirements.schema.js';
+import type { ListRequirementsQuery, RunExtractionInput, SubmitExtractionInput } from './requirements.schema.js';
 import { RequirementsRepository, requirementsRepository } from './requirements.repository.js';
 
 function hash(value: unknown): string {
@@ -45,6 +45,14 @@ export class RequirementsService {
 
   listRequirements(database: TenantTransaction, tenantId: string, query: ListRequirementsQuery) {
     return this.repository.listRequirements(database, tenantId, query);
+  }
+
+  async getDocumentSnapshot(database: TenantTransaction, input: RunExtractionInput) {
+    const snapshot = await this.repository.getDocumentSnapshot(database, input.tenderId, input.documentVersionId);
+    if (!snapshot) {
+      throw new AppError(409, 'La versión documental todavía no tiene un snapshot verificable para análisis');
+    }
+    return snapshot;
   }
 
   async getRequirement(database: TenantTransaction, tenantId: string, id: string) {

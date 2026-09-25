@@ -62,6 +62,14 @@ export const SubmitExtractionSchema = z.object({
   requirements: z.array(ExtractedRequirementSchema).min(1).max(100),
 }).strict();
 
+// El cliente puede solicitar una ejecución, pero jamás aporta el resultado,
+// modelo, tenant o metadatos del agente: todos los decide el backend.
+export const RunExtractionSchema = z.object({
+  idempotencyKey: z.string().uuid(),
+  tenderId: z.string().uuid(),
+  documentVersionId: z.string().uuid(),
+}).strict();
+
 export const RequirementIdParamsSchema = z.object({ id: z.string().uuid() }).strict();
 export const ListRequirementsQuerySchema = z.object({
   tenderId: z.string().uuid().optional(),
@@ -70,5 +78,6 @@ export const ListRequirementsQuerySchema = z.object({
 }).strict();
 
 export type SubmitExtractionInput = z.infer<typeof SubmitExtractionSchema>;
+export type RunExtractionInput = z.infer<typeof RunExtractionSchema>;
 export type ExtractedRequirementInput = z.infer<typeof ExtractedRequirementSchema>;
 export type ListRequirementsQuery = z.infer<typeof ListRequirementsQuerySchema>;
