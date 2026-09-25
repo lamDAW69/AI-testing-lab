@@ -4,6 +4,7 @@ import { errorMiddleware, AppError } from './middleware/error.middleware.js';
 import { healthRouter } from './modules/health/health.controller.js';
 import { productsRouter } from './modules/products/products.controller.js';
 import { dossierRouter } from './modules/dossier/dossier.controller.js';
+import { procurementRouter } from './modules/procurement/procurement.controller.js';
 import { requestContextMiddleware } from './middleware/request-context.middleware.js';
 
 export function createApp(): Express {
@@ -21,6 +22,7 @@ export function createApp(): Express {
   app.use(healthRouter);
   app.use('/api/products', productsRouter);
   app.use('/api/dossier', dossierRouter);
+  app.use('/api/public', procurementRouter);
 
   // 4. Captura de rutas inexistentes (404 seguro)
   app.use((req: Request, _res: Response, next) => {

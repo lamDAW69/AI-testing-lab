@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, text, integer, timestamp, uniqueIndex, index, primaryKey, jsonb } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, varchar, text, integer, timestamp, uniqueIndex, index, primaryKey, jsonb, bigint, boolean } from 'drizzle-orm/pg-core';
 
 // 1. Tabla de Organizaciones / Clientes (Tenants)
 export const tenants = pgTable('tenants', {
@@ -126,6 +126,150 @@ export const agentExecutionEvents = pgTable('agent_execution_events', {
   idxCorrelation: index('idx_agent_execution_events_correlation').on(table.correlationId),
 }));
 
+// ============================================================================
+// DATOS GLOBALES PÚBLICOS (Fase 2 — Sin tenant_id, compartidos universalmente)
+// ============================================================================
+
+// 7. Fuentes oficiales de contratación (ej. ES_PLACSP, TED Europa, etc.)
+export const procurementSources = pgTable('procurement_sources', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  code: varchar('code', { length: 50 }).notNull().unique(),
+  name: varchar('name', { length: 255 }).notNull(),
+  jurisdiction: varchar('jurisdiction', { length: 10 }).notNull().default('ES'),
+  baseUrl: varchar('base_url', { length: 2048 }).notNull(),
+  feedUrl: varchar('feed_url', { length: 2048 }),
+  isActive: boolean('is_active').notNull().default(true),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+// 8. Órganos de contratación / Entidades compradoras
+export const contractingAuthorities = pgTable('contracting_authorities', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  sourceId: uuid('source_id')
+    .notNull()
+    .references(() => procurementSources.id, { onDelete: 'cascade' }),
+  sourceAuthorityId: varchar('source_authority_id', { length: 100 }),
+  name: varchar('name', { length: 255 }).notNull(),
+  taxId: varchar('tax_id', { length: 32 }),
+  buyerType: varchar('buyer_type', { length: 50 }).notNull().default('other'),
+  postalCode: varchar('postal_code', { length: 20 }),
+  city: varchar('city', { length: 100 }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  idxSourceTax: index('idx_contracting_authorities_source_tax').on(table.sourceId, table.taxId),
+  idxName: index('idx_contracting_authorities_name').on(table.name),
+}));
+
+// 9. Expedientes de licitación (Tenders)
+export const tenders = pgTable('tenders', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  sourceId: uuid('source_id')
+    .notNull()
+    .references(() => procurementSources.id, { onDelete: 'cascade' }),
+  authorityId: uuid('authority_id')
+    .notNull()
+    .references(() => contractingAuthorities.id, { onDelete: 'restrict' }),
+  sourceTenderId: varchar('source_tender_id', { length: 255 }).notNull(),
+  title: varchar('title', { length: 500 }).notNull(),
+  description: text('description'),
+  status: varchar('status', { length: 50 }).notNull().default('PUBLISHED'),
+  procedureType: varchar('procedure_type', { length: 50 }).notNull().default('OPEN'),
+  contractType: varchar('contract_type', { length: 50 }).notNull().default('SERVICES'),
+  estimatedValueCents: bigint('estimated_value_cents', { mode: 'number' }),
+  budgetAmountCents: bigint('budget_amount_cents', { mode: 'number' }).notNull(),
+  taxInclusiveAmountCents: bigint('tax_inclusive_amount_cents', { mode: 'number' }),
+  currency: varchar('currency', { length: 3 }).notNull().default('EUR'),
+  mainCpvCode: varchar('main_cpv_code', { length: 20 }).notNull(),
+  additionalCpvCodes: text('additional_cpv_codes').array().notNull().default([]),
+  submissionDeadline: timestamp('submission_deadline', { withTimezone: true }),
+  awardDate: timestamp('award_date', { withTimezone: true }),
+  rawPayloadHash: varchar('raw_payload_hash', { length: 64 }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  uqSourceTender: uniqueIndex('uq_tenders_source_tender').on(table.sourceId, table.sourceTenderId),
+  idxMainCpv: index('idx_tenders_main_cpv').on(table.mainCpvCode),
+  idxStatusDeadline: index('idx_tenders_status_deadline').on(table.status, table.submissionDeadline),
+  idxBudget: index('idx_tenders_budget').on(table.budgetAmountCents),
+  idxAuthority: index('idx_tenders_authority').on(table.authorityId),
+}));
+
+// 10. Lotes independientes del contrato
+export const tenderLots = pgTable('tender_lots', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  tenderId: uuid('tender_id')
+    .notNull()
+    .references(() => tenders.id, { onDelete: 'cascade' }),
+  lotNumber: integer('lot_number').notNull(),
+  title: varchar('title', { length: 500 }).notNull(),
+  description: text('description'),
+  budgetAmountCents: bigint('budget_amount_cents', { mode: 'number' }),
+  mainCpvCode: varchar('main_cpv_code', { length: 20 }),
+  status: varchar('status', { length: 50 }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  uqTenderLot: uniqueIndex('uq_tender_lots_tender_number').on(table.tenderId, table.lotNumber),
+}));
+
+// 11. Documentos y pliegos rectores (Metadatos)
+export const tenderDocuments = pgTable('tender_documents', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  tenderId: uuid('tender_id')
+    .notNull()
+    .references(() => tenders.id, { onDelete: 'cascade' }),
+  documentType: varchar('document_type', { length: 50 }).notNull(), // 'PCAP', 'PPT', 'NOTICE', 'AWARD_NOTICE', 'OTHER'
+  name: varchar('name', { length: 255 }).notNull(),
+  sourceDocumentId: varchar('source_document_id', { length: 255 }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  idxTenderType: index('idx_tender_documents_tender_type').on(table.tenderId, table.documentType),
+}));
+
+// 12. Versiones físicas inmutables de los documentos (Inmutabilidad anti-sobrescritura)
+export const tenderDocumentVersions = pgTable('tender_document_versions', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  documentId: uuid('document_id')
+    .notNull()
+    .references(() => tenderDocuments.id, { onDelete: 'cascade' }),
+  versionNumber: integer('version_number').notNull(),
+  url: varchar('url', { length: 2048 }).notNull(),
+  contentHash: varchar('content_hash', { length: 64 }),
+  mimeType: varchar('mime_type', { length: 100 }),
+  byteSize: integer('byte_size'),
+  rawStoragePath: varchar('raw_storage_path', { length: 1024 }),
+  fetchedAt: timestamp('fetched_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  uqDocVersion: uniqueIndex('uq_tender_doc_versions_doc_num').on(table.documentId, table.versionNumber),
+  idxContentHash: index('idx_tender_doc_versions_hash').on(table.contentHash),
+}));
+
+// 13. Histórico de eventos del expediente
+export const tenderEvents = pgTable('tender_events', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  tenderId: uuid('tender_id')
+    .notNull()
+    .references(() => tenders.id, { onDelete: 'cascade' }),
+  eventType: varchar('event_type', { length: 50 }).notNull(),
+  eventDate: timestamp('event_date', { withTimezone: true }).notNull(),
+  title: varchar('title', { length: 255 }).notNull(),
+  description: text('description'),
+  rawPayload: jsonb('raw_payload').$type<Record<string, unknown>>().notNull().default({}),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  idxTimeline: index('idx_tender_events_timeline').on(table.tenderId, table.eventDate),
+}));
+
+// 14. Catálogo canónico de códigos CPV
+export const cpvCodes = pgTable('cpv_codes', {
+  code: varchar('code', { length: 20 }).primaryKey(),
+  description: text('description').notNull(),
+  parentCode: varchar('parent_code', { length: 20 }),
+});
+
 export type Tenant = typeof tenants.$inferSelect;
 export type NewTenant = typeof tenants.$inferInsert;
 
@@ -144,3 +288,27 @@ export type AuditEvent = typeof auditEvents.$inferSelect;
 export type NewAuditEvent = typeof auditEvents.$inferInsert;
 export type AgentExecutionEvent = typeof agentExecutionEvents.$inferSelect;
 export type NewAgentExecutionEvent = typeof agentExecutionEvents.$inferInsert;
+
+export type ProcurementSource = typeof procurementSources.$inferSelect;
+export type NewProcurementSource = typeof procurementSources.$inferInsert;
+
+export type ContractingAuthority = typeof contractingAuthorities.$inferSelect;
+export type NewContractingAuthority = typeof contractingAuthorities.$inferInsert;
+
+export type Tender = typeof tenders.$inferSelect;
+export type NewTender = typeof tenders.$inferInsert;
+
+export type TenderLot = typeof tenderLots.$inferSelect;
+export type NewTenderLot = typeof tenderLots.$inferInsert;
+
+export type TenderDocument = typeof tenderDocuments.$inferSelect;
+export type NewTenderDocument = typeof tenderDocuments.$inferInsert;
+
+export type TenderDocumentVersion = typeof tenderDocumentVersions.$inferSelect;
+export type NewTenderDocumentVersion = typeof tenderDocumentVersions.$inferInsert;
+
+export type TenderEvent = typeof tenderEvents.$inferSelect;
+export type NewTenderEvent = typeof tenderEvents.$inferInsert;
+
+export type CpvCode = typeof cpvCodes.$inferSelect;
+export type NewCpvCode = typeof cpvCodes.$inferInsert;
