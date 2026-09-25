@@ -18,7 +18,9 @@ const envSchema = z.object({
   INGEST_SECRET: z.string().min(8).optional().default('dev_ingest_secret_change_in_prod'),
   // Volumen local aislado: los binarios no se sirven directamente desde la API.
   DOCUMENT_STORAGE_DIR: z.string().min(1).default('/app/data/documents'),
-  GEMINI_API_KEY: z.string().min(20).optional(),
+  // Una clave ausente o vacía desactiva Gemini, pero nunca debe impedir que
+  // arranque el resto de la API. El extractor devuelve 503 hasta configurarla.
+  GEMINI_API_KEY: z.string().min(20).optional().or(z.literal('').transform(() => undefined)),
   GEMINI_MODEL: z.string().min(1).default('gemini-3.1-flash-lite'),
   GEMINI_MAX_DOCUMENT_CHARS: z.coerce.number().int().min(1_000).max(1_000_000).default(250_000),
   GEMINI_MAX_OUTPUT_TOKENS: z.coerce.number().int().min(256).max(16_384).default(8_000),
