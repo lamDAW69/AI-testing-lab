@@ -26,6 +26,7 @@ test('CreateExtractionJobSchema valida parámetros estrictos y rechaza inyeccion
 
 test('ExtractionJobsService rechaza peticiones con 429 si se excede la cuota de concurrencia del tenant', async () => {
   const fakeRepo = {
+    lockTenantAdmission: async () => undefined,
     findJobByIdempotency: async () => undefined,
     countActiveJobsForTenant: async () => MAX_CONCURRENT_JOBS_PER_TENANT, // Simula que ya hay 2 jobs activos
     createJob: async () => { throw new Error('No debe ser llamado'); },
@@ -63,6 +64,7 @@ test('ExtractionJobsService devuelve el trabajo existente de forma idempotente s
   };
 
   const fakeRepo = {
+    lockTenantAdmission: async () => undefined,
     findJobByIdempotency: async () => existingJob,
     countActiveJobsForTenant: async () => 0,
     createJob: async () => { throw new Error('No debe crear duplicado'); },
@@ -78,4 +80,21 @@ test('ExtractionJobsService devuelve el trabajo existente de forma idempotente s
 
   assert.equal(result.idempotent, true);
   assert.equal(result.job.id, 'job-existing-1');
+});
+
+test('ExtractionJobsService adquiere el lock transaccional antes de comprobar la cuota', async () => {
+  let lockCalls = 0;
+  const fakeRepo = {
+    lockTenantAdmission: async () => { lockCalls += 1; },
+    findJobByIdempotency: async () => ({ id: 'job-existing-2' }),
+  } as any;
+  const service = new ExtractionJobsService(fakeRepo, {} as any, {} as any, {} as any);
+
+  await service.createJob({} as any, 'tenant-123', {
+    idempotencyKey: '00000000-0000-0000-0000-000000000001',
+    tenderId: '00000000-0000-0000-0000-000000000002',
+    documentVersionId: '00000000-0000-0000-0000-000000000003',
+  });
+
+  assert.equal(lockCalls, 1);
 });

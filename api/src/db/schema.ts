@@ -369,6 +369,7 @@ export const extractionJobs = pgTable('extraction_jobs', {
   maxAttempts: integer('max_attempts').notNull().default(3),
   errorMessage: text('error_message'),
   retryAfterTimestamp: timestamp('retry_after_timestamp', { withTimezone: true }),
+  leaseExpiresAt: timestamp('lease_expires_at', { withTimezone: true }),
   resultExtractionId: uuid('result_extraction_id')
     .references(() => requirementExtractions.id, { onDelete: 'set null' }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),

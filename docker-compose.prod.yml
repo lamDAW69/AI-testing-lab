@@ -29,7 +29,32 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - app_internal_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
     # NOTA: En producción NO se publica ningún puerto hacia el host ni hacia Internet
+
+  # Las migraciones requieren DDL; se ejecutan una vez con la cuenta bootstrap.
+  # API y worker nunca reciben estas credenciales y permanecen bajo app_runtime.
+  migrate:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: app_migrate
+    restart: "no"
+    command: ["node", "dist/db/migrate.js"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${APP_DB_USER:-app_runtime}:${APP_DB_PASSWORD}@postgres:5432/${DB_NAME:-app_db}
+      ADMIN_DATABASE_URL: postgresql://${DB_USER:-app_user}:${DB_PASSWORD}@postgres:5432/${DB_NAME:-app_db}
+      SUPABASE_PROJECT_URL: ${SUPABASE_PROJECT_URL}
+    networks:
+      - app_internal_network
 
   # 3. API Backend en Node.js / TypeScript
   api:
@@ -39,8 +64,8 @@ services:
     container_name: app_api
     restart: always
     depends_on:
-      postgres:
-        condition: service_started
+      migrate:
+        condition: service_completed_successfully
       document-storage-init:
         condition: service_completed_successfully
     environment:
@@ -65,6 +90,31 @@ services:
     networks:
       - app_internal_network
     # La API no expone puertos a Internet; Caddy gestiona todo el tráfico entrante
+
+  # Worker aislado: reclama trabajos durables con SKIP LOCKED; no expone puertos.
+  extraction-worker:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: app_extraction_worker
+    restart: always
+    command: ["node", "dist/modules/requirements/extraction-jobs.worker.js"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${APP_DB_USER:-app_runtime}:${APP_DB_PASSWORD}@postgres:5432/${DB_NAME:-app_db}
+      SUPABASE_PROJECT_URL: ${SUPABASE_PROJECT_URL}
+      CORS_ORIGIN: ${CORS_ORIGIN}
+      INGEST_SECRET: ${INGEST_SECRET}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.1-flash-lite}
+      GEMINI_MAX_DOCUMENT_CHARS: ${GEMINI_MAX_DOCUMENT_CHARS:-250000}
+      GEMINI_MAX_OUTPUT_TOKENS: ${GEMINI_MAX_OUTPUT_TOKENS:-8000}
+      GEMINI_TIMEOUT_MS: ${GEMINI_TIMEOUT_MS:-45000}
+    networks:
+      - app_internal_network
 
   # Inicialización explícita del volumen: la API permanece como usuario no-root
   # y no necesita permisos de administración para almacenar documentos.

@@ -1,9 +1,19 @@
 import { and, eq, inArray, sql } from 'drizzle-orm';
-import type { TenantTransaction } from '../../db/client.js';
+import { z } from 'zod';
+import { db, type TenantTransaction } from '../../db/client.js';
 import { extractionJobs, type ExtractionJob, type NewExtractionJob } from '../../db/schema.js';
 import type { CreateExtractionJobInput } from './requirements.schema.js';
 
 export class ExtractionJobsRepository {
+  /**
+   * Serializa la admisión de trabajos de una organización durante la transacción.
+   * PostgreSQL libera el advisory lock automáticamente al hacer commit/rollback,
+   * por lo que el COUNT + INSERT posterior no puede sufrir una carrera.
+   */
+  async lockTenantAdmission(database: TenantTransaction, tenantId: string): Promise<void> {
+    await database.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${tenantId}))`);
+  }
+
   async findJobById(
     database: TenantTransaction,
     tenantId: string,
@@ -74,6 +84,44 @@ export class ExtractionJobsRepository {
       throw new Error('No se pudo crear el trabajo de extracción');
     }
     return job;
+  }
+
+  /**
+   * Reclama un único trabajo mediante una función SQL SECURITY DEFINER,
+   * deliberadamente mínima y sin parámetros. La función usa SKIP LOCKED y un
+   * lease para que varios workers no procesen el mismo trabajo ni lo pierdan
+   * tras un reinicio.
+   */
+  async claimNextDueJob(): Promise<{
+    readonly id: string;
+    readonly tenantId: string;
+    readonly tenderId: string;
+    readonly documentVersionId: string;
+    readonly idempotencyKey: string;
+    readonly attemptCount: number;
+    readonly maxAttempts: number;
+  } | undefined> {
+    const result = await db.execute(sql`SELECT * FROM claim_next_extraction_job()`);
+    const row = result.rows[0];
+    if (!row) return undefined;
+    const parsed = z.object({
+      id: z.string().uuid(),
+      tenant_id: z.string().uuid(),
+      tender_id: z.string().uuid(),
+      document_version_id: z.string().uuid(),
+      idempotency_key: z.string().uuid(),
+      attempt_count: z.number().int().nonnegative(),
+      max_attempts: z.number().int().positive(),
+    }).strict().parse(row);
+    return {
+      id: parsed.id,
+      tenantId: parsed.tenant_id,
+      tenderId: parsed.tender_id,
+      documentVersionId: parsed.document_version_id,
+      idempotencyKey: parsed.idempotency_key,
+      attemptCount: parsed.attempt_count,
+      maxAttempts: parsed.max_attempts,
+    };
   }
 
   async updateJob(

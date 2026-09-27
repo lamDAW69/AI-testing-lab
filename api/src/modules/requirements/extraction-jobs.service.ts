@@ -21,6 +21,10 @@ export class ExtractionJobsService {
     tenantId: string,
     input: CreateExtractionJobInput,
   ) {
+    // El lock transaccional hace atómico el bloque idempotencia/cuota/insert.
+    // Sin él, dos requests concurrentes podrían observar el mismo COUNT.
+    await this.repository.lockTenantAdmission(database, tenantId);
+
     // 1. Idempotencia estricta por tenant y clave
     const existing = await this.repository.findJobByIdempotency(
       database,
@@ -53,13 +57,6 @@ export class ExtractionJobsService {
     // 4. Registrar trabajo en estado PENDING
     const job = await this.repository.createJob(database, tenantId, input);
 
-    // 5. Encolar ejecución asíncrona fuera del ciclo de petición HTTP
-    queueMicrotask(() => {
-      this.processJob(tenantId, job.id).catch((err) => {
-        console.error(`[ExtractionJob ${job.id}] Fallo no controlado en background worker:`, err);
-      });
-    });
-
     return { job, idempotent: false };
   }
 
@@ -71,42 +68,21 @@ export class ExtractionJobsService {
     return job;
   }
 
-  async processJob(tenantId: string, jobId: string): Promise<void> {
-    // Fase A: Transacción para reservar el job y leer snapshot (sin mantener bloqueo durante la IA)
-    const setupResult = await withTenantTransaction(tenantId, async (tx) => {
-      const current = await this.repository.findJobById(tx, tenantId, jobId);
-      if (!current || (current.status !== 'PENDING' && current.status !== 'PROCESSING')) {
-        return null;
-      }
+  async processNextJob(): Promise<boolean> {
+    const job = await this.repository.claimNextDueJob();
+    if (!job) return false;
 
-      if (current.retryAfterTimestamp && current.retryAfterTimestamp.getTime() > Date.now()) {
-        return null;
-      }
-
-      const nextAttempt = current.attemptCount + 1;
-      await this.repository.updateJob(tx, tenantId, jobId, {
-        status: 'PROCESSING',
-        attemptCount: nextAttempt,
-      });
-
-      const snapshot = await this.requirementsRepo.getDocumentSnapshot(
-        tx,
-        current.tenderId,
-        current.documentVersionId,
-      );
-
-      return {
-        job: current,
-        attempt: nextAttempt,
-        snapshot,
-      };
-    });
-
-    if (!setupResult || !setupResult.snapshot) {
-      return;
+    // El lease ya fue adquirido de forma atómica por PostgreSQL. Esta lectura
+    // queda en una transacción RLS del tenant, y la llamada al LLM fuera de ella.
+    const snapshot = await withTenantTransaction(job.tenantId, (tx) =>
+      this.requirementsRepo.getDocumentSnapshot(tx, job.tenderId, job.documentVersionId));
+    if (!snapshot) {
+      await withTenantTransaction(job.tenantId, (tx) => this.repository.updateJob(tx, job.tenantId, job.id, {
+        status: 'FAILED', errorMessage: 'El snapshot documental verificable no existe', retryAfterTimestamp: null,
+        leaseExpiresAt: null,
+      }));
+      return true;
     }
-
-    const { job, attempt, snapshot } = setupResult;
 
     // Fase B: Invocación del LLM fuera de la transacción de base de datos
     try {
@@ -120,18 +96,19 @@ export class ExtractionJobsService {
       );
 
       // Fase C: Persistir resultado y marcar COMPLETED en transacción aislada
-      await withTenantTransaction(tenantId, async (tx) => {
+      await withTenantTransaction(job.tenantId, async (tx) => {
         const { extraction } = await this.reqService.submitExtraction(
           tx,
-          tenantId,
+          job.tenantId,
           extractionResult,
         );
 
-        await this.repository.updateJob(tx, tenantId, jobId, {
+        await this.repository.updateJob(tx, job.tenantId, job.id, {
           status: 'COMPLETED',
           resultExtractionId: extraction.id,
           errorMessage: null,
           retryAfterTimestamp: null,
+          leaseExpiresAt: null,
         });
       });
     } catch (error: unknown) {
@@ -143,31 +120,25 @@ export class ExtractionJobsService {
       const isRateLimitOrTransient =
         statusCode === 429 || statusCode === 502 || statusCode === 503;
 
-      let retryAfterSeconds = Math.min(60, Math.pow(2, attempt) * 5);
+      let retryAfterSeconds = Math.min(60, Math.pow(2, job.attemptCount) * 5);
       if (isAppError && error.details && typeof (error.details as Record<string, unknown>).retryAfterSeconds === 'number') {
         retryAfterSeconds = (error.details as Record<string, unknown>).retryAfterSeconds as number;
       }
 
-      const willRetry = isRateLimitOrTransient && attempt < job.maxAttempts;
+      const willRetry = isRateLimitOrTransient && job.attemptCount < job.maxAttempts;
 
-      await withTenantTransaction(tenantId, async (tx) => {
-        await this.repository.updateJob(tx, tenantId, jobId, {
+      await withTenantTransaction(job.tenantId, async (tx) => {
+        await this.repository.updateJob(tx, job.tenantId, job.id, {
           status: willRetry ? 'PENDING' : 'FAILED',
           errorMessage,
           retryAfterTimestamp: willRetry
             ? new Date(Date.now() + retryAfterSeconds * 1000)
             : null,
+          leaseExpiresAt: null,
         });
       });
-
-      if (willRetry) {
-        setTimeout(() => {
-          this.processJob(tenantId, jobId).catch((err) => {
-            console.error(`[ExtractionJob ${jobId}] Fallo en reintento programado:`, err);
-          });
-        }, retryAfterSeconds * 1000);
-      }
     }
+    return true;
   }
 }
 

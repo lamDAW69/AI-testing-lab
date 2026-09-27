@@ -63,10 +63,10 @@ Si un documento ya ha sido sellado con anterioridad, el sistema detecta el snaps
 ### 4.1. Arquitectura de Job Queue en Base de Datos
 Para procesar pliegos extensos (a menudo de más de 50 páginas) sin bloquear las peticiones HTTP ni agotar el pool de PostgreSQL:
 1. El cliente envía `POST /api/requirements/jobs` y recibe inmediatamente un código `202 Accepted` con el objeto del trabajo en estado `PENDING`.
-2. Un worker en background desacoplado gestiona la ejecución.
+2. Un contenedor `extraction-worker` desacoplado reclama la ejecución desde PostgreSQL; no depende de memoria del proceso HTTP.
 
 ### 4.2. Control de Concurrencia por Tenant
-- Se limita a un **máximo de 2 trabajos simultáneos** (`PENDING` o `PROCESSING`) por inquilino (`MAX_CONCURRENT_JOBS_PER_TENANT = 2`).
+- Se limita a un **máximo estricto de 2 trabajos simultáneos** (`PENDING` o `PROCESSING`) por inquilino (`MAX_CONCURRENT_JOBS_PER_TENANT = 2`). La comprobación y el alta se serializan con un advisory lock transaccional de PostgreSQL derivado del `tenant_id`, cerrando la carrera entre `COUNT` e `INSERT`.
 - Si un inquilino supera este límite, la API responde inmediatamente con código `429 Too Many Requests`.
 
 ### 4.3. Manejo de Rate Limiting (429) y Backoff Exponencial
@@ -74,6 +74,7 @@ Si la API externa de IA (Gemini) devuelve `429 Too Many Requests`:
 - Se lee la cabecera `retry-after` o se calcula un retardo de retroceso exponencial (`Math.pow(2, attempt) * 5` segundos).
 - El trabajo pasa a estado `PENDING` con una marca temporal `retryAfterTimestamp`.
 - Si se superan los reintentos máximos (`maxAttempts = 3`), el trabajo pasa a estado `FAILED` con el mensaje de error registrado.
+- Cada worker obtiene un lease de dos minutos mediante `FOR UPDATE SKIP LOCKED`. Si el proceso termina, el lease vence y otro worker puede recuperar el trabajo, sin ejecutar dos veces la misma reserva.
 
 ### 4.4. Aislamiento RLS (Row Level Security)
 La tabla `extraction_jobs` cuenta con RLS forzado (`FORCE ROW LEVEL SECURITY`):
@@ -134,9 +135,11 @@ El archivo `api/test/unit/prompt-injection-evaluation.test.ts` valida:
 | Elemento | Archivo | Descripción |
 |---|---|---|
 | Migración 0008 | `api/drizzle/0008_add_extraction_jobs.sql` | DDL de tabla `extraction_jobs`, índices, RLS y permisos `app_runtime`. |
+| Migración 0009 | `api/drizzle/0009_make_extraction_jobs_durable.sql` | Lease recuperable, índice de reclamación y función de reclamación atómica con `SKIP LOCKED`. |
 | Journal Drizzle | `api/drizzle/meta/_journal.json` | Registro de migración versión 7, idx 8. |
 | Repositorio Jobs | `api/src/modules/requirements/extraction-jobs.repository.ts` | Consultas tipadas con aislamiento multi-tenant. |
 | Servicio Jobs | `api/src/modules/requirements/extraction-jobs.service.ts` | Orquestación, límite de 2 jobs activos y reintentos con backoff. |
+| Worker Jobs | `api/src/modules/requirements/extraction-jobs.worker.ts` | Proceso independiente que drena la cola durable y recupera leases vencidos. |
 | Controlador Jobs | `api/src/modules/requirements/requirements.controller.ts` | Endpoints `POST /api/requirements/jobs` y `GET /api/requirements/jobs/:id`. |
 | Script Sellado | `api/src/modules/documents/scripts/seal-document.ts` | CLI para descarga, verificación SHA-256 y sellado en volumen. |
 | Fix Buffer Detached | `api/src/modules/documents/document-content.service.ts` | Escritura binaria previa y clonación segura de buffer para `pdfjs-dist`. |
@@ -155,4 +158,4 @@ En el servidor de producción (`46.224.229.83` / `api.pliegoai.com`):
    - Documento: `2157859-PliegodeClusulasAdmin-001002PCA_STD_OE.pdf`
    - Hash SHA-256: `d147c06d1f5df4c1020bd3d5fb3469519c1be2feec87e2c9ed246fabed0267b5`
    - Texto extraído: 96.465 caracteres sellados en el volumen seguro `/app/data/documents`.
-4. **CI/CD**: Pipelines de GitHub Actions completados al 100% en verde (14 pruebas unitarias pasando).
+4. **CI/CD**: Pipelines de GitHub Actions completados al 100% en verde (14 pruebas unitarias pasando en el commit inicial). Tras aplicar la migración 0009, la suite incluye 15 pruebas unitarias; la aplicación en Hetzner requiere desplegar esta revisión y ejecutar las migraciones antes de declarar la cola durable activa en producción.
