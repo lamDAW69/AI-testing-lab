@@ -41,24 +41,34 @@ const GeminiRequirementsSchema = z.object({
 }).strict();
 
 const GeminiJsonSchema = {
-  type: 'object', additionalProperties: false, required: ['requirements'], properties: {
+  type: 'object',
+  required: ['requirements'],
+  properties: {
     requirements: {
-      type: 'array', minItems: 1, maxItems: 100, items: {
-        type: 'object', additionalProperties: false,
+      type: 'array',
+      items: {
+        type: 'object',
         required: ['category', 'requirementType', 'sourceStatus', 'summary', 'extractedText', 'confidence', 'citations'],
         properties: {
           category: { type: 'string', enum: ['ADMINISTRATIVE', 'TECHNICAL', 'ECONOMIC', 'LEGAL', 'OTHER'] },
           requirementType: { type: 'string', enum: ['MANDATORY', 'SCORABLE', 'INFORMATIONAL', 'UNKNOWN'] },
           sourceStatus: { type: 'string', enum: ['CITED'] },
-          summary: { type: 'string' }, extractedText: { type: 'string' }, confidence: { type: 'integer', minimum: 0, maximum: 100 },
-          citations: { type: 'array', minItems: 1, maxItems: 20, items: {
-            type: 'object', additionalProperties: false,
-            required: ['startOffset', 'endOffset', 'quotedText'],
-            properties: {
-              startOffset: { type: 'integer', minimum: 0 }, endOffset: { type: 'integer', minimum: 1 },
-              quotedText: { type: 'string' }, sectionReference: { type: 'string' },
+          summary: { type: 'string' },
+          extractedText: { type: 'string' },
+          confidence: { type: 'integer' },
+          citations: {
+            type: 'array',
+            items: {
+              type: 'object',
+              required: ['startOffset', 'endOffset', 'quotedText'],
+              properties: {
+                startOffset: { type: 'integer' },
+                endOffset: { type: 'integer' },
+                quotedText: { type: 'string' },
+                sectionReference: { type: 'string' },
+              },
             },
-          } },
+          },
         },
       },
     },
@@ -122,7 +132,8 @@ export class GeminiRequirementsExtractor {
           retryAfterSeconds: isNaN(retryAfterSeconds) ? 30 : retryAfterSeconds,
         });
       }
-      throw new AppError(502, `Gemini rechazó la solicitud de extracción con estado HTTP ${response.status}`);
+      const errBody = await response.text().catch(() => '');
+      throw new AppError(502, `Gemini rechazó la solicitud de extracción con estado HTTP ${response.status}: ${errBody.slice(0, 300)}`);
     }
 
     const rawJson = await response.json();
