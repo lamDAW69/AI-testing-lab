@@ -331,6 +331,7 @@ test('RLS en Precalificación (Fase 4): un tenant no puede leer, crear ni inferi
 });
 
 test('Fase 5: Aislamiento estricto de alertas y portfolio entre inquilinos (Anti-Cross-Tenant Leak)', async () => {
+  const { withTenantTransaction } = await import('../../src/db/client.js');
   const { alertsRepository } = await import('../../src/modules/alerts/alerts.repository.js');
   const { portfolioRepository } = await import('../../src/modules/portfolio/portfolio.repository.js');
 
