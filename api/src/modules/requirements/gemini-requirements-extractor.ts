@@ -10,7 +10,18 @@ const GeminiResponseSchema = z.object({
   candidates: z.array(z.object({
     content: z.object({ parts: z.array(z.object({ text: z.string().optional() }).strict()) }).strict(),
   }).strict()).min(1),
+  usageMetadata: z.object({
+    promptTokenCount: z.number().int().nonnegative().optional(),
+    candidatesTokenCount: z.number().int().nonnegative().optional(),
+    totalTokenCount: z.number().int().nonnegative().optional(),
+  }).optional(),
 }).strict();
+
+export function calculateGeminiCostMicrounits(promptTokens = 0, candidatesTokens = 0): number {
+  // Tarifas estándar Gemini: $0.075 / 1M prompt tokens y $0.30 / 1M candidate tokens
+  // Retorna coste exacto en microdólares (1 USD = 1.000.000 microunits)
+  return Math.round(promptTokens * 0.075 + candidatesTokens * 0.30);
+}
 
 const GeminiRequirementsSchema = z.object({
   requirements: z.array(z.object({
@@ -103,8 +114,19 @@ export class GeminiRequirementsExtractor {
       clearTimeout(timeout);
     }
 
-    if (!response.ok) throw new AppError(502, 'Gemini rechazó la solicitud de extracción');
-    const responseBody = GeminiResponseSchema.safeParse(await response.json());
+    if (!response.ok) {
+      if (response.status === 429) {
+        const retryAfterHeader = response.headers.get('retry-after');
+        const retryAfterSeconds = retryAfterHeader ? parseInt(retryAfterHeader, 10) : 30;
+        throw new AppError(429, 'Cuota de Gemini temporalmente agotada (Rate limit)', {
+          retryAfterSeconds: isNaN(retryAfterSeconds) ? 30 : retryAfterSeconds,
+        });
+      }
+      throw new AppError(502, `Gemini rechazó la solicitud de extracción con estado HTTP ${response.status}`);
+    }
+
+    const rawJson = await response.json();
+    const responseBody = GeminiResponseSchema.safeParse(rawJson);
     const text = responseBody.success ? responseBody.data.candidates[0]?.content.parts.map((part) => part.text ?? '').join('') : undefined;
     if (!text) throw new AppError(502, 'Gemini no devolvió contenido estructurado');
     let output: unknown;
@@ -113,11 +135,20 @@ export class GeminiRequirementsExtractor {
     if (!parsed.success) throw new AppError(422, 'La salida de Gemini no cumple el contrato de extracción');
     validateGeminiCitations(snapshotText, parsed.data);
 
+    const usage = responseBody.success ? responseBody.data.usageMetadata : undefined;
+    const promptTokens = usage?.promptTokenCount ?? Math.ceil(snapshotText.length / 4);
+    const candidatesTokens = usage?.candidatesTokenCount ?? 0;
+    const costMicrounits = calculateGeminiCostMicrounits(promptTokens, candidatesTokens);
+
     return {
       ...input,
       agent: {
-        name: 'gemini-requirements-extractor', model: env.GEMINI_MODEL,
-        promptVersion: PromptVersion, toolVersion: ToolVersion, durationMs: Date.now() - startedAt,
+        name: 'gemini-requirements-extractor',
+        model: env.GEMINI_MODEL,
+        promptVersion: PromptVersion,
+        toolVersion: ToolVersion,
+        durationMs: Date.now() - startedAt,
+        costMicrounits,
       },
       requirements: parsed.data.requirements,
     };

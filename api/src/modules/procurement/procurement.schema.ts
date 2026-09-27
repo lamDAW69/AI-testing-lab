@@ -141,7 +141,14 @@ export const TenderQueryFilterSchema = z.object({
 export type TenderQueryFilter = z.infer<typeof TenderQueryFilterSchema>;
 
 // Esquema de entrada para el job de ingesta manual/programada
-export const IngestionJobInputSchema = z.object({
-  tenders: z.array(PlacspTenderInputSchema).min(1, 'Debe incluir al menos un expediente a procesar'),
-}).strict();
+export const IngestionJobInputSchema = z.union([
+  z.object({
+    mode: z.literal('live'),
+    maxItems: z.number().int().positive().max(100).default(20),
+  }).strict(),
+  z.object({
+    mode: z.literal('batch').optional().default('batch'),
+    tenders: z.array(PlacspTenderInputSchema).min(1, 'Debe incluir al menos un expediente a procesar'),
+  }).strict(),
+]);
 export type IngestionJobInput = z.infer<typeof IngestionJobInputSchema>;

@@ -92,10 +92,20 @@ export const SAMPLE_PLACSP_ENTRIES: readonly RawPlacspEntry[] = [
 ];
 
 async function main(): Promise<void> {
-  console.log('🔄 Iniciando ingesta oficial desde PLACSP...');
+  const isLive = process.argv.includes('--live') || process.env.INGEST_SOURCE === 'live';
+  console.log(`🔄 Iniciando ingesta oficial desde PLACSP (${isLive ? 'FEED REAL EN VIVO' : 'FIXTURE LOCAL'})...`);
 
-  const normalized = SAMPLE_PLACSP_ENTRIES.map((entry) => placspConnector.normalizeEntry(entry));
-  const summary = await procurementService.ingestBatch(normalized);
+  let tendersToIngest;
+  if (isLive) {
+    const maxItems = parseInt(process.env.INGEST_MAX_ITEMS ?? '20', 10);
+    console.log(`📡 Descargando hasta ${maxItems} licitaciones del feed oficial de PLACSP...`);
+    tendersToIngest = await placspConnector.fetchRealFeed(maxItems);
+    console.log(`✅ ${tendersToIngest.length} licitaciones extraídas y normalizadas del feed oficial.`);
+  } else {
+    tendersToIngest = SAMPLE_PLACSP_ENTRIES.map((entry) => placspConnector.normalizeEntry(entry));
+  }
+
+  const summary = await procurementService.ingestBatch(tendersToIngest);
 
   console.log('📊 Resumen del job de ingesta:');
   console.log(`   - Total procesados: ${summary.total}`);

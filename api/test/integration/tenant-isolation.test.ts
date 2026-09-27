@@ -216,3 +216,31 @@ test('el contrato del agente exige citas estructuradas y rechaza campos privileg
     documentVersionId: DOCUMENT_VERSION_A, agent: { model: 'forged' },
   }).success, false);
 });
+
+test('RLS en extraction_jobs: un tenant no puede leer ni modificar trabajos de otro tenant', async () => {
+  const { withTenantTransaction } = await import('../../src/db/client.js');
+  const { extractionJobsRepository } = await import('../../src/modules/requirements/extraction-jobs.repository.js');
+
+  const JOB_A_KEY = '55555555-5555-4555-8555-555555555555';
+  // Tenant A crea un job
+  const jobA = await withTenantTransaction(TENANT_A, (tx) =>
+    extractionJobsRepository.createJob(tx, TENANT_A, {
+      idempotencyKey: JOB_A_KEY,
+      tenderId: TENDER_A,
+      documentVersionId: DOCUMENT_VERSION_A,
+    }),
+  );
+  assert.equal(jobA.tenantId, TENANT_A);
+
+  // Tenant B intenta leer el job de Tenant A: debe devolver undefined (Anti-BOLA)
+  const leakAttempt = await withTenantTransaction(TENANT_B, (tx) =>
+    extractionJobsRepository.findJobById(tx, TENANT_B, jobA.id),
+  );
+  assert.equal(leakAttempt, undefined);
+
+  // Tenant B intenta actualizar el job de Tenant A: no afecta a ninguna fila
+  const hackAttempt = await withTenantTransaction(TENANT_B, (tx) =>
+    extractionJobsRepository.updateJob(tx, TENANT_B, jobA.id, { status: 'COMPLETED' }),
+  );
+  assert.equal(hackAttempt, undefined);
+});

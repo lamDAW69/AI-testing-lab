@@ -356,6 +356,32 @@ export const requirementCitations = pgTable('requirement_citations', {
   idxDocumentVersion: index('idx_requirement_citations_document_version').on(table.documentVersionId),
 }));
 
+// 15. Trabajos asíncronos de extracción con reintentos y control de cuota (Fase 3)
+export const extractionJobs = pgTable('extraction_jobs', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  tenantId: uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  tenderId: uuid('tender_id').notNull().references(() => tenders.id, { onDelete: 'cascade' }),
+  documentVersionId: uuid('document_version_id')
+    .notNull().references(() => tenderDocumentVersions.id, { onDelete: 'restrict' }),
+  idempotencyKey: uuid('idempotency_key').notNull(),
+  status: varchar('status', { length: 32 }).notNull().default('PENDING'),
+  attemptCount: integer('attempt_count').notNull().default(0),
+  maxAttempts: integer('max_attempts').notNull().default(3),
+  errorMessage: text('error_message'),
+  retryAfterTimestamp: timestamp('retry_after_timestamp', { withTimezone: true }),
+  resultExtractionId: uuid('result_extraction_id')
+    .references(() => requirementExtractions.id, { onDelete: 'set null' }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  uqTenantJobIdempotency: uniqueIndex('uq_extraction_jobs_tenant_idempotency')
+    .on(table.tenantId, table.idempotencyKey),
+  idxTenantJobStatus: index('idx_extraction_jobs_tenant_status')
+    .on(table.tenantId, table.status),
+  idxJobRetry: index('idx_extraction_jobs_status_retry')
+    .on(table.status, table.retryAfterTimestamp),
+}));
+
 export type Tenant = typeof tenants.$inferSelect;
 export type NewTenant = typeof tenants.$inferInsert;
 
@@ -403,3 +429,5 @@ export type NewCpvCode = typeof cpvCodes.$inferInsert;
 export type RequirementExtraction = typeof requirementExtractions.$inferSelect;
 export type Requirement = typeof requirements.$inferSelect;
 export type RequirementCitation = typeof requirementCitations.$inferSelect;
+export type ExtractionJob = typeof extractionJobs.$inferSelect;
+export type NewExtractionJob = typeof extractionJobs.$inferInsert;

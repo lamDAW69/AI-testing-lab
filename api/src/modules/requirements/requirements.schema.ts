@@ -77,7 +77,16 @@ export const ListRequirementsQuerySchema = z.object({
   offset: z.coerce.number().int().min(0).default(0),
 }).strict();
 
+export const CreateExtractionJobSchema = z.object({
+  idempotencyKey: z.string().uuid(),
+  tenderId: z.string().uuid(),
+  documentVersionId: z.string().uuid(),
+}).strict();
+
+export const ExtractionJobIdParamsSchema = z.object({ id: z.string().uuid() }).strict();
+
 export type SubmitExtractionInput = z.infer<typeof SubmitExtractionSchema>;
 export type RunExtractionInput = z.infer<typeof RunExtractionSchema>;
 export type ExtractedRequirementInput = z.infer<typeof ExtractedRequirementSchema>;
 export type ListRequirementsQuery = z.infer<typeof ListRequirementsQuerySchema>;
+export type CreateExtractionJobInput = z.infer<typeof CreateExtractionJobSchema>;

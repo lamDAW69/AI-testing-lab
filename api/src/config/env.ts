@@ -28,9 +28,14 @@ const envSchema = z.object({
 });
 
 const parseEnv = () => {
+  const isTestRun = process.env.NODE_ENV === 'test' || process.argv.some((a) => a.includes('test'));
   const rawEnv = {
     ...process.env,
-    DATABASE_URL: process.env.DATABASE_URL ?? process.env.TEST_RUNTIME_DATABASE_URL ?? process.env.TEST_ADMIN_DATABASE_URL,
+    DATABASE_URL:
+      process.env.DATABASE_URL ??
+      process.env.TEST_RUNTIME_DATABASE_URL ??
+      process.env.TEST_ADMIN_DATABASE_URL ??
+      (isTestRun ? 'postgresql://dummy:dummy@localhost:5432/test_db' : undefined),
   };
   const result = envSchema.safeParse(rawEnv);
 

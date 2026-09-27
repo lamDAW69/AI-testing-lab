@@ -145,3 +145,77 @@ test('TenderQueryFilterSchema valida filtros deterministas y rechaza parámetros
   const parsedInvalid = TenderQueryFilterSchema.safeParse(invalidQuery);
   assert.equal(parsedInvalid.success, false);
 });
+
+test('parseFeedXml extrae y normaliza correctamente una licitación real en formato XML CODICE', () => {
+  const sampleCodiceXml = `<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom"
+      xmlns:cbc="urn:dgpe:names:draft:codice:schema:xsd:CommonBasicComponents-2"
+      xmlns:cac="urn:dgpe:names:draft:codice:schema:xsd:CommonAggregateComponents-2"
+      xmlns:cac-place-ext="urn:dgpe:names:draft:codice-place-ext:schema:xsd:CommonAggregateComponents-2"
+      xmlns:cbc-place-ext="urn:dgpe:names:draft:codice-place-ext:schema:xsd:CommonBasicComponents-2">
+  <entry>
+    <id>https://contrataciondelestado.es/sindicacion/licitacionesPerfilContratante/20545188</id>
+    <title>Reforma de la cantina del campo de fútbol</title>
+    <cac-place-ext:ContractFolderStatus>
+      <cbc:ContractFolderID>EXP-REAL-095/2026</cbc:ContractFolderID>
+      <cbc-place-ext:ContractFolderStatusCode>PUB</cbc-place-ext:ContractFolderStatusCode>
+      <cac-place-ext:LocatedContractingParty>
+        <cac:Party>
+          <cac:PartyName>
+            <cbc:Name>Alcaldía del Ayuntamiento de Santiago del Teide</cbc:Name>
+          </cac:PartyName>
+          <cac:PartyIdentification>
+            <cbc:ID schemeName="NIF">P3804000B</cbc:ID>
+          </cac:PartyIdentification>
+          <cac:PostalAddress>
+            <cbc:CityName>Santiago del Teide</cbc:CityName>
+            <cbc:PostalZone>38690</cbc:PostalZone>
+          </cac:PostalAddress>
+        </cac:Party>
+      </cac-place-ext:LocatedContractingParty>
+      <cac:ProcurementProject>
+        <cbc:Name>Reforma integral y modernización de instalaciones</cbc:Name>
+        <cbc:TypeCode>3</cbc:TypeCode>
+        <cac:BudgetAmount>
+          <cbc:TaxExclusiveAmount>51401.87</cbc:TaxExclusiveAmount>
+          <cbc:TotalAmount>55000.00</cbc:TotalAmount>
+        </cac:BudgetAmount>
+        <cac:RequiredCommodityClassification>
+          <cbc:ItemClassificationCode>45000000</cbc:ItemClassificationCode>
+        </cac:RequiredCommodityClassification>
+      </cac:ProcurementProject>
+      <cac:TenderingProcess>
+        <cbc:ProcedureCode>9</cbc:ProcedureCode>
+        <cac:TenderSubmissionDeadlinePeriod>
+          <cbc:EndDate>2026-10-15</cbc:EndDate>
+          <cbc:EndTime>17:00:00</cbc:EndTime>
+        </cac:TenderSubmissionDeadlinePeriod>
+      </cac:TenderingProcess>
+      <cac:LegalDocumentReference>
+        <cbc:ID>PCAP_CANTINA.PDF</cbc:ID>
+        <cac:Attachment>
+          <cac:ExternalReference>
+            <cbc:URI>https://contrataciondelestado.es/FileSystem/servlet/GetDocumentByIdServlet?DocId=123</cbc:URI>
+            <cbc:DocumentHash>QN2alusF1cUBUjhvlIeodNPAL5A=</cbc:DocumentHash>
+          </cac:ExternalReference>
+        </cac:Attachment>
+      </cac:LegalDocumentReference>
+    </cac-place-ext:ContractFolderStatus>
+  </entry>
+</feed>`;
+
+  const extracted = placspConnector.parseFeedXml(sampleCodiceXml, 10);
+  assert.equal(extracted.length, 1);
+
+  const tender = extracted[0]!;
+  assert.equal(tender.sourceTenderId, 'EXP-REAL-095/2026');
+  assert.equal(tender.budgetAmountCents, 5140187); // 51401.87 EUR -> 5140187 céntimos
+  assert.equal(tender.taxInclusiveAmountCents, 5500000);
+  assert.equal(tender.mainCpvCode, '45000000');
+  assert.equal(tender.status, 'PUBLISHED');
+  assert.equal(tender.authority.name, 'Alcaldía del Ayuntamiento de Santiago del Teide');
+  assert.equal(tender.authority.taxId, 'P3804000B');
+  assert.equal(tender.documents.length, 1);
+  assert.equal(tender.documents[0]!.documentType, 'PCAP');
+  assert.equal(tender.documents[0]!.url, 'https://contrataciondelestado.es/FileSystem/servlet/GetDocumentByIdServlet?DocId=123');
+});

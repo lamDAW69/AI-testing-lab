@@ -108,7 +108,15 @@ procurementRouter.post('/ingest', requireIngestSecret, async (req: Request, res:
       return;
     }
 
-    const summary = await procurementService.ingestBatch(bodyResult.data.tenders);
+    let tendersToIngest;
+    if (bodyResult.data.mode === 'live') {
+      const { placspConnector } = await import('./connectors/placsp.connector.js');
+      tendersToIngest = await placspConnector.fetchRealFeed(bodyResult.data.maxItems);
+    } else {
+      tendersToIngest = bodyResult.data.tenders;
+    }
+
+    const summary = await procurementService.ingestBatch(tendersToIngest);
     res.status(200).json({
       message: 'Lote de licitaciones procesado con éxito',
       ...summary,
