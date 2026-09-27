@@ -28,7 +28,11 @@ const envSchema = z.object({
 });
 
 const parseEnv = () => {
-  const result = envSchema.safeParse(process.env);
+  const rawEnv = {
+    ...process.env,
+    DATABASE_URL: process.env.DATABASE_URL ?? process.env.TEST_RUNTIME_DATABASE_URL ?? process.env.TEST_ADMIN_DATABASE_URL,
+  };
+  const result = envSchema.safeParse(rawEnv);
 
   if (!result.success) {
     console.error('❌ Error crítico: Configuración de variables de entorno inválida:');
