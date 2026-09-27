@@ -177,6 +177,27 @@ export class ProcurementRepository {
           rawPayload: { previousHash: existing.rawPayloadHash, newHash: payloadHash },
         });
 
+        // Comprobar si hubo cambio de estado o plazo de presentación
+        const statusChanged = existing.status !== input.status;
+        const previousDeadlineMs = existing.submissionDeadline ? existing.submissionDeadline.getTime() : null;
+        const newDeadlineMs = input.submissionDeadline ? new Date(input.submissionDeadline).getTime() : null;
+        const deadlineChanged = previousDeadlineMs !== newDeadlineMs;
+
+        if (statusChanged || deadlineChanged) {
+          const reason = statusChanged && deadlineChanged
+            ? `Cambio de estado a ${input.status} y modificación de plazo a ${input.submissionDeadline ?? 'N/A'}`
+            : statusChanged
+              ? `Cambio de estado a ${input.status}`
+              : `Modificación de plazo de presentación a ${input.submissionDeadline ?? 'N/A'}`;
+
+          await tx.execute(sql`SELECT * FROM public.invalidate_analyses_for_tender_change(
+            ${existing.id}::uuid,
+            ${reason},
+            ${input.status},
+            ${input.submissionDeadline ? new Date(input.submissionDeadline) : null}
+          )`);
+        }
+
         // Versionado inmutable de documentos: no sobrescribir nunca
         for (const doc of input.documents) {
           const existingDocs = await tx
@@ -229,14 +250,24 @@ export class ProcurementRepository {
             .limit(1);
 
           if (!latestVersionRows[0] || latestVersionRows[0].contentHash !== doc.contentHash) {
-            await tx.insert(tenderDocumentVersions).values({
+            const newVersions = await tx.insert(tenderDocumentVersions).values({
               documentId: docId,
               versionNumber: currentVersion + 1,
               url: doc.url,
               contentHash: doc.contentHash,
               mimeType: doc.mimeType,
               byteSize: doc.byteSize,
-            });
+            }).returning();
+
+            const createdVersion = newVersions[0];
+            if (createdVersion && currentVersion > 0) {
+              // Si ya existía una versión anterior del pliego, invalidar atómicamente los análisis vigentes
+              await tx.execute(sql`SELECT * FROM public.invalidate_analyses_for_document_version(
+                ${existing.id}::uuid,
+                ${createdVersion.id}::uuid,
+                'Nueva versión documental o adenda detectada en ingesta oficial'
+              )`);
+            }
           }
         }
 

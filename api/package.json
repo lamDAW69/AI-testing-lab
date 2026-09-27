@@ -15,6 +15,7 @@
     "ingest:placsp": "tsx src/modules/procurement/scripts/run-ingest.ts",
     "ingest:placsp:live": "tsx src/modules/procurement/scripts/run-ingest.ts --live",
     "procurement:seal": "tsx src/modules/documents/scripts/seal-document.ts",
+    "demo:phase5": "tsx src/modules/qualification/scripts/demo-phase5-e2e.ts",
     "test": "npm run test:integration",
     "test:unit": "tsx --test test/unit/*.test.ts",
     "test:integration": "tsx --test --test-concurrency=1 test/integration/*.test.ts",

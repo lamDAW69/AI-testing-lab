@@ -424,6 +424,12 @@ export const opportunityAnalyses = pgTable('opportunity_analyses', {
   summary: text('summary'),
   blockingReasons: jsonb('blocking_reasons').$type<string[]>().notNull().default([]),
   warnings: jsonb('warnings').$type<string[]>().notNull().default([]),
+  isCurrent: boolean('is_current').notNull().default(true),
+  invalidationStatus: varchar('invalidation_status', { length: 32 }).notNull().default('VALID'),
+  invalidationReason: text('invalidation_reason'),
+  supersededByDocumentVersionId: uuid('superseded_by_document_version_id')
+    .references(() => tenderDocumentVersions.id, { onDelete: 'set null' }),
+  invalidatedAt: timestamp('invalidated_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 }, (table) => ({
@@ -435,6 +441,10 @@ export const opportunityAnalyses = pgTable('opportunity_analyses', {
     .on(table.tenantId, table.status),
   idxTenantDocument: index('idx_opportunity_analyses_tenant_doc')
     .on(table.tenantId, table.documentVersionId),
+  idxTenantInvalidation: index('idx_opportunity_analyses_tenant_invalidation')
+    .on(table.tenantId, table.invalidationStatus),
+  idxTenantCurrent: index('idx_opportunity_analyses_tenant_current')
+    .on(table.tenantId, table.tenderId, table.isCurrent),
 }));
 
 // 18. Evaluación individualizada de cada requisito con respecto a la empresa
@@ -508,6 +518,36 @@ export const analysisDecisions = pgTable('analysis_decisions', {
     .on(table.tenantId, table.decision),
 }));
 
+// 21. Cola persistente / Outbox de alertas de oportunidad (Fase 5)
+export const opportunityAlerts = pgTable('opportunity_alerts', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  tenantId: uuid('tenant_id')
+    .notNull()
+    .references(() => tenants.id, { onDelete: 'cascade' }),
+  tenderId: uuid('tender_id')
+    .notNull()
+    .references(() => tenders.id, { onDelete: 'cascade' }),
+  analysisId: uuid('analysis_id')
+    .references(() => opportunityAnalyses.id, { onDelete: 'set null' }),
+  alertType: varchar('alert_type', { length: 50 }).notNull(),
+  severity: varchar('severity', { length: 20 }).notNull().default('INFO'),
+  title: varchar('title', { length: 255 }).notNull(),
+  message: text('message').notNull(),
+  metadata: jsonb('metadata').$type<Record<string, unknown>>().notNull().default({}),
+  status: varchar('status', { length: 20 }).notNull().default('UNREAD'),
+  idempotencyHash: varchar('idempotency_hash', { length: 64 }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  readAt: timestamp('read_at', { withTimezone: true }),
+  dismissedAt: timestamp('dismissed_at', { withTimezone: true }),
+}, (table) => ({
+  uqTenantIdempotency: uniqueIndex('uq_opportunity_alerts_tenant_idempotency')
+    .on(table.tenantId, table.idempotencyHash),
+  idxTenantStatus: index('idx_opportunity_alerts_tenant_status')
+    .on(table.tenantId, table.status, table.createdAt),
+  idxTenantTender: index('idx_opportunity_alerts_tenant_tender')
+    .on(table.tenantId, table.tenderId),
+}));
+
 export type Tenant = typeof tenants.$inferSelect;
 export type NewTenant = typeof tenants.$inferInsert;
 
@@ -568,3 +608,7 @@ export type AssessmentEvidence = typeof assessmentEvidence.$inferSelect;
 export type NewAssessmentEvidence = typeof assessmentEvidence.$inferInsert;
 export type AnalysisDecision = typeof analysisDecisions.$inferSelect;
 export type NewAnalysisDecision = typeof analysisDecisions.$inferInsert;
+
+export type OpportunityAlert = typeof opportunityAlerts.$inferSelect;
+export type NewOpportunityAlert = typeof opportunityAlerts.$inferInsert;
+

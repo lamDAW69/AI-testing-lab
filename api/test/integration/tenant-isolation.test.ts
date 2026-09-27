@@ -329,3 +329,55 @@ test('RLS en Precalificación (Fase 4): un tenant no puede leer, crear ni inferi
   );
   assert.equal(leakDecision, null);
 });
+
+test('Fase 5: Aislamiento estricto de alertas y portfolio entre inquilinos (Anti-Cross-Tenant Leak)', async () => {
+  const { alertsRepository } = await import('../../src/modules/alerts/alerts.repository.js');
+  const { portfolioRepository } = await import('../../src/modules/portfolio/portfolio.repository.js');
+
+  // 1. Tenant A recibe una alerta privada
+  const { alert: alertA } = await withTenantTransaction(TENANT_A, (tx) =>
+    alertsRepository.createAlert(tx, TENANT_A, {
+      tenderId: TENDER_A,
+      alertType: 'DOCUMENT_CHANGED',
+      severity: 'WARNING',
+      title: 'Alerta confidencial Tenant A',
+      message: 'Se ha detectado una adenda relevante para la estrategia de A.',
+      deduplicationKey: 'test-event-dedup-1',
+    }),
+  );
+  assert.ok(alertA, 'La alerta de Tenant A debe ser creada');
+
+  // 2. Tenant B lista sus alertas: debe recibir 0 alertas (cero fugas)
+  const alertsB = await withTenantTransaction(TENANT_B, (tx) =>
+    alertsRepository.listAlerts(tx, TENANT_B, {
+      status: 'ALL',
+      limit: 20,
+      offset: 0,
+    }),
+  );
+  assert.equal(alertsB.total, 0);
+  assert.equal(alertsB.alerts.length, 0);
+
+  // 3. Intento de BOLA / IDOR: Tenant B intenta consultar directamente la alerta de Tenant A por su ID
+  const leakAlert = await withTenantTransaction(TENANT_B, (tx) =>
+    alertsRepository.findAlertById(tx, TENANT_B, alertA!.id),
+  );
+  assert.equal(leakAlert, null, 'Tenant B no debe poder leer la alerta de Tenant A');
+
+  // 4. Intento de manipulación de estado: Tenant B intenta marcar como leída la alerta de Tenant A
+  const leakMark = await withTenantTransaction(TENANT_B, (tx) =>
+    alertsRepository.markAsRead(tx, TENANT_B, alertA!.id),
+  );
+  assert.equal(leakMark, null, 'Tenant B no debe poder mutar el estado de la alerta de Tenant A');
+
+  // 5. Tenant B consulta su portfolio: no debe ver el análisis, decisión ni alertas de Tenant A
+  const portfolioB = await withTenantTransaction(TENANT_B, (tx) =>
+    portfolioRepository.listPortfolio(tx, TENANT_B, {
+      limit: 10,
+      offset: 0,
+    }),
+  );
+  assert.equal(portfolioB.total, 0);
+  assert.equal(portfolioB.items.length, 0);
+});
+
