@@ -21,7 +21,7 @@ const envSchema = z.object({
   // Una clave ausente o vacía desactiva Gemini, pero nunca debe impedir que
   // arranque el resto de la API. El extractor devuelve 503 hasta configurarla.
   GEMINI_API_KEY: z.string().min(20).optional().or(z.literal('').transform(() => undefined)),
-  GEMINI_MODEL: z.string().min(1).default('gemini-flash-latest'),
+  GEMINI_MODEL: z.string().min(1).default('gemini-3.5-flash-lite'),
   GEMINI_MAX_DOCUMENT_CHARS: z.coerce.number().int().min(1_000).max(1_000_000).default(250_000),
   GEMINI_MAX_OUTPUT_TOKENS: z.coerce.number().int().min(256).max(16_384).default(8_000),
   GEMINI_TIMEOUT_MS: z.coerce.number().int().min(1_000).max(120_000).default(45_000),
