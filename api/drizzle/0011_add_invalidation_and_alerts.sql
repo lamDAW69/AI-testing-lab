@@ -68,10 +68,11 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public, pg_temp
 AS $$
+#variable_conflict use_column
 DECLARE
   v_tender_ref varchar;
 BEGIN
-  SELECT source_tender_id INTO v_tender_ref FROM tenders WHERE id = p_tender_id;
+  SELECT tenders.source_tender_id INTO v_tender_ref FROM tenders WHERE tenders.id = p_tender_id;
 
   RETURN QUERY
   WITH invalidated AS (
@@ -122,7 +123,7 @@ BEGIN
     ON CONFLICT (tenant_id, idempotency_hash) DO NOTHING
     RETURNING id
   )
-  SELECT affected_analysis_id, affected_tenant_id, affected_tender_id FROM invalidated;
+  SELECT inv.affected_analysis_id, inv.affected_tenant_id, inv.affected_tender_id FROM invalidated inv;
 END;
 $$;
 
@@ -147,12 +148,13 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public, pg_temp
 AS $$
+#variable_conflict use_column
 DECLARE
   v_tender_ref varchar;
   v_alert_type varchar := 'DOCUMENT_CHANGED';
   v_severity varchar := 'WARNING';
 BEGIN
-  SELECT source_tender_id INTO v_tender_ref FROM tenders WHERE id = p_tender_id;
+  SELECT tenders.source_tender_id INTO v_tender_ref FROM tenders WHERE tenders.id = p_tender_id;
 
   IF p_new_status IN ('CANCELLED', 'SUSPENDED') THEN
     v_severity := 'CRITICAL';
@@ -204,7 +206,7 @@ BEGIN
     ON CONFLICT (tenant_id, idempotency_hash) DO NOTHING
     RETURNING id
   )
-  SELECT affected_analysis_id, affected_tenant_id, affected_tender_id FROM invalidated;
+  SELECT inv.affected_analysis_id, inv.affected_tenant_id, inv.affected_tender_id FROM invalidated inv;
 END;
 $$;
 
