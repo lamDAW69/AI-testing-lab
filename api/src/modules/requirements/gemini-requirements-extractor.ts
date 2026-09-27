@@ -8,14 +8,20 @@ const ToolVersion = 'gemini-generate-content-v1beta';
 
 const GeminiResponseSchema = z.object({
   candidates: z.array(z.object({
-    content: z.object({ parts: z.array(z.object({ text: z.string().optional() }).strict()) }).strict(),
-  }).strict()).min(1),
+    content: z.object({
+      parts: z.array(z.object({
+        text: z.string().optional(),
+        thought: z.boolean().optional(),
+      }).passthrough()).optional(),
+    }).passthrough(),
+    finishReason: z.string().optional(),
+  }).passthrough()).min(1),
   usageMetadata: z.object({
     promptTokenCount: z.number().int().nonnegative().optional(),
     candidatesTokenCount: z.number().int().nonnegative().optional(),
     totalTokenCount: z.number().int().nonnegative().optional(),
-  }).optional(),
-}).strict();
+  }).passthrough().optional(),
+}).passthrough();
 
 export function calculateGeminiCostMicrounits(promptTokens = 0, candidatesTokens = 0): number {
   // Tarifas estándar Gemini: $0.075 / 1M prompt tokens y $0.30 / 1M candidate tokens
@@ -138,7 +144,13 @@ export class GeminiRequirementsExtractor {
 
     const rawJson = await response.json();
     const responseBody = GeminiResponseSchema.safeParse(rawJson);
-    const text = responseBody.success ? responseBody.data.candidates[0]?.content.parts.map((part) => part.text ?? '').join('') : undefined;
+    if (!responseBody.success) {
+      throw new AppError(502, `La respuesta de Gemini no cumple el contrato esperado: ${JSON.stringify(responseBody.error.format())}`);
+    }
+    const parts = responseBody.data.candidates[0]?.content.parts ?? [];
+    const nonThoughtParts = parts.filter((p) => !p.thought && typeof p.text === 'string' && p.text.trim().length > 0);
+    const candidateParts = nonThoughtParts.length > 0 ? nonThoughtParts : parts.filter((p) => typeof p.text === 'string' && p.text.trim().length > 0);
+    const text = candidateParts.map((p) => p.text).join('');
     if (!text) throw new AppError(502, 'Gemini no devolvió contenido estructurado');
     let output: unknown;
     try { output = JSON.parse(text); } catch { throw new AppError(502, 'Gemini devolvió JSON inválido'); }
