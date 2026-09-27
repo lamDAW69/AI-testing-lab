@@ -293,7 +293,37 @@ test('RLS en Precalificación (Fase 4): un tenant no puede leer, crear ni inferi
     ),
   );
 
-  // 5. Tenant B intenta leer la decisión de Tenant A: debe devolver null
+  // 5. La evidencia de la evaluación también permanece invisible para B,
+  // incluso conociendo el ID de la evaluación de A.
+  const assessmentA = await withTenantTransaction(TENANT_A, (tx) =>
+    qualificationRepository.saveAssessment(tx, TENANT_A, analysisA.id, {
+      requirementId: REQUIREMENT_A,
+      status: 'SUPPORTED',
+      confidence: 90,
+      rationale: 'La evidencia privada de Tenant A respalda el requisito.',
+      isBlocking: false,
+      agentName: 'test-matcher',
+      model: 'test-model',
+      promptVersion: 'test-v1',
+      durationMs: 1,
+      costMicrounits: 0,
+      evidences: [{
+        sourceType: 'DOSSIER_ITEM',
+        sourceId: dossierItemA.id,
+        sourceTitle: dossierItemA.title,
+        matchType: 'SUPPORTS',
+        excerpt: dossierItemA.description,
+        confidence: 90,
+      }],
+    }),
+  );
+  const evidenceVisibleToB = await withTenantTransaction(TENANT_B, async (tx) => {
+    const result = await tx.execute(sql`SELECT id FROM assessment_evidence WHERE assessment_id = ${assessmentA.id}`);
+    return result.rows;
+  });
+  assert.equal(evidenceVisibleToB.length, 0);
+
+  // 6. Tenant B intenta leer la decisión de Tenant A: debe devolver null
   const leakDecision = await withTenantTransaction(TENANT_B, (tx) =>
     qualificationRepository.getDecision(tx, TENANT_B, analysisA.id),
   );

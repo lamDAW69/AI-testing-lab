@@ -2,6 +2,7 @@ import type { TenantTransaction } from '../../db/client.js';
 import { AppError } from '../../middleware/error.middleware.js';
 import {
   evaluateDeterministicGates,
+  type DeterministicGatesResult,
   type CompanyProfileForGates,
   type RequirementEvaluationForGates,
   type TenderContextForGates,
@@ -9,7 +10,9 @@ import {
 import {
   qualificationMatcherAgent,
   type DossierEvidenceCandidate,
+  type QualificationMatchResult,
   type QualificationMatcherAgent,
+  type RequirementToMatch,
 } from './qualification-matcher.agent.js';
 import {
   qualificationRepository,
@@ -21,6 +24,23 @@ import type {
   CreateOpportunityAnalysisInput,
   OpportunityDimensions,
 } from './qualification.schema.js';
+import type { OpportunityAnalysis } from '../../db/schema.js';
+
+type RequirementsWithCitations = Awaited<ReturnType<QualificationRepository['getRequirementsWithCitations']>>;
+
+export interface PreparedQualificationAnalysis {
+  analysis: OpportunityAnalysis;
+  requirements: RequirementsWithCitations;
+  dossierCandidates: DossierEvidenceCandidate[];
+  tenderContext: TenderContextForGates;
+  profileContext: CompanyProfileForGates | null;
+  preliminaryGates: DeterministicGatesResult;
+}
+
+export interface PreparedRequirementMatch {
+  requirement: RequirementsWithCitations[number];
+  match: QualificationMatchResult;
+}
 
 export class QualificationService {
   constructor(
@@ -59,14 +79,25 @@ export class QualificationService {
     return { analysis, idempotent: false };
   }
 
-  async runFullAnalysis(
+  /**
+   * Reads and reserves the analysis in a short tenant transaction. Gemini is
+   * deliberately not invoked here: an external request must never keep a
+   * PostgreSQL transaction (and its tenant context) open.
+   */
+  async prepareFullAnalysis(
     database: TenantTransaction,
     tenantId: string,
     analysisId: string,
-  ) {
+  ): Promise<PreparedQualificationAnalysis | { completed: OpportunityAnalysis }> {
     const analysis = await this.repository.findAnalysisById(database, tenantId, analysisId);
     if (!analysis) {
       throw new AppError(404, 'El análisis de oportunidad solicitado no existe');
+    }
+    if (analysis.status === 'COMPLETED') {
+      return { completed: analysis };
+    }
+    if (analysis.status === 'PROCESSING') {
+      throw new AppError(409, 'El análisis de oportunidad ya se está procesando');
     }
 
     // 1. Verificar expediente y versión documental
@@ -115,6 +146,26 @@ export class QualificationService {
       });
     }
 
+    const tenderContext: TenderContextForGates = {
+      status: tender.status,
+      submissionDeadline: tender.submissionDeadline,
+      estimatedValueCents: tender.estimatedValueCents,
+      title: tender.title,
+    };
+
+    const profileContext: CompanyProfileForGates | null = profile ? {
+      minContractCents: profile.minContractCents,
+      maxContractCents: profile.maxContractCents,
+      territories: profile.territories,
+    } : null;
+
+    // Estas puertas se aplican antes de cualquier llamada al modelo. Un
+    // expediente vencido, suspendido o fuera de presupuesto no consume IA.
+    const preliminaryGates = evaluateDeterministicGates({
+      tender: tenderContext,
+      profile: profileContext,
+    });
+
     // 3. Obtener requisitos extraídos y sellados de esta versión documental
     const requirementsList = await this.repository.getRequirementsWithCitations(
       database,
@@ -123,26 +174,65 @@ export class QualificationService {
       analysis.documentVersionId,
     );
 
-    // 4. Evaluar cada requisito mediante el agente de correspondencia
+    const processing = await this.repository.updateAnalysis(database, tenantId, analysis.id, {
+      status: 'PROCESSING',
+    });
+
+    return {
+      analysis: processing,
+      requirements: requirementsList,
+      dossierCandidates,
+      tenderContext,
+      profileContext,
+      preliminaryGates,
+    };
+  }
+
+  /** Runs only the stateless, external model calls. No database transaction is open. */
+  async matchPreparedRequirements(prepared: PreparedQualificationAnalysis): Promise<PreparedRequirementMatch[]> {
+    // A deterministic exclusion is final and must not call Gemini.
+    if (prepared.preliminaryGates.eligibilityStatus === 'POTENTIALLY_INELIGIBLE') {
+      return [];
+    }
+
+    const matches: PreparedRequirementMatch[] = [];
+    for (const req of prepared.requirements) {
+      const requirement: RequirementToMatch = {
+        id: req.id,
+        category: req.category,
+        requirementType: req.requirementType,
+        summary: req.summary,
+        extractedText: req.extractedText,
+        citations: req.citations.map((c) => ({
+          quotedText: c.quotedText,
+          sectionReference: c.sectionReference,
+        })),
+      };
+      matches.push({
+        requirement: req,
+        match: await this.matcherAgent.evaluateRequirement(requirement, prepared.dossierCandidates),
+      });
+    }
+    return matches;
+  }
+
+  /** Persists model output in a second, short tenant transaction. */
+  async completePreparedAnalysis(
+    database: TenantTransaction,
+    tenantId: string,
+    prepared: PreparedQualificationAnalysis,
+    matches: PreparedRequirementMatch[],
+  ) {
+    const analysis = await this.repository.findAnalysisById(database, tenantId, prepared.analysis.id);
+    if (!analysis) {
+      throw new AppError(404, 'El análisis de oportunidad solicitado no existe');
+    }
+
+    // 4. Persistir cada evaluación ya calculada por el agente
     const evaluatedRequirementsForGates: RequirementEvaluationForGates[] = [];
     const savedAssessments = [];
 
-    for (const req of requirementsList) {
-      const matchResult = await this.matcherAgent.evaluateRequirement(
-        {
-          id: req.id,
-          category: req.category,
-          requirementType: req.requirementType,
-          summary: req.summary,
-          extractedText: req.extractedText,
-          citations: req.citations.map((c) => ({
-            quotedText: c.quotedText,
-            sectionReference: c.sectionReference,
-          })),
-        },
-        dossierCandidates,
-      );
-
+    for (const { requirement: req, match: matchResult } of matches) {
       const assessment = await this.repository.saveAssessment(
         database,
         tenantId,
@@ -173,30 +263,18 @@ export class QualificationService {
       });
     }
 
-    // 5. Evaluar puertas deterministas de elegibilidad
-    const tenderContext: TenderContextForGates = {
-      status: tender.status,
-      submissionDeadline: tender.submissionDeadline,
-      estimatedValueCents: tender.estimatedValueCents,
-      title: tender.title,
-    };
-
-    const profileContext: CompanyProfileForGates | null = profile ? {
-      minContractCents: profile.minContractCents,
-      maxContractCents: profile.maxContractCents,
-      territories: profile.territories,
-    } : null;
-
+    // 5. Volvemos a aplicar las puertas con los resultados del agente. Las
+    // causas detectadas antes de Gemini siguen dominando el resultado.
     const deterministicResult = evaluateDeterministicGates({
-      tender: tenderContext,
-      profile: profileContext,
+      tender: prepared.tenderContext,
+      profile: prepared.profileContext,
       requirements: evaluatedRequirementsForGates,
     });
 
     // 6. Calcular las 7 dimensiones explicables
     const dimensions = this.calculateDimensions(
-      tenderContext,
-      profileContext,
+      prepared.tenderContext,
+      prepared.profileContext,
       savedAssessments,
       deterministicResult,
     );
@@ -214,6 +292,12 @@ export class QualificationService {
     });
 
     return updated;
+  }
+
+  async markAnalysisFailed(database: TenantTransaction, tenantId: string, analysisId: string) {
+    const analysis = await this.repository.findAnalysisById(database, tenantId, analysisId);
+    if (!analysis) return;
+    await this.repository.updateAnalysis(database, tenantId, analysisId, { status: 'FAILED' });
   }
 
   async getAnalysisDetail(

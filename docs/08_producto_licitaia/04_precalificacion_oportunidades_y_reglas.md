@@ -43,7 +43,7 @@ tenants
 
 ## 3. Puertas Deterministas de Elegibilidad
 
-Antes y durante la evaluación, la función `evaluateDeterministicGates` (`api/src/modules/qualification/deterministic-gates.ts`) aplica reglas objetivas reproducibles:
+Antes de llamar al modelo y de nuevo al incorporar sus resultados, la función `evaluateDeterministicGates` (`api/src/modules/qualification/deterministic-gates.ts`) aplica reglas objetivas reproducibles. Si las puertas iniciales detectan una exclusión, el análisis se completa sin consumir IA. Las llamadas a Gemini se ejecutan fuera de la transacción PostgreSQL; una segunda transacción breve persiste sus resultados bajo el mismo tenant.
 1. **Plazo Vencido**: Si `tender.submissionDeadline < now()`, genera causa bloqueante `POTENTIALLY_INELIGIBLE`.
 2. **Expediente Inactivo**: Estados CANCELLED, SUSPENDED o ANNULLED bloquean la oportunidad.
 3. **Presupuesto Excedido**: Si `tender.estimatedValueCents > profile.maxContractCents`, genera bloqueo por sobrecapacidad económica.
@@ -94,7 +94,8 @@ El servicio `QualificationService` (`api/src/modules/qualification/qualification
 Ejecutado sobre el pliego sellado del Ayuntamiento de Valdetorres (`157/2026`, versión documental `0927331b-ed1c-4a34-aeb1-7fc183df6b0e`):
 
 - **Análisis Creado**: `0aafb471-e8b6-48d6-a27a-3300bff0edd2`
-- **Latencia de Evaluación**: **1.292 ms** (1,29 segundos).
+- **Latencia de Evaluación registrada**: **1.235 ms** (1,24 segundos).
+- **Coste registrado**: **107 microunidades**.
 - **Estado de Elegibilidad**: `POTENTIALLY_INELIGIBLE`
 - **Causa Bloqueante**: `Incumplimiento de requisito obligatorio: "Constitución de garantía provisional"`
 - **Evaluación de Requisito**:

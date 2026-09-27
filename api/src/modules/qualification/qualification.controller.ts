@@ -28,12 +28,36 @@ qualificationRouter.post('/analyses', analysisEditor, async (req: Request, res: 
 
 // 2. Ejecutar la evaluación completa de precalificación para un análisis
 qualificationRouter.post('/analyses/:id/run', analysisEditor, async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  let analysisId: string | undefined;
+  let processingStarted = false;
   try {
     const { id } = OpportunityAnalysisIdParamsSchema.parse(req.params);
+    analysisId = id;
+    const prepared = await withTenantTransaction(req.user!.tenantId, (tx) =>
+      qualificationService.prepareFullAnalysis(tx, req.user!.tenantId, id));
+
+    if ('completed' in prepared) {
+      res.status(200).json({ data: prepared.completed, idempotent: true });
+      return;
+    }
+    processingStarted = true;
+
+    // Gemini se ejecuta sin una transacción PostgreSQL abierta. El resultado
+    // se persiste después en una transacción corta, con RLS del mismo tenant.
+    const matches = await qualificationService.matchPreparedRequirements(prepared);
     const updated = await withTenantTransaction(req.user!.tenantId, (tx) =>
-      qualificationService.runFullAnalysis(tx, req.user!.tenantId, id));
+      qualificationService.completePreparedAnalysis(tx, req.user!.tenantId, prepared, matches));
     res.status(200).json({ data: updated });
   } catch (error) {
+    if (analysisId && processingStarted) {
+      try {
+        await withTenantTransaction(req.user!.tenantId, (tx) =>
+          qualificationService.markAnalysisFailed(tx, req.user!.tenantId, analysisId!));
+      } catch {
+        // El manejador global conserva el error original; no se oculta con un
+        // fallo secundario al registrar el estado de la ejecución.
+      }
+    }
     next(error);
   }
 });
