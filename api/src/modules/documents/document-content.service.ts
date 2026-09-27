@@ -141,9 +141,12 @@ export class DocumentContentService {
       throw new AppError(413, 'El documento está vacío o supera el tamaño máximo permitido');
     }
 
+    const rawSha256 = sha256(bytes);
+    const rawStoragePath = await writeRawDocument(documentVersionId, rawSha256, bytes);
+
     const format = allowedMimeType(response.headers.get('content-type'));
     const extractedText = format === 'pdf'
-      ? await extractPdfText(bytes)
+      ? await extractPdfText(new Uint8Array(bytes.slice()))
       : new TextDecoder('utf-8', { fatal: false }).decode(bytes);
     if (extractedText.trim().length === 0) {
       throw new AppError(422, 'No se pudo extraer texto verificable del documento');
@@ -152,10 +155,9 @@ export class DocumentContentService {
       throw new AppError(422, 'El texto extraído supera el límite permitido');
     }
 
-    const rawSha256 = sha256(bytes);
     const snapshot = await this.repository.createSnapshot({
       documentVersionId,
-      rawStoragePath: await writeRawDocument(documentVersionId, rawSha256, bytes),
+      rawStoragePath,
       rawSha256,
       rawByteSize: bytes.byteLength,
       extractedText,
