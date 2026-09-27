@@ -383,6 +383,131 @@ export const extractionJobs = pgTable('extraction_jobs', {
     .on(table.status, table.retryAfterTimestamp),
 }));
 
+// ============================================================================
+// PRECALIFICACIÓN DE OPORTUNIDADES (Fase 4)
+// ============================================================================
+
+// 16. Elementos ampliados del dossier de la empresa (solvencia, referencias, etc.)
+export const companyDossierItems = pgTable('company_dossier_items', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  tenantId: uuid('tenant_id')
+    .notNull()
+    .references(() => tenants.id, { onDelete: 'cascade' }),
+  category: varchar('category', { length: 50 }).notNull(),
+  title: varchar('title', { length: 255 }).notNull(),
+  description: text('description').notNull(),
+  documentReference: varchar('document_reference', { length: 500 }),
+  evidenceStatus: varchar('evidence_status', { length: 32 }).notNull().default('DECLARED'),
+  validUntil: timestamp('valid_until', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  idxTenantCategory: index('idx_company_dossier_items_tenant_cat').on(table.tenantId, table.category),
+}));
+
+// 17. Análisis global de oportunidad para un expediente y versión documental
+export const opportunityAnalyses = pgTable('opportunity_analyses', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  tenantId: uuid('tenant_id')
+    .notNull()
+    .references(() => tenants.id, { onDelete: 'cascade' }),
+  tenderId: uuid('tender_id')
+    .notNull()
+    .references(() => tenders.id, { onDelete: 'cascade' }),
+  documentVersionId: uuid('document_version_id')
+    .notNull()
+    .references(() => tenderDocumentVersions.id, { onDelete: 'restrict' }),
+  idempotencyKey: uuid('idempotency_key').notNull(),
+  status: varchar('status', { length: 32 }).notNull().default('PENDING'),
+  eligibilityStatus: varchar('eligibility_status', { length: 32 }).notNull().default('PENDING'),
+  dimensions: jsonb('dimensions').$type<Record<string, unknown>>().notNull().default({}),
+  summary: text('summary'),
+  blockingReasons: jsonb('blocking_reasons').$type<string[]>().notNull().default([]),
+  warnings: jsonb('warnings').$type<string[]>().notNull().default([]),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  uqTenantIdempotency: uniqueIndex('uq_opportunity_analyses_tenant_idempotency')
+    .on(table.tenantId, table.idempotencyKey),
+  idxTenantTender: index('idx_opportunity_analyses_tenant_tender')
+    .on(table.tenantId, table.tenderId),
+  idxTenantStatus: index('idx_opportunity_analyses_tenant_status')
+    .on(table.tenantId, table.status),
+  idxTenantDocument: index('idx_opportunity_analyses_tenant_doc')
+    .on(table.tenantId, table.documentVersionId),
+}));
+
+// 18. Evaluación individualizada de cada requisito con respecto a la empresa
+export const requirementAssessments = pgTable('requirement_assessments', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  tenantId: uuid('tenant_id')
+    .notNull()
+    .references(() => tenants.id, { onDelete: 'cascade' }),
+  analysisId: uuid('analysis_id')
+    .notNull()
+    .references(() => opportunityAnalyses.id, { onDelete: 'cascade' }),
+  requirementId: uuid('requirement_id')
+    .notNull()
+    .references(() => requirements.id, { onDelete: 'cascade' }),
+  status: varchar('status', { length: 32 }).notNull(),
+  confidence: integer('confidence').notNull(),
+  rationale: text('rationale').notNull(),
+  isBlocking: boolean('is_blocking').notNull().default(false),
+  agentName: varchar('agent_name', { length: 100 }),
+  model: varchar('model', { length: 100 }),
+  promptVersion: varchar('prompt_version', { length: 100 }),
+  durationMs: integer('duration_ms'),
+  costMicrounits: integer('cost_microunits'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  idxTenantAnalysis: index('idx_requirement_assessments_tenant_analysis')
+    .on(table.tenantId, table.analysisId),
+  idxTenantRequirement: index('idx_requirement_assessments_tenant_req')
+    .on(table.tenantId, table.requirementId),
+}));
+
+// 19. Evidencia del dossier asociada a una evaluación
+export const assessmentEvidence = pgTable('assessment_evidence', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  tenantId: uuid('tenant_id')
+    .notNull()
+    .references(() => tenants.id, { onDelete: 'cascade' }),
+  assessmentId: uuid('assessment_id')
+    .notNull()
+    .references(() => requirementAssessments.id, { onDelete: 'cascade' }),
+  sourceType: varchar('source_type', { length: 50 }).notNull(),
+  sourceId: varchar('source_id', { length: 100 }),
+  sourceTitle: varchar('source_title', { length: 255 }).notNull(),
+  matchType: varchar('match_type', { length: 32 }).notNull(),
+  excerpt: text('excerpt').notNull(),
+  confidence: integer('confidence').notNull(),
+  validUntil: timestamp('valid_until', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  idxTenantAssessment: index('idx_assessment_evidence_tenant_assessment')
+    .on(table.tenantId, table.assessmentId),
+}));
+
+// 20. Decisiones humanas sobre la oportunidad (desacopladas del análisis)
+export const analysisDecisions = pgTable('analysis_decisions', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  tenantId: uuid('tenant_id')
+    .notNull()
+    .references(() => tenants.id, { onDelete: 'cascade' }),
+  analysisId: uuid('analysis_id')
+    .notNull()
+    .references(() => opportunityAnalyses.id, { onDelete: 'cascade' }),
+  decision: varchar('decision', { length: 32 }).notNull(),
+  rationale: text('rationale').notNull(),
+  decidedBy: uuid('decided_by').notNull(),
+  decidedAt: timestamp('decided_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  uqTenantAnalysis: uniqueIndex('uq_analysis_decisions_tenant_analysis')
+    .on(table.tenantId, table.analysisId),
+  idxTenantDecision: index('idx_analysis_decisions_tenant_decision')
+    .on(table.tenantId, table.decision),
+}));
+
 export type Tenant = typeof tenants.$inferSelect;
 export type NewTenant = typeof tenants.$inferInsert;
 
@@ -396,6 +521,8 @@ export type CompanyProfile = typeof companyProfiles.$inferSelect;
 export type NewCompanyProfile = typeof companyProfiles.$inferInsert;
 export type CompanyCertification = typeof companyCertifications.$inferSelect;
 export type NewCompanyCertification = typeof companyCertifications.$inferInsert;
+export type CompanyDossierItem = typeof companyDossierItems.$inferSelect;
+export type NewCompanyDossierItem = typeof companyDossierItems.$inferInsert;
 
 export type AuditEvent = typeof auditEvents.$inferSelect;
 export type NewAuditEvent = typeof auditEvents.$inferInsert;
@@ -432,3 +559,12 @@ export type Requirement = typeof requirements.$inferSelect;
 export type RequirementCitation = typeof requirementCitations.$inferSelect;
 export type ExtractionJob = typeof extractionJobs.$inferSelect;
 export type NewExtractionJob = typeof extractionJobs.$inferInsert;
+
+export type OpportunityAnalysis = typeof opportunityAnalyses.$inferSelect;
+export type NewOpportunityAnalysis = typeof opportunityAnalyses.$inferInsert;
+export type RequirementAssessment = typeof requirementAssessments.$inferSelect;
+export type NewRequirementAssessment = typeof requirementAssessments.$inferInsert;
+export type AssessmentEvidence = typeof assessmentEvidence.$inferSelect;
+export type NewAssessmentEvidence = typeof assessmentEvidence.$inferInsert;
+export type AnalysisDecision = typeof analysisDecisions.$inferSelect;
+export type NewAnalysisDecision = typeof analysisDecisions.$inferInsert;

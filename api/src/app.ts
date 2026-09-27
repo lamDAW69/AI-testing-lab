@@ -6,6 +6,7 @@ import { productsRouter } from './modules/products/products.controller.js';
 import { dossierRouter } from './modules/dossier/dossier.controller.js';
 import { procurementRouter } from './modules/procurement/procurement.controller.js';
 import { requirementsRouter } from './modules/requirements/requirements.controller.js';
+import { qualificationRouter } from './modules/qualification/qualification.controller.js';
 import { documentContentRouter } from './modules/documents/document-content.controller.js';
 import { requestContextMiddleware } from './middleware/request-context.middleware.js';
 
@@ -26,6 +27,7 @@ export function createApp(): Express {
   app.use('/api/dossier', dossierRouter);
   app.use('/api/public', procurementRouter);
   app.use('/api/requirements', requirementsRouter);
+  app.use('/api/qualification', qualificationRouter);
   app.use('/api/internal/documents', documentContentRouter);
 
   // 4. Captura de rutas inexistentes (404 seguro)

@@ -71,6 +71,13 @@
       "when": 1790617300000,
       "tag": "0009_make_extraction_jobs_durable",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1790617400000,
+      "tag": "0010_add_opportunity_qualification",
+      "breakpoints": true
     }
   ]
 }

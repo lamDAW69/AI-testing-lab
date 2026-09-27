@@ -244,3 +244,58 @@ test('RLS en extraction_jobs: un tenant no puede leer ni modificar trabajos de o
   );
   assert.equal(hackAttempt, undefined);
 });
+
+test('RLS en Precalificación (Fase 4): un tenant no puede leer, crear ni inferir análisis, evidencias o decisiones de otro', async () => {
+  const { withTenantTransaction } = await import('../../src/db/client.js');
+  const { qualificationRepository } = await import('../../src/modules/qualification/qualification.repository.js');
+
+  const ANALYSIS_KEY_A = '66666666-6666-4666-8666-666666666666';
+
+  // 1. Tenant A crea un ítem de dossier y un análisis de oportunidad
+  const dossierItemA = await withTenantTransaction(TENANT_A, (tx) =>
+    qualificationRepository.createDossierItem(tx, TENANT_A, {
+      category: 'TECHNICAL',
+      title: 'Solvencia técnica confidencial A',
+      description: 'Experiencia sensible de Tenant A',
+    }),
+  );
+  assert.equal(dossierItemA.tenantId, TENANT_A);
+
+  const analysisA = await withTenantTransaction(TENANT_A, (tx) =>
+    qualificationRepository.createAnalysis(tx, TENANT_A, {
+      idempotencyKey: ANALYSIS_KEY_A,
+      tenderId: TENDER_A,
+      documentVersionId: DOCUMENT_VERSION_A,
+    }),
+  );
+  assert.equal(analysisA.tenantId, TENANT_A);
+
+  // 2. Tenant B no puede leer el análisis de Tenant A
+  const leakAnalysis = await withTenantTransaction(TENANT_B, (tx) =>
+    qualificationRepository.findAnalysisById(tx, TENANT_B, analysisA.id),
+  );
+  assert.equal(leakAnalysis, null);
+
+  // 3. Tenant B no puede listar ni ver ítems de dossier de Tenant A
+  const itemsB = await withTenantTransaction(TENANT_B, (tx) =>
+    qualificationRepository.listDossierItems(tx, TENANT_B),
+  );
+  assert.ok(!itemsB.some((item) => item.id === dossierItemA.id));
+
+  // 4. Tenant A registra una decisión
+  await withTenantTransaction(TENANT_A, (tx) =>
+    qualificationRepository.saveDecision(
+      tx,
+      TENANT_A,
+      analysisA.id,
+      { decision: 'PURSUE', rationale: 'Estrategia clave para Tenant A' },
+      USER_A,
+    ),
+  );
+
+  // 5. Tenant B intenta leer la decisión de Tenant A: debe devolver null
+  const leakDecision = await withTenantTransaction(TENANT_B, (tx) =>
+    qualificationRepository.getDecision(tx, TENANT_B, analysisA.id),
+  );
+  assert.equal(leakDecision, null);
+});
