@@ -151,11 +151,26 @@ El archivo `api/test/unit/prompt-injection-evaluation.test.ts` valida:
 ## 8. Verificación en Producción (Hetzner VPS)
 
 En el servidor de producción (`46.224.229.83` / `api.pliegoai.com`):
-1. **Migración 0008 aplicada**: La tabla `extraction_jobs` fue creada e indexada correctamente con usuario administrativo.
+1. **Migraciones 0008 y 0009 aplicadas**: La tabla `extraction_jobs` fue creada con `lease_expires_at`, índice de reclamación y la función atómica `public.claim_next_extraction_job()` ejecutada mediante `FOR UPDATE SKIP LOCKED`.
 2. **Ingesta Real PLACSP**: 20 licitaciones reales importadas directamente de `contrataciondelestado.es`.
 3. **Primer Pliego Oficial Sellado**:
    - Expediente: `157/2026 Valdetorres` (ID: `142b99c0-3ebd-4732-856a-d15e3ef91600`)
    - Documento: `2157859-PliegodeClusulasAdmin-001002PCA_STD_OE.pdf`
+   - Versión ID: `0927331b-ed1c-4a34-aeb1-7fc183df6b0e`
    - Hash SHA-256: `d147c06d1f5df4c1020bd3d5fb3469519c1be2feec87e2c9ed246fabed0267b5`
    - Texto extraído: 96.465 caracteres sellados en el volumen seguro `/app/data/documents`.
-4. **CI/CD**: Pipelines de GitHub Actions completados al 100% en verde (14 pruebas unitarias pasando en el commit inicial). Tras aplicar la migración 0009, la suite incluye 15 pruebas unitarias; la aplicación en Hetzner requiere desplegar esta revisión y ejecutar las migraciones antes de declarar la cola durable activa en producción.
+4. **Worker en Producción y Cola Durable**:
+   - Contenedor `app_extraction_worker` drenando la cola en background cada 1 segundo.
+   - Manejo de cuotas y descongestión con `gemini-3.5-flash-lite`.
+   - Anclaje determinista de citas contra el snapshot inmutable resolviendo discrepancias de kerning en PDFs oficiales.
+5. **Ejecución y Extracción Real Verificada**:
+   - **Job ID**: `20cd7a7a-c80d-4ed4-b9dd-f8b5c5786be1`
+   - **Estado final**: `COMPLETED` (Intento 1).
+   - **Extraction ID**: `aced53ee-2ecc-4321-b479-826ceaca86c0`
+   - **Modelo LLM**: `gemini-3.5-flash-lite` (v1beta)
+   - **Latencia**: 1.449 ms (1,45 segundos).
+   - **Consumo y Coste**: 2.044 microdólares ($0,002044 USD).
+   - **Requisito extraído**: `df0b24a0-c7d6-42f3-80b6-9a02ecec5090` (Categoría `ECONOMIC`, Tipo `MANDATORY`, Resumen: "Constitución de garantía provisional", Confianza: 90%).
+   - **Cita auditada**: `4490fda9-dd4a-43bb-b8fa-637d3507a756` en offsets exactos `[25960, 26153)` coincidiendo al 100% de caracter por caracter con el snapshot documental sellado.
+   - **Evento de Auditoría**: Grabado de forma inmutable en `agent_execution_events` (`87cfb95e-a4ec-423b-af8d-41c256d5f88d`).
+6. **CI/CD**: Pipelines de GitHub Actions completados al 100% en verde (15 pruebas unitarias y pruebas de aislamiento RLS multi-tenant contra PostgreSQL).
