@@ -86,6 +86,17 @@ export interface PortfolioMetrics {
 }
 
 export class PortfolioRepository {
+  private latestAnalysisCondition(tenantId: string) {
+    return sql<boolean>`${opportunityAnalyses.id} = (
+      SELECT latest_analysis.id
+      FROM opportunity_analyses AS latest_analysis
+      WHERE latest_analysis.tenant_id = ${tenantId}::uuid
+        AND latest_analysis.tender_id = ${opportunityAnalyses.tenderId}
+      ORDER BY latest_analysis.created_at DESC, latest_analysis.id DESC
+      LIMIT 1
+    )`;
+  }
+
   /**
    * Consulta determinista agregada del portfolio del tenant.
    * Cero llamadas a IA: lee únicamente datos estructurados e indexados bajo RLS.
@@ -96,7 +107,10 @@ export class PortfolioRepository {
     filters: PortfolioQueryFilter,
   ): Promise<{ items: PortfolioItem[]; total: number }> {
     // 1. Obtener análisis vigentes del tenant
-    const conditions = [eq(opportunityAnalyses.tenantId, tenantId)];
+    const conditions = [
+      eq(opportunityAnalyses.tenantId, tenantId),
+      this.latestAnalysisCondition(tenantId),
+    ];
 
     if (filters.eligibilityStatus) {
       conditions.push(eq(opportunityAnalyses.eligibilityStatus, filters.eligibilityStatus));
@@ -346,7 +360,10 @@ export class PortfolioRepository {
         uniqueTenders: sql<number>`count(distinct ${opportunityAnalyses.tenderId})`,
       })
       .from(opportunityAnalyses)
-      .where(eq(opportunityAnalyses.tenantId, tenantId));
+      .where(and(
+        eq(opportunityAnalyses.tenantId, tenantId),
+        this.latestAnalysisCondition(tenantId),
+      ));
 
     // 2. Distribución de elegibilidad
     const eligibilityRows = await database
@@ -355,7 +372,10 @@ export class PortfolioRepository {
         count: sql<number>`count(*)`,
       })
       .from(opportunityAnalyses)
-      .where(eq(opportunityAnalyses.tenantId, tenantId))
+      .where(and(
+        eq(opportunityAnalyses.tenantId, tenantId),
+        this.latestAnalysisCondition(tenantId),
+      ))
       .groupBy(opportunityAnalyses.eligibilityStatus);
 
     const eligibilityDistribution = {
@@ -377,7 +397,14 @@ export class PortfolioRepository {
         count: sql<number>`count(*)`,
       })
       .from(analysisDecisions)
-      .where(eq(analysisDecisions.tenantId, tenantId))
+      .innerJoin(opportunityAnalyses, and(
+        eq(analysisDecisions.analysisId, opportunityAnalyses.id),
+        eq(opportunityAnalyses.tenantId, tenantId),
+      ))
+      .where(and(
+        eq(analysisDecisions.tenantId, tenantId),
+        this.latestAnalysisCondition(tenantId),
+      ))
       .groupBy(analysisDecisions.decision);
 
     const decisionsDistribution = {
@@ -403,7 +430,10 @@ export class PortfolioRepository {
         blockingReason: sql<string>`jsonb_array_elements_text(${opportunityAnalyses.blockingReasons})`,
       })
       .from(opportunityAnalyses)
-      .where(eq(opportunityAnalyses.tenantId, tenantId));
+      .where(and(
+        eq(opportunityAnalyses.tenantId, tenantId),
+        this.latestAnalysisCondition(tenantId),
+      ));
 
     const blockingMap = new Map<string, number>();
     for (const b of blockingRows) {
@@ -434,7 +464,10 @@ export class PortfolioRepository {
         count: sql<number>`count(*)`,
       })
       .from(opportunityAlerts)
-      .where(eq(opportunityAlerts.tenantId, tenantId))
+      .where(and(
+        eq(opportunityAlerts.tenantId, tenantId),
+        eq(opportunityAlerts.status, 'UNREAD'),
+      ))
       .groupBy(opportunityAlerts.severity);
 
     const alertTypeRows = await database
@@ -443,7 +476,10 @@ export class PortfolioRepository {
         count: sql<number>`count(*)`,
       })
       .from(opportunityAlerts)
-      .where(eq(opportunityAlerts.tenantId, tenantId))
+      .where(and(
+        eq(opportunityAlerts.tenantId, tenantId),
+        eq(opportunityAlerts.status, 'UNREAD'),
+      ))
       .groupBy(opportunityAlerts.alertType);
 
     const unreadAlerts = await database

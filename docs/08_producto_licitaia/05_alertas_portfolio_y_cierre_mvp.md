@@ -38,6 +38,11 @@ Para invalidar análisis de todos los inquilinos afectados sin romper el aislami
 
 Estas funciones actualizan atómicamente los análisis vigentes y generan de forma inmediata un evento de alerta en `opportunity_alerts` para cada tenant que analizaba el expediente.
 
+### 2.3 Consistencia del análisis vigente
+La migración `0012_harden_phase5_consistency.sql` normaliza posibles duplicados históricos y crea el índice parcial único `uq_opportunity_analyses_tenant_tender_current`. Solo puede existir un análisis con `is_current = true` por `(tenant_id, tender_id)`. Al iniciar una nueva evaluación, la anterior se conserva y pasa a `STALE` antes de insertar la nueva.
+
+La ingesta considera invalidante tanto una nueva versión de un documento existente como la incorporación posterior de un nuevo documento rector o adenda. Los avisos de adjudicación (`AWARD_NOTICE`) quedan fuera de esta regla documental porque su cambio administrativo se procesa mediante el estado del expediente.
+
 ---
 
 ## 3. Cola Persistente de Alertas / Outbox (5.2)
@@ -70,6 +75,7 @@ $$\text{idempotency\_hash} = \text{SHA-256}(\text{tenant\_id} \mathbin{\Vert} \t
 Si el worker o el feed de PLACSP reintenta el procesamiento de la misma versión o enmienda, la inserción se resuelve mediante `ON CONFLICT (tenant_id, idempotency_hash) DO NOTHING`, garantizando que el usuario nunca reciba alertas duplicadas.
 
 ### 3.3 Endpoints de Alertas (`/api/alerts`)
+La creación de alertas es exclusivamente interna. No existe un endpoint público que permita al cliente fabricar eventos operativos.
 - `GET /api/alerts`: Listado filtrado por estado (`UNREAD`, `READ`, `DISMISSED`, `ALL`), severidad o tipo, con paginación protegida.
 - `GET /api/alerts/stats`: Conteo rápido de alertas no leídas y distribución por tipo y severidad.
 - `PATCH /api/alerts/:id/read`: Marca una alerta como leída registrando la marca temporal `read_at`.
@@ -82,6 +88,8 @@ Si el worker o el feed de PLACSP reintenta el procesamiento de la misma versión
 
 ### 4.1 Arquitectura Determinista sin Coste LLM
 A diferencia de la fase de extracción o precalificación, la consulta del portfolio no realiza llamadas a modelos de lenguaje. Se ejecuta mediante consultas relacionales ultra-optimizadas con índices compuestos en `(tenant_id, eligibility_status)` y `(tenant_id, is_current)`.
+
+El listado consolida una sola fila por licitación y tenant, seleccionando siempre el análisis más reciente. Las evaluaciones anteriores permanecen en la base como histórico auditable, pero no duplican oportunidades en el portfolio ni inflan sus distribuciones actuales.
 
 ### 4.2 Endpoints del Portfolio (`/api/portfolio`)
 - `GET /api/portfolio`: Consulta agregada que devuelve para cada expediente:

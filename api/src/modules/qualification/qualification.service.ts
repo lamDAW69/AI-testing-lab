@@ -73,7 +73,16 @@ export class QualificationService {
       throw new AppError(404, 'La versión documental o el expediente indicado no existe');
     }
 
-    // 3. Crear análisis inicial en estado PENDING
+    // 3. Mantener una sola evaluación vigente por tenant y expediente. El
+    // histórico anterior se conserva y queda marcado como obsoleto.
+    await this.repository.supersedeCurrentAnalyses(
+      database,
+      tenantId,
+      input.tenderId,
+      input.documentVersionId,
+    );
+
+    // 4. Crear análisis inicial en estado PENDING
     const analysis = await this.repository.createAnalysis(database, tenantId, input);
 
     return { analysis, idempotent: false };

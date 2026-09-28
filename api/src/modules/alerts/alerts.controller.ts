@@ -4,7 +4,6 @@ import { authMiddleware, requireTenantRole } from '../../middleware/auth.middlew
 import { alertsService } from './alerts.service.js';
 import {
   AlertQueryFilterSchema,
-  CreateAlertInputSchema,
 } from './alerts.schema.js';
 
 export const alertsRouter = Router();
@@ -48,21 +47,8 @@ alertsRouter.get('/stats', readerRole, async (req: Request, res: Response, next:
   }
 });
 
-// 3. Crear alerta persistente de forma manual o interna
-alertsRouter.post('/', editorRole, async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    const input = CreateAlertInputSchema.parse(req.body);
-    const result = await alertsService.createAlert(req.user!.tenantId, input);
-    res.status(result.created ? 201 : 200).json({
-      data: result.alert,
-      created: result.created,
-    });
-  } catch (error) {
-    next(error);
-  }
-});
-
-// 4. Marcar alerta individual como leída
+// 3. Marcar alerta individual como leída. Las alertas se crean únicamente
+// desde servicios internos; el cliente no puede fabricar eventos operativos.
 alertsRouter.patch('/:id/read', editorRole, async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { id } = AlertIdParamSchema.parse(req.params);
@@ -73,7 +59,7 @@ alertsRouter.patch('/:id/read', editorRole, async (req: Request, res: Response, 
   }
 });
 
-// 5. Marcar todas las alertas del tenant como leídas
+// 4. Marcar todas las alertas del tenant como leídas
 alertsRouter.post('/mark-all-read', editorRole, async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const result = await alertsService.markAllAsRead(req.user!.tenantId);
@@ -83,7 +69,7 @@ alertsRouter.post('/mark-all-read', editorRole, async (req: Request, res: Respon
   }
 });
 
-// 6. Descartar / archivar una alerta
+// 5. Descartar / archivar una alerta
 alertsRouter.patch('/:id/dismiss', editorRole, async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { id } = AlertIdParamSchema.parse(req.params);

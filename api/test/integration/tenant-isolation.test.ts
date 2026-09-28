@@ -334,6 +334,37 @@ test('Fase 5: Aislamiento estricto de alertas y portfolio entre inquilinos (Anti
   const { withTenantTransaction } = await import('../../src/db/client.js');
   const { alertsRepository } = await import('../../src/modules/alerts/alerts.repository.js');
   const { portfolioRepository } = await import('../../src/modules/portfolio/portfolio.repository.js');
+  const { qualificationService } = await import('../../src/modules/qualification/qualification.service.js');
+
+  // 0. Un nuevo análisis conserva el histórico, pero sustituye al anterior
+  // como único análisis vigente de la oportunidad.
+  const replacement = await withTenantTransaction(TENANT_A, (tx) =>
+    qualificationService.createOpportunityAnalysis(tx, TENANT_A, {
+      idempotencyKey: '77777777-7777-4777-8777-777777777777',
+      tenderId: TENDER_A,
+      documentVersionId: DOCUMENT_VERSION_A,
+    }),
+  );
+  assert.equal(replacement.idempotent, false);
+
+  const currentAnalyses = await withTenantTransaction(TENANT_A, async (tx) => {
+    const result = await tx.execute(sql`
+      SELECT id
+      FROM opportunity_analyses
+      WHERE tenant_id = ${TENANT_A}
+        AND tender_id = ${TENDER_A}
+        AND is_current = true
+    `);
+    return result.rows;
+  });
+  assert.equal(currentAnalyses.length, 1);
+  assert.equal(currentAnalyses[0]?.id, replacement.analysis.id);
+
+  const portfolioA = await withTenantTransaction(TENANT_A, (tx) =>
+    portfolioRepository.listPortfolio(tx, TENANT_A, { limit: 10, offset: 0 }),
+  );
+  assert.equal(portfolioA.total, 1, 'El portfolio debe consolidar una sola fila por licitación');
+  assert.equal(portfolioA.items[0]?.latestAnalysis?.id, replacement.analysis.id);
 
   // 1. Tenant A recibe una alerta privada
   const { alert: alertA } = await withTenantTransaction(TENANT_A, (tx) =>
@@ -381,4 +412,3 @@ test('Fase 5: Aislamiento estricto de alertas y portfolio entre inquilinos (Anti
   assert.equal(portfolioB.total, 0);
   assert.equal(portfolioB.items.length, 0);
 });
-

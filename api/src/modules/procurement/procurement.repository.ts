@@ -212,6 +212,7 @@ export class ProcurementRepository {
             .limit(1);
 
           let docId: string;
+          const isNewDocument = !existingDocs[0];
           if (existingDocs[0]) {
             docId = existingDocs[0].id;
           } else {
@@ -260,8 +261,10 @@ export class ProcurementRepository {
             }).returning();
 
             const createdVersion = newVersions[0];
-            if (createdVersion && currentVersion > 0) {
-              // Si ya existía una versión anterior del pliego, invalidar atómicamente los análisis vigentes
+            const isRelevantNewDocument = isNewDocument && doc.documentType !== 'AWARD_NOTICE';
+            if (createdVersion && (currentVersion > 0 || isRelevantNewDocument)) {
+              // Tanto una nueva versión como una adenda/documento rector nuevo
+              // pueden cambiar la base del análisis ya emitido.
               await tx.execute(sql`SELECT * FROM public.invalidate_analyses_for_document_version(
                 ${existing.id}::uuid,
                 ${createdVersion.id}::uuid,

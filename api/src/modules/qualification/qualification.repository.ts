@@ -110,6 +110,34 @@ export class QualificationRepository {
     return rows[0]!;
   }
 
+  async supersedeCurrentAnalyses(
+    database: TenantTransaction,
+    tenantId: string,
+    tenderId: string,
+    documentVersionId: string,
+  ): Promise<number> {
+    const rows = await database
+      .update(opportunityAnalyses)
+      .set({
+        isCurrent: false,
+        invalidationStatus: 'STALE',
+        invalidationReason: 'Sustituido por un análisis posterior del mismo expediente',
+        supersededByDocumentVersionId: documentVersionId,
+        invalidatedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(opportunityAnalyses.tenantId, tenantId),
+          eq(opportunityAnalyses.tenderId, tenderId),
+          eq(opportunityAnalyses.isCurrent, true),
+        ),
+      )
+      .returning({ id: opportunityAnalyses.id });
+
+    return rows.length;
+  }
+
   async updateAnalysis(
     database: TenantTransaction,
     tenantId: string,

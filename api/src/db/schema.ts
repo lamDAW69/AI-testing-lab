@@ -1,3 +1,4 @@
+import { sql } from 'drizzle-orm';
 import { pgTable, uuid, varchar, text, integer, timestamp, uniqueIndex, index, primaryKey, jsonb, bigint, boolean } from 'drizzle-orm/pg-core';
 
 // 1. Tabla de Organizaciones / Clientes (Tenants)
@@ -435,6 +436,9 @@ export const opportunityAnalyses = pgTable('opportunity_analyses', {
 }, (table) => ({
   uqTenantIdempotency: uniqueIndex('uq_opportunity_analyses_tenant_idempotency')
     .on(table.tenantId, table.idempotencyKey),
+  uqTenantTenderCurrent: uniqueIndex('uq_opportunity_analyses_tenant_tender_current')
+    .on(table.tenantId, table.tenderId)
+    .where(sql`${table.isCurrent} = true`),
   idxTenantTender: index('idx_opportunity_analyses_tenant_tender')
     .on(table.tenantId, table.tenderId),
   idxTenantStatus: index('idx_opportunity_analyses_tenant_status')
@@ -611,4 +615,3 @@ export type NewAnalysisDecision = typeof analysisDecisions.$inferInsert;
 
 export type OpportunityAlert = typeof opportunityAlerts.$inferSelect;
 export type NewOpportunityAlert = typeof opportunityAlerts.$inferInsert;
-
