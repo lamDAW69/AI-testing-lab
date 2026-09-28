@@ -12,7 +12,7 @@
 La Fase 5 cierra el ciclo funcional del Producto Mínimo Viable (MVP) de **LicitaIA**, resolviendo el ciclo de vida documental y la explotación de negocio por parte de las empresas licitadoras:
 
 1. **Invalidez por cambio documental**: Detección de nuevas versiones de pliegos, adendas o modificaciones de estado/plazo sin pérdida de histórico. Los análisis existentes pasan a `REQUIRES_REANALYSIS` o `STALE`.
-2. **Cola persistente de alertas (Outbox)**: Sistema de notificaciones desacoplado y duradero con deduplicación por hash criptográfico SHA-256 e idempotencia a nivel de base de datos (`ON CONFLICT DO NOTHING`).
+2. **Bandeja persistente de alertas**: Registro duradero de eventos dentro de LicitaIA, con deduplicación por hash criptográfico SHA-256 e idempotencia a nivel de base de datos (`ON CONFLICT DO NOTHING`). La entrega externa por email o push queda fuera de este primer canal.
 3. **Portfolio de oportunidades**: Vista agregada y determinista de todas las oportunidades analizadas y seguidas por cada tenant. **Cero consumo de tokens LLM al filtrar o consultar**.
 4. **Métricas y observabilidad**: Agregados estratégicos (distribución de decisiones, elegibilidad, top bloqueos, latencias y consumo de tokens/costes en USD) sin exponer información confidencial ni datos personales (PII).
 5. **Aislamiento multi-inquilino de nivel militar**: Todas las nuevas tablas y vistas operan bajo `ROW LEVEL SECURITY (RLS)` forzado con políticas estrictas basadas en `app.current_tenant_id`.
@@ -45,7 +45,7 @@ La ingesta considera invalidante tanto una nueva versión de un documento existe
 
 ---
 
-## 3. Cola Persistente de Alertas / Outbox (5.2)
+## 3. Bandeja Persistente de Alertas / Outbox (5.2)
 
 ### 3.1 Modelo de Datos (`opportunity_alerts`)
 ```sql
@@ -72,7 +72,9 @@ CREATE UNIQUE INDEX uq_opportunity_alerts_tenant_idempotency ON opportunity_aler
 El hash de idempotencia se calcula como:
 $$\text{idempotency\_hash} = \text{SHA-256}(\text{tenant\_id} \mathbin{\Vert} \text{alert\_type} \mathbin{\Vert} \text{deduplication\_key})$$
 
-Si el worker o el feed de PLACSP reintenta el procesamiento de la misma versión o enmienda, la inserción se resuelve mediante `ON CONFLICT (tenant_id, idempotency_hash) DO NOTHING`, garantizando que el usuario nunca reciba alertas duplicadas.
+Si la ingesta de PLACSP reintenta el procesamiento de la misma versión o enmienda, la inserción se resuelve mediante `ON CONFLICT (tenant_id, idempotency_hash) DO NOTHING`, garantizando que la bandeja no contenga alertas duplicadas.
+
+En esta entrega, las alertas se consultan dentro de la API y el portfolio. Un futuro canal externo requerirá un dispatcher con leases, reintentos y registro de entrega; no se declara como implementado todavía.
 
 ### 3.3 Endpoints de Alertas (`/api/alerts`)
 La creación de alertas es exclusivamente interna. No existe un endpoint público que permita al cliente fabricar eventos operativos.
@@ -87,7 +89,7 @@ La creación de alertas es exclusivamente interna. No existe un endpoint públic
 ## 4. Portfolio de Oportunidades (5.3)
 
 ### 4.1 Arquitectura Determinista sin Coste LLM
-A diferencia de la fase de extracción o precalificación, la consulta del portfolio no realiza llamadas a modelos de lenguaje. Se ejecuta mediante consultas relacionales ultra-optimizadas con índices compuestos en `(tenant_id, eligibility_status)` y `(tenant_id, is_current)`.
+A diferencia de la fase de extracción o precalificación, la consulta del portfolio no realiza llamadas a modelos de lenguaje. Se ejecuta mediante consultas relacionales indexadas por tenant, expediente, vigencia y estado de invalidación.
 
 El listado consolida una sola fila por licitación y tenant, seleccionando siempre el análisis más reciente. Las evaluaciones anteriores permanecen en la base como histórico auditable, pero no duplican oportunidades en el portfolio ni inflan sus distribuciones actuales.
 
@@ -118,7 +120,7 @@ El endpoint `GET /api/portfolio/metrics` consolida el reporting operacional del 
 - **Distribución de decisiones**: Porcentaje y volumen en `PURSUE`, `REVIEW`, `DISCARD` y `UNDECIDED`.
 - **Distribución de elegibilidad**: Volúmenes de idoneidad técnica/económica.
 - **Top causas de bloqueo**: Las 5 causas bloqueantes más recurrentes en los pliegos analizados (ej: falta de clasificación, garantía provisional excesiva, solvencia técnica insuficiente).
-- **Costes y consumo de IA**: Número de evaluaciones realizadas, coste acumulado en microunidades y USD (calculado a partir de los eventos de ejecución de Gemini 3.5 Flash Lite) y latencia media por evaluación.
+- **Costes y consumo de IA**: Número de evaluaciones realizadas, coste acumulado en microunidades y USD (calculado a partir de las evaluaciones de requisitos persistidas) y latencia media por evaluación.
 - **Salud de alertas**: Alertas no leídas agrupadas por severidad (`CRITICAL`, `WARNING`, `INFO`).
 
 ---
