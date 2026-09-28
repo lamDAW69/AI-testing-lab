@@ -1,4 +1,4 @@
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, inArray, sql } from 'drizzle-orm';
 import type { TenantTransaction } from '../../db/client.js';
 import {
   analysisDecisions,
@@ -315,10 +315,20 @@ export class QualificationRepository {
         ),
       );
 
+    const assessmentIds = assessments.map((row) => row.assessment.id);
+    if (assessmentIds.length === 0) {
+      return [];
+    }
+
     const evidences = await database
       .select()
       .from(assessmentEvidence)
-      .where(eq(assessmentEvidence.tenantId, tenantId));
+      .where(
+        and(
+          eq(assessmentEvidence.tenantId, tenantId),
+          inArray(assessmentEvidence.assessmentId, assessmentIds),
+        ),
+      );
 
     const evidenceByAssessment = new Map<string, typeof evidences>();
     for (const ev of evidences) {

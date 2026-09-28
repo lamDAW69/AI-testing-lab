@@ -34,7 +34,7 @@ AS $$
   UPDATE extraction_jobs AS job
   SET status = 'PROCESSING',
       attempt_count = job.attempt_count + 1,
-      lease_expires_at = now() + interval '2 minutes',
+      lease_expires_at = now() + interval '5 minutes',
       updated_at = now()
   FROM candidate
   WHERE job.id = candidate.id

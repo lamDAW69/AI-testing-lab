@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { placspConnector, RawPlacspEntry } from '../../src/modules/procurement/connectors/placsp.connector.js';
+import { parseMadridDateTime, placspConnector, RawPlacspEntry } from '../../src/modules/procurement/connectors/placsp.connector.js';
 import { PlacspTenderInputSchema, TenderQueryFilterSchema } from '../../src/modules/procurement/procurement.schema.js';
 
 const SAMPLE_RAW_ENTRY: RawPlacspEntry = {
@@ -218,4 +218,80 @@ test('parseFeedXml extrae y normaliza correctamente una licitación real en form
   assert.equal(tender.documents.length, 1);
   assert.equal(tender.documents[0]!.documentType, 'PCAP');
   assert.equal(tender.documents[0]!.url, 'https://contrataciondelestado.es/FileSystem/servlet/GetDocumentByIdServlet?DocId=123');
+  // Verifica la conversión precisa de huso peninsular (CEST UTC+2 en octubre)
+  assert.equal(tender.submissionDeadline, '2026-10-15T15:00:00.000Z');
+});
+
+test('parseMadridDateTime convierte fielmente CET (+1 invierno) y CEST (+2 verano) a ISO UTC', () => {
+  // Invierno (CET, UTC+1)
+  const winterIso = parseMadridDateTime('2026-01-15', '14:00:00');
+  assert.equal(winterIso, '2026-01-15T13:00:00.000Z');
+
+  // Verano (CEST, UTC+2)
+  const summerIso = parseMadridDateTime('2026-07-15', '14:00:00');
+  assert.equal(summerIso, '2026-07-15T12:00:00.000Z');
+
+  // Si ya trae timezone explícito (Z o offset), no lo altera
+  const explicitUtc = parseMadridDateTime('2026-07-15', '14:00:00Z');
+  assert.equal(explicitUtc, '2026-07-15T14:00:00.000Z');
+});
+
+test('parseFeedXml extrae correctamente múltiples lotes (cac:ProcurementProjectLot)', () => {
+  const xmlWithLots = `<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom"
+      xmlns:cbc="urn:dgpe:names:draft:codice:schema:xsd:CommonBasicComponents-2"
+      xmlns:cac="urn:dgpe:names:draft:codice:schema:xsd:CommonAggregateComponents-2"
+      xmlns:cac-place-ext="urn:dgpe:names:draft:codice-place-ext:schema:xsd:CommonAggregateComponents-2"
+      xmlns:cbc-place-ext="urn:dgpe:names:draft:codice-place-ext:schema:xsd:CommonBasicComponents-2">
+  <entry>
+    <id>EXP-LOTS-123</id>
+    <title>Servicios IT con lotes</title>
+    <cac-place-ext:ContractFolderStatus>
+      <cbc:ContractFolderID>EXP-LOTS-123</cbc:ContractFolderID>
+      <cac:ProcurementProject>
+        <cbc:Name>Servicios IT con lotes</cbc:Name>
+        <cac:BudgetAmount>
+          <cbc:TaxExclusiveAmount>100000.00</cbc:TaxExclusiveAmount>
+        </cac:BudgetAmount>
+      </cac:ProcurementProject>
+      <cac:ProcurementProjectLot>
+        <cbc:ID schemeName="LotNumber">1</cbc:ID>
+        <cac:ProcurementProject>
+          <cbc:Name>Lote 1: Microservicios</cbc:Name>
+          <cac:BudgetAmount>
+            <cbc:TaxExclusiveAmount>60000.00</cbc:TaxExclusiveAmount>
+          </cac:BudgetAmount>
+          <cac:RequiredCommodityClassification>
+            <cbc:ItemClassificationCode>72262000</cbc:ItemClassificationCode>
+          </cac:RequiredCommodityClassification>
+        </cac:ProcurementProject>
+      </cac:ProcurementProjectLot>
+      <cac:ProcurementProjectLot>
+        <cbc:ID schemeName="LotNumber">2</cbc:ID>
+        <cac:ProcurementProject>
+          <cbc:Name>Lote 2: Frontend Cloudflare</cbc:Name>
+          <cac:BudgetAmount>
+            <cbc:TaxExclusiveAmount>40000.00</cbc:TaxExclusiveAmount>
+          </cac:BudgetAmount>
+          <cac:RequiredCommodityClassification>
+            <cbc:ItemClassificationCode>72260000</cbc:ItemClassificationCode>
+          </cac:RequiredCommodityClassification>
+        </cac:ProcurementProject>
+      </cac:ProcurementProjectLot>
+    </cac-place-ext:ContractFolderStatus>
+  </entry>
+</feed>`;
+
+  const tenders = placspConnector.parseFeedXml(xmlWithLots);
+  assert.equal(tenders.length, 1);
+  const tender = tenders[0]!;
+  assert.equal(tender.lots.length, 2);
+  assert.equal(tender.lots[0]!.lotNumber, 1);
+  assert.equal(tender.lots[0]!.title, 'Lote 1: Microservicios');
+  assert.equal(tender.lots[0]!.budgetAmountCents, 6000000);
+  assert.equal(tender.lots[0]!.mainCpvCode, '72262000');
+  assert.equal(tender.lots[1]!.lotNumber, 2);
+  assert.equal(tender.lots[1]!.title, 'Lote 2: Frontend Cloudflare');
+  assert.equal(tender.lots[1]!.budgetAmountCents, 4000000);
+  assert.equal(tender.lots[1]!.mainCpvCode, '72260000');
 });

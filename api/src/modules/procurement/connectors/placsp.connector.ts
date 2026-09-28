@@ -53,6 +53,63 @@ function extractXmlText(node: unknown): string {
   return '';
 }
 
+/**
+ * Convierte una fecha y hora local de licitación pública española (huso peninsular Europe/Madrid)
+ * a formato ISO-8601 UTC ('Z'), respetando horario de verano (CEST, UTC+2) e invierno (CET, UTC+1).
+ */
+export function parseMadridDateTime(endDate: string, rawEndTime?: string): string | undefined {
+  if (!endDate) return undefined;
+  const time = rawEndTime?.trim() || '23:59:59';
+
+  // Si ya contiene offset explícito (+HH:MM / -HH:MM) o indicador 'Z', parsear directamente
+  if (time.includes('Z') || /[+-]\d{2}:?\d{2}$/.test(time)) {
+    try {
+      const d = new Date(`${endDate}T${time}`);
+      return isNaN(d.getTime()) ? undefined : d.toISOString();
+    } catch {
+      return undefined;
+    }
+  }
+
+  // Normalizar formato HH:mm a HH:mm:ss
+  const cleanTime = time.length === 5 ? `${time}:00` : time;
+
+  try {
+    const probe = new Date(`${endDate}T12:00:00Z`);
+    if (isNaN(probe.getTime())) return undefined;
+
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Europe/Madrid',
+      timeZoneName: 'shortOffset',
+    });
+    const parts = formatter.formatToParts(probe);
+    const tzPart = parts.find((p) => p.type === 'timeZoneName')?.value; // ej: "GMT+1" o "GMT+2"
+
+    let offset = '+01:00';
+    if (tzPart) {
+      const match = tzPart.match(/GMT([+-]\d+)(?::(\d+))?/);
+      const rawHour = match?.[1];
+      if (rawHour) {
+        const sign = rawHour.startsWith('-') ? '-' : '+';
+        const hours = Math.abs(parseInt(rawHour, 10)).toString().padStart(2, '0');
+        const mins = (match[2] ?? '00').padStart(2, '0');
+        offset = `${sign}${hours}:${mins}`;
+      }
+    }
+
+    const isoWithOffset = `${endDate}T${cleanTime}${offset}`;
+    const d = new Date(isoWithOffset);
+    return isNaN(d.getTime()) ? undefined : d.toISOString();
+  } catch {
+    try {
+      const fallback = new Date(`${endDate}T${cleanTime}Z`);
+      return isNaN(fallback.getTime()) ? undefined : fallback.toISOString();
+    } catch {
+      return undefined;
+    }
+  }
+}
+
 export class PlacspConnector {
   readonly sourceCode = 'ES_PLACSP';
 
@@ -253,10 +310,47 @@ export class PlacspConnector {
         const endDate = extractXmlText(deadlinePeriod?.['cbc:EndDate']);
         if (endDate) {
           const endTime = extractXmlText(deadlinePeriod?.['cbc:EndTime']) || '23:59:59';
-          try {
-            submissionDeadline = new Date(`${endDate}T${endTime}Z`).toISOString();
-          } catch {
-            submissionDeadline = undefined;
+          submissionDeadline = parseMadridDateTime(endDate, endTime);
+        }
+
+        // Lotes del expediente (cac:ProcurementProjectLot)
+        const rawLotsNode = folder['cac:ProcurementProjectLot'] ?? project?.['cac:ProcurementProjectLot'];
+        const lots: Array<{
+          lotNumber: number;
+          title: string;
+          description?: string;
+          budgetAmountEur?: number;
+          cpvCode?: string;
+        }> = [];
+
+        if (rawLotsNode) {
+          const lotList = Array.isArray(rawLotsNode) ? rawLotsNode : [rawLotsNode];
+          for (let i = 0; i < lotList.length; i++) {
+            const lotNode = lotList[i];
+            const lotProj = lotNode?.['cac:ProcurementProject'] ?? lotNode;
+            const rawLotId = extractXmlText(lotNode?.['cbc:ID']);
+            const parsedLotNum = parseInt(rawLotId, 10);
+            const lotNumber = !isNaN(parsedLotNum) && parsedLotNum > 0 ? parsedLotNum : (i + 1);
+
+            const lotTitle = extractXmlText(lotProj?.['cbc:Name']) || extractXmlText(lotNode?.['cbc:Name']) || `Lote ${lotNumber}`;
+            const lotDesc = extractXmlText(lotProj?.['cbc:Description']) || extractXmlText(lotNode?.['cbc:Description']) || undefined;
+
+            const lotBudgetNode = lotProj?.['cac:BudgetAmount'] ?? lotNode?.['cac:BudgetAmount'];
+            const lotBudgetStr = extractXmlText(lotBudgetNode?.['cbc:TaxExclusiveAmount'] ?? lotBudgetNode?.['cbc:TotalAmount']);
+            const lotBudget = lotBudgetStr ? parseFloat(lotBudgetStr) : undefined;
+
+            const lotCpv = extractXmlText(
+              lotProj?.['cac:RequiredCommodityClassification']?.['cbc:ItemClassificationCode'] ??
+              lotNode?.['cac:RequiredCommodityClassification']?.['cbc:ItemClassificationCode']
+            ) || undefined;
+
+            lots.push({
+              lotNumber,
+              title: lotTitle.slice(0, 500),
+              description: lotDesc ? lotDesc.slice(0, 1000) : undefined,
+              budgetAmountEur: lotBudget !== undefined && !isNaN(lotBudget) ? lotBudget : undefined,
+              cpvCode: lotCpv,
+            });
           }
         }
 
@@ -305,6 +399,7 @@ export class PlacspConnector {
             postalCode,
             city,
           },
+          lots: lots.length > 0 ? lots : undefined,
           documents,
         };
 

@@ -185,6 +185,7 @@ export class GeminiRequirementsExtractor {
             temperature: 0,
             maxOutputTokens: env.GEMINI_MAX_OUTPUT_TOKENS,
             responseMimeType: 'application/json',
+            responseSchema: GeminiJsonSchema,
           },
         }),
       });

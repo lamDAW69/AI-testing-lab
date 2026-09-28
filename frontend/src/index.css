@@ -1,0 +1,71 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    background-color: #F6F3EF;
+    color: #161616;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Directrices Vercel & Pliego AI: Números tabulares para importes y plazos */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Foco visible accesible con color violeta primario */
+  :focus-visible {
+    outline: 2px solid #695CFF;
+    outline-offset: 2px;
+  }
+
+  button, a, input, select, textarea {
+    touch-action: manipulation;
+  }
+}
+
+/* Transparencias y Glassmorphism según Sección 3 de Pliego AI */
+.glass-primary {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  box-shadow: 0 12px 40px rgba(20, 20, 30, 0.08);
+}
+
+.glass-secondary {
+  background: rgba(255, 255, 255, 0.52);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  box-shadow: 0 4px 16px rgba(20, 20, 30, 0.04);
+}
+
+.surface-solid {
+  background: #FFFFFF;
+  border: 1px solid rgba(20, 20, 20, 0.08);
+  box-shadow: 0 1px 3px rgba(20, 20, 30, 0.03), 0 4px 12px -2px rgba(20, 20, 30, 0.03);
+}
+
+/* Scrollbar sutil y cálida */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F6F3EF;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #D4D0CE;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #B6B2B0;
+}

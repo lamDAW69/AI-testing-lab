@@ -204,24 +204,34 @@ export class QualificationService {
       return [];
     }
 
+    const concurrency = 4;
     const matches: PreparedRequirementMatch[] = [];
-    for (const req of prepared.requirements) {
-      const requirement: RequirementToMatch = {
-        id: req.id,
-        category: req.category,
-        requirementType: req.requirementType,
-        summary: req.summary,
-        extractedText: req.extractedText,
-        citations: req.citations.map((c) => ({
-          quotedText: c.quotedText,
-          sectionReference: c.sectionReference,
-        })),
-      };
-      matches.push({
-        requirement: req,
-        match: await this.matcherAgent.evaluateRequirement(requirement, prepared.dossierCandidates),
-      });
+
+    for (let i = 0; i < prepared.requirements.length; i += concurrency) {
+      const batch = prepared.requirements.slice(i, i + concurrency);
+      const batchMatches = await Promise.all(
+        batch.map(async (req) => {
+          const requirement: RequirementToMatch = {
+            id: req.id,
+            category: req.category,
+            requirementType: req.requirementType,
+            summary: req.summary,
+            extractedText: req.extractedText,
+            citations: req.citations.map((c) => ({
+              quotedText: c.quotedText,
+              sectionReference: c.sectionReference,
+            })),
+          };
+          const match = await this.matcherAgent.evaluateRequirement(requirement, prepared.dossierCandidates);
+          return {
+            requirement: req,
+            match,
+          };
+        }),
+      );
+      matches.push(...batchMatches);
     }
+
     return matches;
   }
 
@@ -367,7 +377,7 @@ export class QualificationService {
     assessments: Array<{
       status: string;
       requirement: { category: string; requirementType: string; summary: string };
-      evidences: Array<{ sourceType: string; matchType: string; validUntil?: Date | null }>;
+      evidences: Array<{ sourceType: string; matchType: string; confidence?: number; validUntil?: Date | null }>;
     }>,
     gatesResult: { eligibilityStatus: any; blockingReasons: string[]; warnings: string[] },
   ): OpportunityDimensions {
@@ -499,7 +509,13 @@ export class QualificationService {
       if (a.evidences.length === 0 || a.status === 'UNKNOWN') {
         missingCount++;
       } else {
-        const hasVerified = a.evidences.some((e) => (e as any).evidenceStatus === 'VERIFIED');
+        const hasVerified = a.evidences.some(
+          (e) =>
+            (e as any).evidenceStatus === 'VERIFIED' ||
+            (e.matchType === 'SUPPORTS' &&
+              (e.confidence ?? 0) >= 70 &&
+              (!e.validUntil || new Date(e.validUntil) > new Date())),
+        );
         if (hasVerified) verifiedCount++;
         else declaredCount++;
       }
