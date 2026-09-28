@@ -9,7 +9,7 @@ import { tenantMemberships } from '../db/schema.js';
 export interface AuthenticatedUser {
   readonly userId: string;
   readonly tenantId: string;
-  readonly role: string;
+  readonly role: TenantRole;
   readonly email?: string;
 }
 
@@ -25,14 +25,34 @@ let jwks: ReturnType<typeof createRemoteJWKSet> | null = null;
 
 const UserIdSchema = z.string().uuid();
 const TenantIdSchema = z.string().uuid();
+export const TenantRoleSchema = z.enum(['owner', 'admin', 'analyst', 'reviewer', 'viewer', 'member']);
+export type TenantRole = z.infer<typeof TenantRoleSchema>;
+
 const MembershipSchema = z.object({
   tenantId: TenantIdSchema,
-  role: z.enum(['owner', 'admin', 'member']),
+  role: TenantRoleSchema,
 });
 
 type MembershipResolution =
   | { readonly ok: true; readonly membership: z.infer<typeof MembershipSchema> }
   | { readonly ok: false; readonly status: 400 | 403; readonly message: string };
+
+/**
+ * Autorización por rol siempre posterior a la autenticación y a la resolución
+ * de membresía. Los roles jamás se aceptan desde body, query o cabeceras.
+ */
+export function requireTenantRole(...allowedRoles: readonly TenantRole[]) {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    if (!req.user || !allowedRoles.includes(req.user.role)) {
+      res.status(403).json({
+        error: 'Forbidden',
+        message: 'Tu rol no tiene permiso para realizar esta acción',
+      });
+      return;
+    }
+    next();
+  };
+}
 
 /**
  * Resuelve un tenant exclusivamente desde una membresía persistida en nuestra

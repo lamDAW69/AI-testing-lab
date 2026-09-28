@@ -1,4 +1,5 @@
-import { pgTable, uuid, varchar, text, integer, timestamp, uniqueIndex, index, primaryKey, jsonb } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
+import { pgTable, uuid, varchar, text, integer, timestamp, uniqueIndex, index, primaryKey, jsonb, bigint, boolean } from 'drizzle-orm/pg-core';
 
 // 1. Tabla de Organizaciones / Clientes (Tenants)
 export const tenants = pgTable('tenants', {
@@ -42,7 +43,46 @@ export const products = pgTable('products', {
   uqTenantSku: uniqueIndex('uq_products_tenant_sku').on(table.tenantId, table.sku),
 }));
 
-// 4. Auditoría append-only: no contiene tokens, secretos ni contenido documental.
+// 4. Dossier privado de la empresa. Una organización tiene un único perfil
+// canónico; las evidencias se modelan aparte para que no se marquen como
+// verificadas por el simple hecho de ser declaradas por un usuario.
+export const companyProfiles = pgTable('company_profiles', {
+  tenantId: uuid('tenant_id')
+    .primaryKey()
+    .references(() => tenants.id, { onDelete: 'cascade' }),
+  legalName: varchar('legal_name', { length: 255 }).notNull(),
+  taxId: varchar('tax_id', { length: 32 }),
+  website: varchar('website', { length: 2048 }),
+  description: text('description'),
+  cpvCodes: text('cpv_codes').array().notNull().default([]),
+  territories: text('territories').array().notNull().default([]),
+  minContractCents: integer('min_contract_cents'),
+  maxContractCents: integer('max_contract_cents'),
+  capacitySummary: text('capacity_summary'),
+  evidenceStatus: varchar('evidence_status', { length: 24 }).notNull().default('DECLARED'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const companyCertifications = pgTable('company_certifications', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  tenantId: uuid('tenant_id')
+    .notNull()
+    .references(() => tenants.id, { onDelete: 'cascade' }),
+  name: varchar('name', { length: 255 }).notNull(),
+  issuer: varchar('issuer', { length: 255 }).notNull(),
+  certificateNumber: varchar('certificate_number', { length: 255 }),
+  validFrom: timestamp('valid_from', { withTimezone: true }),
+  validUntil: timestamp('valid_until', { withTimezone: true }),
+  documentReference: varchar('document_reference', { length: 500 }),
+  evidenceStatus: varchar('evidence_status', { length: 24 }).notNull().default('DECLARED'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  idxTenantValidity: index('idx_company_certifications_tenant_validity').on(table.tenantId, table.validUntil),
+}));
+
+// 5. Auditoría append-only: no contiene tokens, secretos ni contenido documental.
 export const auditEvents = pgTable('audit_events', {
   id: uuid('id').defaultRandom().primaryKey(),
   tenantId: uuid('tenant_id')
@@ -61,7 +101,7 @@ export const auditEvents = pgTable('audit_events', {
   idxCorrelation: index('idx_audit_events_correlation').on(table.correlationId),
 }));
 
-// 5. Trazas append-only de agentes. Un executionId agrupa sus eventos sin
+// 6. Trazas append-only de agentes. Un executionId agrupa sus eventos sin
 // permitir que una ejecución ya registrada sea reescrita silenciosamente.
 export const agentExecutionEvents = pgTable('agent_execution_events', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -87,6 +127,431 @@ export const agentExecutionEvents = pgTable('agent_execution_events', {
   idxCorrelation: index('idx_agent_execution_events_correlation').on(table.correlationId),
 }));
 
+// ============================================================================
+// DATOS GLOBALES PÚBLICOS (Fase 2 — Sin tenant_id, compartidos universalmente)
+// ============================================================================
+
+// 7. Fuentes oficiales de contratación (ej. ES_PLACSP, TED Europa, etc.)
+export const procurementSources = pgTable('procurement_sources', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  code: varchar('code', { length: 50 }).notNull().unique(),
+  name: varchar('name', { length: 255 }).notNull(),
+  jurisdiction: varchar('jurisdiction', { length: 10 }).notNull().default('ES'),
+  baseUrl: varchar('base_url', { length: 2048 }).notNull(),
+  feedUrl: varchar('feed_url', { length: 2048 }),
+  isActive: boolean('is_active').notNull().default(true),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+// 8. Órganos de contratación / Entidades compradoras
+export const contractingAuthorities = pgTable('contracting_authorities', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  sourceId: uuid('source_id')
+    .notNull()
+    .references(() => procurementSources.id, { onDelete: 'cascade' }),
+  sourceAuthorityId: varchar('source_authority_id', { length: 100 }),
+  name: varchar('name', { length: 255 }).notNull(),
+  taxId: varchar('tax_id', { length: 32 }),
+  buyerType: varchar('buyer_type', { length: 50 }).notNull().default('other'),
+  postalCode: varchar('postal_code', { length: 20 }),
+  city: varchar('city', { length: 100 }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  idxSourceTax: index('idx_contracting_authorities_source_tax').on(table.sourceId, table.taxId),
+  idxName: index('idx_contracting_authorities_name').on(table.name),
+}));
+
+// 9. Expedientes de licitación (Tenders)
+export const tenders = pgTable('tenders', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  sourceId: uuid('source_id')
+    .notNull()
+    .references(() => procurementSources.id, { onDelete: 'cascade' }),
+  authorityId: uuid('authority_id')
+    .notNull()
+    .references(() => contractingAuthorities.id, { onDelete: 'restrict' }),
+  sourceTenderId: varchar('source_tender_id', { length: 255 }).notNull(),
+  title: varchar('title', { length: 500 }).notNull(),
+  description: text('description'),
+  status: varchar('status', { length: 50 }).notNull().default('PUBLISHED'),
+  procedureType: varchar('procedure_type', { length: 50 }).notNull().default('OPEN'),
+  contractType: varchar('contract_type', { length: 50 }).notNull().default('SERVICES'),
+  estimatedValueCents: bigint('estimated_value_cents', { mode: 'number' }),
+  budgetAmountCents: bigint('budget_amount_cents', { mode: 'number' }).notNull(),
+  taxInclusiveAmountCents: bigint('tax_inclusive_amount_cents', { mode: 'number' }),
+  currency: varchar('currency', { length: 3 }).notNull().default('EUR'),
+  mainCpvCode: varchar('main_cpv_code', { length: 20 }).notNull(),
+  additionalCpvCodes: text('additional_cpv_codes').array().notNull().default([]),
+  submissionDeadline: timestamp('submission_deadline', { withTimezone: true }),
+  awardDate: timestamp('award_date', { withTimezone: true }),
+  rawPayloadHash: varchar('raw_payload_hash', { length: 64 }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  uqSourceTender: uniqueIndex('uq_tenders_source_tender').on(table.sourceId, table.sourceTenderId),
+  idxMainCpv: index('idx_tenders_main_cpv').on(table.mainCpvCode),
+  idxStatusDeadline: index('idx_tenders_status_deadline').on(table.status, table.submissionDeadline),
+  idxBudget: index('idx_tenders_budget').on(table.budgetAmountCents),
+  idxAuthority: index('idx_tenders_authority').on(table.authorityId),
+}));
+
+// 10. Lotes independientes del contrato
+export const tenderLots = pgTable('tender_lots', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  tenderId: uuid('tender_id')
+    .notNull()
+    .references(() => tenders.id, { onDelete: 'cascade' }),
+  lotNumber: integer('lot_number').notNull(),
+  title: varchar('title', { length: 500 }).notNull(),
+  description: text('description'),
+  budgetAmountCents: bigint('budget_amount_cents', { mode: 'number' }),
+  mainCpvCode: varchar('main_cpv_code', { length: 20 }),
+  status: varchar('status', { length: 50 }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  uqTenderLot: uniqueIndex('uq_tender_lots_tender_number').on(table.tenderId, table.lotNumber),
+}));
+
+// 11. Documentos y pliegos rectores (Metadatos)
+export const tenderDocuments = pgTable('tender_documents', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  tenderId: uuid('tender_id')
+    .notNull()
+    .references(() => tenders.id, { onDelete: 'cascade' }),
+  documentType: varchar('document_type', { length: 50 }).notNull(), // 'PCAP', 'PPT', 'NOTICE', 'AWARD_NOTICE', 'OTHER'
+  name: varchar('name', { length: 255 }).notNull(),
+  sourceDocumentId: varchar('source_document_id', { length: 255 }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  idxTenderType: index('idx_tender_documents_tender_type').on(table.tenderId, table.documentType),
+}));
+
+// 12. Versiones físicas inmutables de los documentos (Inmutabilidad anti-sobrescritura)
+export const tenderDocumentVersions = pgTable('tender_document_versions', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  documentId: uuid('document_id')
+    .notNull()
+    .references(() => tenderDocuments.id, { onDelete: 'cascade' }),
+  versionNumber: integer('version_number').notNull(),
+  url: varchar('url', { length: 2048 }).notNull(),
+  contentHash: varchar('content_hash', { length: 64 }),
+  mimeType: varchar('mime_type', { length: 100 }),
+  byteSize: integer('byte_size'),
+  rawStoragePath: varchar('raw_storage_path', { length: 1024 }),
+  fetchedAt: timestamp('fetched_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  uqDocVersion: uniqueIndex('uq_tender_doc_versions_doc_num').on(table.documentId, table.versionNumber),
+  idxContentHash: index('idx_tender_doc_versions_hash').on(table.contentHash),
+}));
+
+// Snapshot inmutable del contenido que realmente vio el extractor. El binario
+// original reside fuera de PostgreSQL en un volumen privado; en la base se
+// conserva su huella y el texto trazable sobre el que se calculan las citas.
+export const documentContentSnapshots = pgTable('document_content_snapshots', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  documentVersionId: uuid('document_version_id')
+    .notNull().references(() => tenderDocumentVersions.id, { onDelete: 'restrict' }),
+  rawStoragePath: varchar('raw_storage_path', { length: 1024 }).notNull(),
+  rawSha256: varchar('raw_sha256', { length: 64 }).notNull(),
+  rawByteSize: integer('raw_byte_size').notNull(),
+  extractedText: text('extracted_text').notNull(),
+  extractedTextSha256: varchar('extracted_text_sha256', { length: 64 }).notNull(),
+  extractionEngine: varchar('extraction_engine', { length: 100 }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  uqDocumentVersion: uniqueIndex('uq_document_content_snapshots_document_version')
+    .on(table.documentVersionId),
+  idxRawSha256: index('idx_document_content_snapshots_raw_sha256').on(table.rawSha256),
+}));
+
+// 13. Histórico de eventos del expediente
+export const tenderEvents = pgTable('tender_events', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  tenderId: uuid('tender_id')
+    .notNull()
+    .references(() => tenders.id, { onDelete: 'cascade' }),
+  eventType: varchar('event_type', { length: 50 }).notNull(),
+  eventDate: timestamp('event_date', { withTimezone: true }).notNull(),
+  title: varchar('title', { length: 255 }).notNull(),
+  description: text('description'),
+  rawPayload: jsonb('raw_payload').$type<Record<string, unknown>>().notNull().default({}),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  idxTimeline: index('idx_tender_events_timeline').on(table.tenderId, table.eventDate),
+}));
+
+// 14. Catálogo canónico de códigos CPV
+export const cpvCodes = pgTable('cpv_codes', {
+  code: varchar('code', { length: 20 }).primaryKey(),
+  description: text('description').notNull(),
+  parentCode: varchar('parent_code', { length: 20 }),
+});
+
+// ============================================================================
+// ANÁLISIS DOCUMENTAL PRIVADO POR TENANT (Fase 3)
+// ============================================================================
+export const requirementExtractions = pgTable('requirement_extractions', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  tenantId: uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  idempotencyKey: uuid('idempotency_key').notNull(),
+  tenderId: uuid('tender_id').notNull().references(() => tenders.id, { onDelete: 'cascade' }),
+  documentVersionId: uuid('document_version_id')
+    .notNull().references(() => tenderDocumentVersions.id, { onDelete: 'restrict' }),
+  agentName: varchar('agent_name', { length: 100 }).notNull(),
+  model: varchar('model', { length: 100 }),
+  promptVersion: varchar('prompt_version', { length: 100 }).notNull(),
+  toolVersion: varchar('tool_version', { length: 100 }),
+  inputHash: varchar('input_hash', { length: 64 }).notNull(),
+  outputHash: varchar('output_hash', { length: 64 }).notNull(),
+  durationMs: integer('duration_ms'),
+  costMicrounits: integer('cost_microunits'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  uqTenantIdempotency: uniqueIndex('uq_requirement_extractions_tenant_idempotency')
+    .on(table.tenantId, table.idempotencyKey),
+  idxTenantDocument: index('idx_requirement_extractions_tenant_document')
+    .on(table.tenantId, table.documentVersionId),
+}));
+
+export const requirements = pgTable('requirements', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  tenantId: uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  extractionId: uuid('extraction_id')
+    .notNull().references(() => requirementExtractions.id, { onDelete: 'cascade' }),
+  tenderId: uuid('tender_id').notNull().references(() => tenders.id, { onDelete: 'cascade' }),
+  documentVersionId: uuid('document_version_id')
+    .notNull().references(() => tenderDocumentVersions.id, { onDelete: 'restrict' }),
+  category: varchar('category', { length: 32 }).notNull(),
+  requirementType: varchar('requirement_type', { length: 32 }).notNull(),
+  sourceStatus: varchar('source_status', { length: 32 }).notNull(),
+  reviewStatus: varchar('review_status', { length: 32 }).notNull(),
+  summary: text('summary').notNull(),
+  extractedText: text('extracted_text').notNull(),
+  confidence: integer('confidence').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  idxTenantTender: index('idx_requirements_tenant_tender').on(table.tenantId, table.tenderId),
+  idxTenantExtraction: index('idx_requirements_tenant_extraction').on(table.tenantId, table.extractionId),
+}));
+
+export const requirementCitations = pgTable('requirement_citations', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  tenantId: uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  requirementId: uuid('requirement_id').notNull().references(() => requirements.id, { onDelete: 'cascade' }),
+  documentVersionId: uuid('document_version_id')
+    .notNull().references(() => tenderDocumentVersions.id, { onDelete: 'restrict' }),
+  pageNumber: integer('page_number'),
+  sectionReference: varchar('section_reference', { length: 255 }),
+  startOffset: integer('start_offset'),
+  endOffset: integer('end_offset'),
+  quotedText: text('quoted_text').notNull(),
+  verificationStatus: varchar('verification_status', { length: 32 }).notNull().default('PENDING_REVIEW'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  idxTenantRequirement: index('idx_requirement_citations_tenant_requirement')
+    .on(table.tenantId, table.requirementId),
+  idxDocumentVersion: index('idx_requirement_citations_document_version').on(table.documentVersionId),
+}));
+
+// 15. Trabajos asíncronos de extracción con reintentos y control de cuota (Fase 3)
+export const extractionJobs = pgTable('extraction_jobs', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  tenantId: uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  tenderId: uuid('tender_id').notNull().references(() => tenders.id, { onDelete: 'cascade' }),
+  documentVersionId: uuid('document_version_id')
+    .notNull().references(() => tenderDocumentVersions.id, { onDelete: 'restrict' }),
+  idempotencyKey: uuid('idempotency_key').notNull(),
+  status: varchar('status', { length: 32 }).notNull().default('PENDING'),
+  attemptCount: integer('attempt_count').notNull().default(0),
+  maxAttempts: integer('max_attempts').notNull().default(3),
+  errorMessage: text('error_message'),
+  retryAfterTimestamp: timestamp('retry_after_timestamp', { withTimezone: true }),
+  leaseExpiresAt: timestamp('lease_expires_at', { withTimezone: true }),
+  resultExtractionId: uuid('result_extraction_id')
+    .references(() => requirementExtractions.id, { onDelete: 'set null' }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  uqTenantJobIdempotency: uniqueIndex('uq_extraction_jobs_tenant_idempotency')
+    .on(table.tenantId, table.idempotencyKey),
+  idxTenantJobStatus: index('idx_extraction_jobs_tenant_status')
+    .on(table.tenantId, table.status),
+  idxJobRetry: index('idx_extraction_jobs_status_retry')
+    .on(table.status, table.retryAfterTimestamp),
+}));
+
+// ============================================================================
+// PRECALIFICACIÓN DE OPORTUNIDADES (Fase 4)
+// ============================================================================
+
+// 16. Elementos ampliados del dossier de la empresa (solvencia, referencias, etc.)
+export const companyDossierItems = pgTable('company_dossier_items', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  tenantId: uuid('tenant_id')
+    .notNull()
+    .references(() => tenants.id, { onDelete: 'cascade' }),
+  category: varchar('category', { length: 50 }).notNull(),
+  title: varchar('title', { length: 255 }).notNull(),
+  description: text('description').notNull(),
+  documentReference: varchar('document_reference', { length: 500 }),
+  evidenceStatus: varchar('evidence_status', { length: 32 }).notNull().default('DECLARED'),
+  validUntil: timestamp('valid_until', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  idxTenantCategory: index('idx_company_dossier_items_tenant_cat').on(table.tenantId, table.category),
+}));
+
+// 17. Análisis global de oportunidad para un expediente y versión documental
+export const opportunityAnalyses = pgTable('opportunity_analyses', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  tenantId: uuid('tenant_id')
+    .notNull()
+    .references(() => tenants.id, { onDelete: 'cascade' }),
+  tenderId: uuid('tender_id')
+    .notNull()
+    .references(() => tenders.id, { onDelete: 'cascade' }),
+  documentVersionId: uuid('document_version_id')
+    .notNull()
+    .references(() => tenderDocumentVersions.id, { onDelete: 'restrict' }),
+  idempotencyKey: uuid('idempotency_key').notNull(),
+  status: varchar('status', { length: 32 }).notNull().default('PENDING'),
+  eligibilityStatus: varchar('eligibility_status', { length: 32 }).notNull().default('PENDING'),
+  dimensions: jsonb('dimensions').$type<Record<string, unknown>>().notNull().default({}),
+  summary: text('summary'),
+  blockingReasons: jsonb('blocking_reasons').$type<string[]>().notNull().default([]),
+  warnings: jsonb('warnings').$type<string[]>().notNull().default([]),
+  isCurrent: boolean('is_current').notNull().default(true),
+  invalidationStatus: varchar('invalidation_status', { length: 32 }).notNull().default('VALID'),
+  invalidationReason: text('invalidation_reason'),
+  supersededByDocumentVersionId: uuid('superseded_by_document_version_id')
+    .references(() => tenderDocumentVersions.id, { onDelete: 'set null' }),
+  invalidatedAt: timestamp('invalidated_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  uqTenantIdempotency: uniqueIndex('uq_opportunity_analyses_tenant_idempotency')
+    .on(table.tenantId, table.idempotencyKey),
+  uqTenantTenderCurrent: uniqueIndex('uq_opportunity_analyses_tenant_tender_current')
+    .on(table.tenantId, table.tenderId)
+    .where(sql`${table.isCurrent} = true`),
+  idxTenantTender: index('idx_opportunity_analyses_tenant_tender')
+    .on(table.tenantId, table.tenderId),
+  idxTenantStatus: index('idx_opportunity_analyses_tenant_status')
+    .on(table.tenantId, table.status),
+  idxTenantDocument: index('idx_opportunity_analyses_tenant_doc')
+    .on(table.tenantId, table.documentVersionId),
+  idxTenantInvalidation: index('idx_opportunity_analyses_tenant_invalidation')
+    .on(table.tenantId, table.invalidationStatus),
+  idxTenantCurrent: index('idx_opportunity_analyses_tenant_current')
+    .on(table.tenantId, table.tenderId, table.isCurrent),
+}));
+
+// 18. Evaluación individualizada de cada requisito con respecto a la empresa
+export const requirementAssessments = pgTable('requirement_assessments', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  tenantId: uuid('tenant_id')
+    .notNull()
+    .references(() => tenants.id, { onDelete: 'cascade' }),
+  analysisId: uuid('analysis_id')
+    .notNull()
+    .references(() => opportunityAnalyses.id, { onDelete: 'cascade' }),
+  requirementId: uuid('requirement_id')
+    .notNull()
+    .references(() => requirements.id, { onDelete: 'cascade' }),
+  status: varchar('status', { length: 32 }).notNull(),
+  confidence: integer('confidence').notNull(),
+  rationale: text('rationale').notNull(),
+  isBlocking: boolean('is_blocking').notNull().default(false),
+  agentName: varchar('agent_name', { length: 100 }),
+  model: varchar('model', { length: 100 }),
+  promptVersion: varchar('prompt_version', { length: 100 }),
+  durationMs: integer('duration_ms'),
+  costMicrounits: integer('cost_microunits'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  idxTenantAnalysis: index('idx_requirement_assessments_tenant_analysis')
+    .on(table.tenantId, table.analysisId),
+  idxTenantRequirement: index('idx_requirement_assessments_tenant_req')
+    .on(table.tenantId, table.requirementId),
+}));
+
+// 19. Evidencia del dossier asociada a una evaluación
+export const assessmentEvidence = pgTable('assessment_evidence', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  tenantId: uuid('tenant_id')
+    .notNull()
+    .references(() => tenants.id, { onDelete: 'cascade' }),
+  assessmentId: uuid('assessment_id')
+    .notNull()
+    .references(() => requirementAssessments.id, { onDelete: 'cascade' }),
+  sourceType: varchar('source_type', { length: 50 }).notNull(),
+  sourceId: varchar('source_id', { length: 100 }),
+  sourceTitle: varchar('source_title', { length: 255 }).notNull(),
+  matchType: varchar('match_type', { length: 32 }).notNull(),
+  excerpt: text('excerpt').notNull(),
+  confidence: integer('confidence').notNull(),
+  validUntil: timestamp('valid_until', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  idxTenantAssessment: index('idx_assessment_evidence_tenant_assessment')
+    .on(table.tenantId, table.assessmentId),
+}));
+
+// 20. Decisiones humanas sobre la oportunidad (desacopladas del análisis)
+export const analysisDecisions = pgTable('analysis_decisions', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  tenantId: uuid('tenant_id')
+    .notNull()
+    .references(() => tenants.id, { onDelete: 'cascade' }),
+  analysisId: uuid('analysis_id')
+    .notNull()
+    .references(() => opportunityAnalyses.id, { onDelete: 'cascade' }),
+  decision: varchar('decision', { length: 32 }).notNull(),
+  rationale: text('rationale').notNull(),
+  decidedBy: uuid('decided_by').notNull(),
+  decidedAt: timestamp('decided_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  uqTenantAnalysis: uniqueIndex('uq_analysis_decisions_tenant_analysis')
+    .on(table.tenantId, table.analysisId),
+  idxTenantDecision: index('idx_analysis_decisions_tenant_decision')
+    .on(table.tenantId, table.decision),
+}));
+
+// 21. Cola persistente / Outbox de alertas de oportunidad (Fase 5)
+export const opportunityAlerts = pgTable('opportunity_alerts', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  tenantId: uuid('tenant_id')
+    .notNull()
+    .references(() => tenants.id, { onDelete: 'cascade' }),
+  tenderId: uuid('tender_id')
+    .notNull()
+    .references(() => tenders.id, { onDelete: 'cascade' }),
+  analysisId: uuid('analysis_id')
+    .references(() => opportunityAnalyses.id, { onDelete: 'set null' }),
+  alertType: varchar('alert_type', { length: 50 }).notNull(),
+  severity: varchar('severity', { length: 20 }).notNull().default('INFO'),
+  title: varchar('title', { length: 255 }).notNull(),
+  message: text('message').notNull(),
+  metadata: jsonb('metadata').$type<Record<string, unknown>>().notNull().default({}),
+  status: varchar('status', { length: 20 }).notNull().default('UNREAD'),
+  idempotencyHash: varchar('idempotency_hash', { length: 64 }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  readAt: timestamp('read_at', { withTimezone: true }),
+  dismissedAt: timestamp('dismissed_at', { withTimezone: true }),
+}, (table) => ({
+  uqTenantIdempotency: uniqueIndex('uq_opportunity_alerts_tenant_idempotency')
+    .on(table.tenantId, table.idempotencyHash),
+  idxTenantStatus: index('idx_opportunity_alerts_tenant_status')
+    .on(table.tenantId, table.status, table.createdAt),
+  idxTenantTender: index('idx_opportunity_alerts_tenant_tender')
+    .on(table.tenantId, table.tenderId),
+}));
+
 export type Tenant = typeof tenants.$inferSelect;
 export type NewTenant = typeof tenants.$inferInsert;
 
@@ -96,7 +561,57 @@ export type NewTenantMembership = typeof tenantMemberships.$inferInsert;
 export type Product = typeof products.$inferSelect;
 export type NewProduct = typeof products.$inferInsert;
 
+export type CompanyProfile = typeof companyProfiles.$inferSelect;
+export type NewCompanyProfile = typeof companyProfiles.$inferInsert;
+export type CompanyCertification = typeof companyCertifications.$inferSelect;
+export type NewCompanyCertification = typeof companyCertifications.$inferInsert;
+export type CompanyDossierItem = typeof companyDossierItems.$inferSelect;
+export type NewCompanyDossierItem = typeof companyDossierItems.$inferInsert;
+
 export type AuditEvent = typeof auditEvents.$inferSelect;
 export type NewAuditEvent = typeof auditEvents.$inferInsert;
 export type AgentExecutionEvent = typeof agentExecutionEvents.$inferSelect;
 export type NewAgentExecutionEvent = typeof agentExecutionEvents.$inferInsert;
+
+export type ProcurementSource = typeof procurementSources.$inferSelect;
+export type NewProcurementSource = typeof procurementSources.$inferInsert;
+
+export type ContractingAuthority = typeof contractingAuthorities.$inferSelect;
+export type NewContractingAuthority = typeof contractingAuthorities.$inferInsert;
+
+export type Tender = typeof tenders.$inferSelect;
+export type NewTender = typeof tenders.$inferInsert;
+
+export type TenderLot = typeof tenderLots.$inferSelect;
+export type NewTenderLot = typeof tenderLots.$inferInsert;
+
+export type TenderDocument = typeof tenderDocuments.$inferSelect;
+export type NewTenderDocument = typeof tenderDocuments.$inferInsert;
+
+export type TenderDocumentVersion = typeof tenderDocumentVersions.$inferSelect;
+export type NewTenderDocumentVersion = typeof tenderDocumentVersions.$inferInsert;
+export type DocumentContentSnapshot = typeof documentContentSnapshots.$inferSelect;
+
+export type TenderEvent = typeof tenderEvents.$inferSelect;
+export type NewTenderEvent = typeof tenderEvents.$inferInsert;
+
+export type CpvCode = typeof cpvCodes.$inferSelect;
+export type NewCpvCode = typeof cpvCodes.$inferInsert;
+
+export type RequirementExtraction = typeof requirementExtractions.$inferSelect;
+export type Requirement = typeof requirements.$inferSelect;
+export type RequirementCitation = typeof requirementCitations.$inferSelect;
+export type ExtractionJob = typeof extractionJobs.$inferSelect;
+export type NewExtractionJob = typeof extractionJobs.$inferInsert;
+
+export type OpportunityAnalysis = typeof opportunityAnalyses.$inferSelect;
+export type NewOpportunityAnalysis = typeof opportunityAnalyses.$inferInsert;
+export type RequirementAssessment = typeof requirementAssessments.$inferSelect;
+export type NewRequirementAssessment = typeof requirementAssessments.$inferInsert;
+export type AssessmentEvidence = typeof assessmentEvidence.$inferSelect;
+export type NewAssessmentEvidence = typeof assessmentEvidence.$inferInsert;
+export type AnalysisDecision = typeof analysisDecisions.$inferSelect;
+export type NewAnalysisDecision = typeof analysisDecisions.$inferInsert;
+
+export type OpportunityAlert = typeof opportunityAlerts.$inferSelect;
+export type NewOpportunityAlert = typeof opportunityAlerts.$inferInsert;

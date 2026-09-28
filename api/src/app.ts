@@ -3,6 +3,13 @@ import { securityHeadersMiddleware, corsMiddleware } from './middleware/security
 import { errorMiddleware, AppError } from './middleware/error.middleware.js';
 import { healthRouter } from './modules/health/health.controller.js';
 import { productsRouter } from './modules/products/products.controller.js';
+import { dossierRouter } from './modules/dossier/dossier.controller.js';
+import { procurementRouter } from './modules/procurement/procurement.controller.js';
+import { requirementsRouter } from './modules/requirements/requirements.controller.js';
+import { qualificationRouter } from './modules/qualification/qualification.controller.js';
+import { alertsRouter } from './modules/alerts/alerts.controller.js';
+import { portfolioRouter } from './modules/portfolio/portfolio.controller.js';
+import { documentContentRouter } from './modules/documents/document-content.controller.js';
 import { requestContextMiddleware } from './middleware/request-context.middleware.js';
 
 export function createApp(): Express {
@@ -19,6 +26,13 @@ export function createApp(): Express {
   // 3. Rutas del sistema
   app.use(healthRouter);
   app.use('/api/products', productsRouter);
+  app.use('/api/dossier', dossierRouter);
+  app.use('/api/public', procurementRouter);
+  app.use('/api/requirements', requirementsRouter);
+  app.use('/api/qualification', qualificationRouter);
+  app.use('/api/alerts', alertsRouter);
+  app.use('/api/portfolio', portfolioRouter);
+  app.use('/api/internal/documents', documentContentRouter);
 
   // 4. Captura de rutas inexistentes (404 seguro)
   app.use((req: Request, _res: Response, next) => {

@@ -18,10 +18,11 @@ build/
 .output/
 .wrangler/
 
-# Logs
+# Logs y pruebas
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+.playwright-cli/
 
 # Sistema Operativo y Editores
 .DS_Store

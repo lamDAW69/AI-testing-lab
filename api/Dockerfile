@@ -26,8 +26,9 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
 
-# Principio de menor privilegio: Crear usuario no-root por seguridad
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+# Principio de menor privilegio: UID/GID estables para que el volumen de
+# documentos pueda pertenecer al proceso no-root también tras recrear imágenes.
+RUN addgroup -S -g 10001 appgroup && adduser -S -u 10001 appuser -G appgroup
 
 # Copiar manifiestos y artefactos compilados desde el builder
 COPY --from=builder --chown=appuser:appgroup /app/package*.json ./
