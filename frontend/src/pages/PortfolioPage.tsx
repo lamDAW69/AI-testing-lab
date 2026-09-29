@@ -2,12 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   Search,
-  ChevronDown,
   MoreVertical,
-  ArrowRight,
-  RotateCcw,
-  CheckCircle2,
-  AlertTriangle,
   FolderOpen,
 } from 'lucide-react';
 import { useData } from '../lib/data-context';
@@ -18,7 +13,6 @@ import {
   ValidityBadge,
 } from '../components/ui/StatusBadge';
 import { formatCurrency, formatDeadlineDays } from '../lib/formatters';
-import { EligibilityStatus, HumanDecision, AnalysisValidity } from '../types/qualification';
 
 export const PortfolioPage: React.FC = () => {
   const { portfolio } = useData();
@@ -33,9 +27,9 @@ export const PortfolioPage: React.FC = () => {
   const [validityFilter, setValidityFilter] = useState<string>('all');
   const [onlyBlockers, setOnlyBlockers] = useState<boolean>(false);
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const itemsPerPage = 6;
+  const itemsPerPage = 8; // Mayor densidad operativa
 
-  // Segmentación rápida (Sección 33)
+  // 27. Segmentación rápida (No son filtros, primera fila)
   const countAll = portfolio.length;
   const countAttention = portfolio.filter(
     (p) => p.hasBlockers || p.validity === 'REQUIRES_REANALYSIS'
@@ -49,7 +43,7 @@ export const PortfolioPage: React.FC = () => {
   ).length;
 
   const filteredItems = portfolio.filter((item) => {
-    // Búsqueda
+    // Búsqueda en portfolio
     const matchesSearch =
       searchTerm === '' ||
       item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -68,7 +62,7 @@ export const PortfolioPage: React.FC = () => {
       matchesSegment = item.decision === 'REVIEW' || item.decision === 'UNDECIDED';
     }
 
-    // Filtros operativos inferiores (Sección 34)
+    // 28. Filtros operativos inferiores
     const matchesDecision =
       decisionFilter === 'all' || item.decision === decisionFilter;
     const matchesEligibility =
@@ -94,11 +88,10 @@ export const PortfolioPage: React.FC = () => {
   );
 
   return (
-    <div className="space-y-5 select-none">
-      {/* 32. HEADER PORTFOLIO (Sección 32) */}
+    <div className="space-y-4 select-none">
+      {/* HEADER PORTFOLIO */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          {/* Breadcrumb */}
           <nav className="text-xs text-[#929097] flex items-center gap-1.5 mb-1.5">
             <Link to="/app/inicio" className="hover:text-[#171719] transition-colors">
               Inicio
@@ -115,7 +108,7 @@ export const PortfolioPage: React.FC = () => {
           </p>
         </div>
 
-        {/* Búsqueda derecha */}
+        {/* Búsqueda dentro de la página (Sección 12: en Portfolio la búsqueda pertenece a la vista) */}
         <div className="relative w-full md:w-72">
           <Search className="w-3.5 h-3.5 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#929097]" />
           <input
@@ -123,12 +116,12 @@ export const PortfolioPage: React.FC = () => {
             placeholder="Buscar en tu portfolio..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full h-10 pl-9 pr-3 bg-white/80 focus:bg-white border border-[rgba(30,24,38,0.08)] focus:border-[#685cff] rounded-[11px] text-xs text-[#171719] placeholder-[#929097] transition-all focus:outline-none shadow-xs"
+            className="w-full h-10 pl-9 pr-3 bg-white/70 focus:bg-white border border-[rgba(30,24,38,0.06)] focus:border-[#685cff] rounded-[11px] text-xs text-[#171719] placeholder-[#929097] transition-all focus:outline-none shadow-xs"
           />
         </div>
       </div>
 
-      {/* 33. SEGMENTACIÓN RÁPIDA (Sección 33) */}
+      {/* 27. FILA 1: SEGMENTOS PORTFOLIO (Sección 27) */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
         <button
           onClick={() => {
@@ -201,8 +194,8 @@ export const PortfolioPage: React.FC = () => {
         </button>
       </div>
 
-      {/* 34. FILTROS OPERATIVOS DEL PORTFOLIO (Sección 34) */}
-      <div className="flex items-center gap-2 flex-wrap text-xs pt-1">
+      {/* 28. FILA 2: FILTROS OPERATIVOS REALES (Sección 28) */}
+      <div className="flex items-center gap-2 flex-wrap text-xs pt-0.5">
         {/* Decisión */}
         <select
           value={decisionFilter}
@@ -210,7 +203,7 @@ export const PortfolioPage: React.FC = () => {
             setDecisionFilter(e.target.value);
             setCurrentPage(1);
           }}
-          className="h-8 px-2.5 rounded-[8px] bg-white/70 hover:bg-white border border-[rgba(30,24,38,0.08)] text-[#171719] focus:outline-none cursor-pointer"
+          className="h-8 px-2.5 rounded-[8px] bg-white/70 hover:bg-white border border-[rgba(30,24,38,0.06)] text-[#171719] focus:outline-none cursor-pointer shadow-xs"
         >
           <option value="all">Decisión: Todas ▾</option>
           <option value="PURSUE">Pursue (Avanzar)</option>
@@ -226,7 +219,7 @@ export const PortfolioPage: React.FC = () => {
             setEligibilityFilter(e.target.value);
             setCurrentPage(1);
           }}
-          className="h-8 px-2.5 rounded-[8px] bg-white/70 hover:bg-white border border-[rgba(30,24,38,0.08)] text-[#171719] focus:outline-none cursor-pointer"
+          className="h-8 px-2.5 rounded-[8px] bg-white/70 hover:bg-white border border-[rgba(30,24,38,0.06)] text-[#171719] focus:outline-none cursor-pointer shadow-xs"
         >
           <option value="all">Elegibilidad: Todas ▾</option>
           <option value="POTENTIALLY_ELIGIBLE">Potencialmente Elegible</option>
@@ -241,7 +234,7 @@ export const PortfolioPage: React.FC = () => {
             setValidityFilter(e.target.value);
             setCurrentPage(1);
           }}
-          className="h-8 px-2.5 rounded-[8px] bg-white/70 hover:bg-white border border-[rgba(30,24,38,0.08)] text-[#171719] focus:outline-none cursor-pointer"
+          className="h-8 px-2.5 rounded-[8px] bg-white/70 hover:bg-white border border-[rgba(30,24,38,0.06)] text-[#171719] focus:outline-none cursor-pointer shadow-xs"
         >
           <option value="all">Vigencia: Todas ▾</option>
           <option value="VALID">Análisis Vigente</option>
@@ -255,10 +248,10 @@ export const PortfolioPage: React.FC = () => {
             setOnlyBlockers(!onlyBlockers);
             setCurrentPage(1);
           }}
-          className={`h-8 px-3 rounded-[8px] border transition-all cursor-pointer flex items-center gap-1.5 ${
+          className={`h-8 px-3 rounded-[8px] border transition-all cursor-pointer flex items-center gap-1.5 shadow-xs ${
             onlyBlockers
               ? 'bg-[#ffeded] border-[#e44848]/30 text-[#e44848] font-semibold'
-              : 'bg-white/70 hover:bg-white border-[rgba(30,24,38,0.08)] text-[#69666d]'
+              : 'bg-white/70 hover:bg-white border-[rgba(30,24,38,0.06)] text-[#69666d]'
           }`}
         >
           <span
@@ -281,16 +274,15 @@ export const PortfolioPage: React.FC = () => {
               setOnlyBlockers(false);
               setCurrentPage(1);
             }}
-            className="text-[#685cff] hover:underline text-xs ml-2 cursor-pointer"
+            className="text-[#685cff] hover:underline text-xs ml-2 cursor-pointer font-medium"
           >
             Limpiar filtros
           </button>
         )}
       </div>
 
-      {/* 35, 36, 38. TABLA OPERATIVA PORTFOLIO (Secciones 35-39) */}
+      {/* 29 & 31. TABLA OPERATIVA DE ALTA DENSIDAD (Filas 50-58px, Sección 29) */}
       {filteredItems.length === 0 ? (
-        /* 52. Empty state Portfolio */
         <div className="surface p-12 rounded-[20px] text-center max-w-md mx-auto space-y-3">
           <div className="w-12 h-12 rounded-full bg-[#f5f1ed] text-[#69666d] flex items-center justify-center mx-auto text-xl">
             ◈
@@ -303,16 +295,16 @@ export const PortfolioPage: React.FC = () => {
           </p>
           <button
             onClick={() => navigate('/app/catalogo')}
-            className="mt-2 inline-flex items-center gap-1.5 px-4 py-2 rounded-[11px] bg-[#171719] text-white text-xs font-medium hover:bg-[#28282b] transition-colors cursor-pointer"
+            className="mt-2 inline-flex items-center gap-1.5 px-4 py-2 rounded-[11px] bg-[#171719] text-white text-xs font-semibold hover:bg-[#28282b] transition-colors cursor-pointer"
           >
             <FolderOpen className="w-3.5 h-3.5" />
             <span>Explorar catálogo</span>
           </button>
         </div>
       ) : (
-        <div className="surface rounded-[16px] overflow-hidden border border-[rgba(30,24,38,0.08)] shadow-xs">
+        <div className="surface rounded-[16px] overflow-hidden border border-[rgba(30,24,38,0.06)] shadow-xs">
           {/* Encabezado de columnas de la tabla (Desktop) */}
-          <div className="hidden lg:grid grid-cols-[minmax(260px,1.8fr)_0.85fr_0.9fr_0.75fr_0.65fr_0.85fr_36px] gap-3 px-3.5 py-2.5 bg-[#f8f5f2] border-b border-[rgba(30,24,38,0.08)] text-[11px] font-mono uppercase text-[#929097] select-none">
+          <div className="hidden lg:grid grid-cols-[minmax(260px,1.8fr)_0.85fr_0.9fr_0.75fr_0.65fr_0.85fr_36px] gap-3 px-3.5 py-2.5 bg-[#f8f5f2]/80 border-b border-[rgba(30,24,38,0.06)] text-[11px] font-mono uppercase text-[#929097] select-none">
             <span>Oportunidad</span>
             <span>Estado</span>
             <span>Elegibilidad</span>
@@ -322,8 +314,8 @@ export const PortfolioPage: React.FC = () => {
             <span className="text-right">···</span>
           </div>
 
-          {/* Filas operativas (.portfolio-row) */}
-          <div className="divide-y divide-[rgba(30,24,38,0.06)]">
+          {/* Filas operativas de 50-58px (.portfolio-row) */}
+          <div className="divide-y divide-[rgba(30,24,38,0.055)]">
             {paginatedItems.map((item) => {
               const isCritical =
                 item.hasBlockers || item.validity === 'REQUIRES_REANALYSIS';
@@ -344,7 +336,7 @@ export const PortfolioPage: React.FC = () => {
                 >
                   {/* Columna 1: Oportunidad */}
                   <div className="min-w-0 pr-2">
-                    <h3 className="text-xs sm:text-sm font-semibold text-[#171719] truncate hover:text-[#685cff] transition-colors">
+                    <h3 className="text-xs sm:text-sm font-semibold text-[#171719] truncate hover:text-[#685cff] transition-colors leading-tight">
                       {item.title}
                     </h3>
                     <p className="text-[11px] text-[#69666d] truncate">
@@ -385,7 +377,7 @@ export const PortfolioPage: React.FC = () => {
                   {/* Columna 5: Plazo */}
                   <div className="hidden lg:block">
                     <div
-                      className={`text-xs font-semibold tabular-nums ${
+                      className={`text-xs font-semibold tabular-nums leading-tight ${
                         isCriticalDeadline ? 'text-[#e44848]' : 'text-[#171719]'
                       }`}
                     >
@@ -395,7 +387,6 @@ export const PortfolioPage: React.FC = () => {
                       {new Intl.DateTimeFormat('es-ES', {
                         day: 'numeric',
                         month: 'short',
-                        year: 'numeric',
                       }).format(new Date(item.submissionDeadline))}
                     </div>
                   </div>
@@ -423,8 +414,8 @@ export const PortfolioPage: React.FC = () => {
             })}
           </div>
 
-          {/* 40. PAGINACIÓN (Sección 40) */}
-          <div className="p-3.5 bg-[#f8f5f2]/70 border-t border-[rgba(30,24,38,0.06)] flex items-center justify-between text-xs text-[#69666d]">
+          {/* PAGINACIÓN */}
+          <div className="p-3 bg-[#f8f5f2]/70 border-t border-[rgba(30,24,38,0.055)] flex items-center justify-between text-xs text-[#69666d]">
             <div>
               Mostrando{' '}
               <span className="font-semibold text-[#171719]">
@@ -444,7 +435,7 @@ export const PortfolioPage: React.FC = () => {
               <button
                 disabled={currentPage === 1}
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                className="w-7 h-7 rounded-[7px] border border-[rgba(30,24,38,0.08)] bg-white disabled:opacity-40 hover:bg-[#f5f1ed] text-[#171719] flex items-center justify-center cursor-pointer transition-colors"
+                className="w-7 h-7 rounded-[7px] border border-[rgba(30,24,38,0.06)] bg-white disabled:opacity-40 hover:bg-[#f5f1ed] text-[#171719] flex items-center justify-center cursor-pointer transition-colors"
               >
                 ‹
               </button>
@@ -456,7 +447,7 @@ export const PortfolioPage: React.FC = () => {
                   className={`w-7 h-7 rounded-[7px] text-xs font-semibold transition-colors cursor-pointer ${
                     currentPage === page
                       ? 'bg-[#685cff] text-white shadow-xs'
-                      : 'bg-white hover:bg-[#f5f1ed] text-[#171719] border border-[rgba(30,24,38,0.08)]'
+                      : 'bg-white hover:bg-[#f5f1ed] text-[#171719] border border-[rgba(30,24,38,0.06)]'
                   }`}
                 >
                   {page}
@@ -466,7 +457,7 @@ export const PortfolioPage: React.FC = () => {
               <button
                 disabled={currentPage === totalPages}
                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                className="w-7 h-7 rounded-[7px] border border-[rgba(30,24,38,0.08)] bg-white disabled:opacity-40 hover:bg-[#f5f1ed] text-[#171719] flex items-center justify-center cursor-pointer transition-colors"
+                className="w-7 h-7 rounded-[7px] border border-[rgba(30,24,38,0.06)] bg-white disabled:opacity-40 hover:bg-[#f5f1ed] text-[#171719] flex items-center justify-center cursor-pointer transition-colors"
               >
                 ›
               </button>

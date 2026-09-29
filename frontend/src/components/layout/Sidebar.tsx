@@ -204,22 +204,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </AnimatePresence>
         </div>
 
-        {/* Perfil de Usuario y Logout */}
+        {/* Perfil de Usuario con Avatar y Logout (Sección 9) */}
         <div className="flex items-center justify-between px-1 text-xs">
-          <div className="min-w-0 pr-2">
-            <p className="font-semibold text-[#171719] truncate leading-tight">
-              {user?.fullName || 'Marta García'}
-            </p>
-            <p className="text-[11px] text-[#69666d] truncate">
-              {user?.email || 'marta@empresa.es'}
-            </p>
+          <div className="flex items-center gap-2.5 min-w-0 pr-1">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#685cff] to-[#9c8fff] text-white flex items-center justify-center font-semibold text-xs shrink-0 shadow-2xs">
+              {user?.fullName?.charAt(0) || 'M'}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="font-semibold text-xs text-[#171719] truncate leading-tight">
+                {user?.fullName || 'Marta García'}
+              </p>
+              <p className="text-[10px] text-[#69666d] truncate">
+                {user?.email || 'marta@empresa.es'}
+              </p>
+            </div>
           </div>
           <button
             onClick={logout}
             title="Cerrar sesión"
-            className="p-1.5 rounded-lg text-[#929097] hover:text-[#e44848] hover:bg-[#ffeded] transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg text-[#929097] hover:text-[#e44848] hover:bg-[#ffeded] transition-colors cursor-pointer shrink-0"
           >
-            <LogOut className="w-4 h-4" />
+            <LogOut className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>

@@ -3,9 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import {
   Search,
   ArrowRight,
-  Sparkles,
   Bookmark,
-  SlidersHorizontal,
   ChevronDown,
   LayoutList,
   LayoutGrid,
@@ -27,7 +25,7 @@ export const CatalogPage: React.FC = () => {
   const [sortBy, setSortBy] = useState<'deadline' | 'amount' | 'date'>('deadline');
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
 
-  // Filtros interactivos
+  // Filtros interactivos reales
   const filteredTenders = tenders.filter((tender) => {
     const matchesSearch =
       searchTerm === '' ||
@@ -54,10 +52,9 @@ export const CatalogPage: React.FC = () => {
 
   return (
     <div className="space-y-6 select-none">
-      {/* 23. HEADER DE CATÁLOGO (Sección 23) */}
+      {/* 19. HEADER DE CATÁLOGO (Sección 19) */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          {/* Breadcrumb discreto */}
           <nav className="text-xs text-[#929097] flex items-center gap-1.5 mb-1.5">
             <Link to="/app/inicio" className="hover:text-[#171719] transition-colors">
               Inicio
@@ -74,22 +71,11 @@ export const CatalogPage: React.FC = () => {
           </p>
         </div>
 
-        {/* Botones de acción derecha */}
+        {/* Botones de acción derecha (Sección 25: Ocultar "Buscar con IA" al no existir backend real) */}
         <div className="flex items-center gap-2.5">
           <button
-            onClick={() => {
-              if (tenders.length > 0) {
-                navigate(`/app/oportunidades/${tenders[0].id}`);
-              }
-            }}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-[11px] bg-[#eeeaff] hover:bg-[#e7e1ff] text-xs font-semibold text-[#685cff] border border-[#d5ccfe] transition-all cursor-pointer shadow-xs"
-          >
-            <span>✦</span>
-            <span>Buscar con IA</span>
-          </button>
-          <button
             onClick={() => alert('Búsqueda guardada en tu perfil.')}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-[11px] bg-white hover:bg-[#f5f1ed] text-xs font-medium text-[#171719] border border-[rgba(30,24,38,0.12)] transition-all cursor-pointer shadow-xs"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-[11px] bg-white hover:bg-[#f5f1ed] text-xs font-semibold text-[#171719] border border-[rgba(30,24,38,0.10)] transition-all cursor-pointer shadow-xs"
           >
             <Bookmark className="w-3.5 h-3.5 text-[#69666d]" />
             <span>Guardar búsqueda</span>
@@ -97,9 +83,9 @@ export const CatalogPage: React.FC = () => {
         </div>
       </div>
 
-      {/* 24 & 25. SEARCH & FILTROS (Secciones 24 y 25) */}
+      {/* 20 & 21. SEARCH & FILTROS (Secciones 20 y 21) */}
       <div className="space-y-3">
-        {/* Search Input principal: height 48px, radius 14px, max-w-640px */}
+        {/* Search Input: height 48px, max-w-640px, radius 14px (Sección 20) */}
         <div className="relative max-w-[640px]">
           <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-[#929097]" />
           <input
@@ -107,17 +93,17 @@ export const CatalogPage: React.FC = () => {
             placeholder="Buscar por título, organismo, CPV..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full h-12 pl-11 pr-4 bg-white/85 hover:bg-white focus:bg-white border border-[rgba(30,24,38,0.08)] focus:border-[#685cff] rounded-[14px] text-xs sm:text-sm text-[#171719] placeholder-[#929097] transition-all shadow-xs focus:outline-none"
+            className="w-full h-12 pl-11 pr-4 bg-white/70 hover:bg-white focus:bg-white border border-[rgba(30,24,38,0.06)] focus:border-[#685cff] rounded-[14px] text-xs sm:text-sm text-[#171719] placeholder-[#929097] transition-all shadow-xs focus:outline-none"
           />
         </div>
 
-        {/* Filter Pills / Chips */}
+        {/* Chips de Filtro: height 34px, radius 999px (Sección 21) */}
         <div className="flex items-center gap-2 flex-wrap">
           {/* CPV */}
           <select
             value={selectedCpv}
             onChange={(e) => setSelectedCpv(e.target.value)}
-            className="filter-chip h-9 px-3.5 rounded-full bg-white/70 hover:bg-white border border-[rgba(30,24,38,0.08)] text-xs text-[#171719] cursor-pointer focus:outline-none"
+            className="h-[34px] px-3.5 rounded-full bg-white/65 hover:bg-white border border-[rgba(30,24,38,0.06)] text-xs text-[#171719] cursor-pointer focus:outline-none shadow-xs"
           >
             <option value="all">CPV: Todos los sectores ▾</option>
             <option value="722">CPV 72200000 · Software ▾</option>
@@ -126,7 +112,7 @@ export const CatalogPage: React.FC = () => {
           </select>
 
           {/* Organismo */}
-          <button className="filter-chip h-9 px-3.5 rounded-full bg-white/70 hover:bg-white border border-[rgba(30,24,38,0.08)] text-xs text-[#69666d] hover:text-[#171719] transition-colors cursor-pointer flex items-center gap-1">
+          <button className="h-[34px] px-3.5 rounded-full bg-white/65 hover:bg-white border border-[rgba(30,24,38,0.06)] text-xs text-[#69666d] hover:text-[#171719] transition-colors cursor-pointer flex items-center gap-1 shadow-xs">
             <span>Organismo</span>
             <ChevronDown className="w-3 h-3 text-[#929097]" />
           </button>
@@ -135,7 +121,7 @@ export const CatalogPage: React.FC = () => {
           <select
             value={selectedTerritory}
             onChange={(e) => setSelectedTerritory(e.target.value)}
-            className="filter-chip h-9 px-3.5 rounded-full bg-white/70 hover:bg-white border border-[rgba(30,24,38,0.08)] text-xs text-[#171719] cursor-pointer focus:outline-none"
+            className="h-[34px] px-3.5 rounded-full bg-white/65 hover:bg-white border border-[rgba(30,24,38,0.06)] text-xs text-[#171719] cursor-pointer focus:outline-none shadow-xs"
           >
             <option value="all">Territorio: Nacional ▾</option>
             <option value="madrid">Comunidad de Madrid ▾</option>
@@ -144,13 +130,13 @@ export const CatalogPage: React.FC = () => {
           </select>
 
           {/* Importe */}
-          <button className="filter-chip h-9 px-3.5 rounded-full bg-white/70 hover:bg-white border border-[rgba(30,24,38,0.08)] text-xs text-[#69666d] hover:text-[#171719] transition-colors cursor-pointer flex items-center gap-1">
+          <button className="h-[34px] px-3.5 rounded-full bg-white/65 hover:bg-white border border-[rgba(30,24,38,0.06)] text-xs text-[#69666d] hover:text-[#171719] transition-colors cursor-pointer flex items-center gap-1 shadow-xs">
             <span>Importe</span>
             <ChevronDown className="w-3 h-3 text-[#929097]" />
           </button>
 
           {/* Plazo */}
-          <button className="filter-chip h-9 px-3.5 rounded-full bg-white/70 hover:bg-white border border-[rgba(30,24,38,0.08)] text-xs text-[#69666d] hover:text-[#171719] transition-colors cursor-pointer flex items-center gap-1">
+          <button className="h-[34px] px-3.5 rounded-full bg-white/65 hover:bg-white border border-[rgba(30,24,38,0.06)] text-xs text-[#69666d] hover:text-[#171719] transition-colors cursor-pointer flex items-center gap-1 shadow-xs">
             <span>Plazo</span>
             <ChevronDown className="w-3 h-3 text-[#929097]" />
           </button>
@@ -159,7 +145,7 @@ export const CatalogPage: React.FC = () => {
           <select
             value={selectedState}
             onChange={(e) => setSelectedState(e.target.value)}
-            className="filter-chip h-9 px-3.5 rounded-full bg-white/70 hover:bg-white border border-[rgba(30,24,38,0.08)] text-xs text-[#171719] cursor-pointer focus:outline-none"
+            className="h-[34px] px-3.5 rounded-full bg-white/65 hover:bg-white border border-[rgba(30,24,38,0.06)] text-xs text-[#171719] cursor-pointer focus:outline-none shadow-xs"
           >
             <option value="all">Estado: Todos ▾</option>
             <option value="PUBLISHED">Estado: Abierto (Publicado) ▾</option>
@@ -168,8 +154,8 @@ export const CatalogPage: React.FC = () => {
         </div>
       </div>
 
-      {/* 26. TOOLBAR DEL CATÁLOGO (Sección 26) */}
-      <div className="flex items-center justify-between text-xs text-[#69666d] pt-2 pb-1 border-b border-[rgba(30,24,38,0.06)]">
+      {/* TOOLBAR DEL CATÁLOGO */}
+      <div className="flex items-center justify-between text-xs text-[#69666d] pt-2 pb-1 border-b border-[rgba(30,24,38,0.055)]">
         <div className="flex items-center gap-4">
           <span className="font-semibold text-[#171719]">
             {filteredTenders.length} {filteredTenders.length === 1 ? 'resultado' : 'resultados'}
@@ -223,9 +209,8 @@ export const CatalogPage: React.FC = () => {
         </div>
       </div>
 
-      {/* 27, 28, 29. RESULTADOS DE CATÁLOGO (Sección 27-29) */}
+      {/* 22, 23, 24. FILAS DE CATÁLOGO (Secciones 22-24) */}
       {filteredTenders.length === 0 ? (
-        /* 30. Estado Vacío Catálogo (Sección 30) */
         <div className="surface p-12 rounded-[20px] text-center max-w-lg mx-auto space-y-3">
           <div className="w-12 h-12 rounded-full bg-[#f5f1ed] text-[#69666d] flex items-center justify-center mx-auto text-xl">
             ◈
@@ -238,7 +223,7 @@ export const CatalogPage: React.FC = () => {
           </p>
           <button
             onClick={clearFilters}
-            className="mt-2 inline-flex items-center gap-1.5 px-4 py-2 rounded-[11px] bg-[#171719] text-white text-xs font-medium hover:bg-[#28282b] transition-colors cursor-pointer"
+            className="mt-2 inline-flex items-center gap-1.5 px-4 py-2 rounded-[11px] bg-[#171719] text-white text-xs font-semibold hover:bg-[#28282b] transition-colors cursor-pointer"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span>Limpiar filtros</span>
@@ -246,8 +231,8 @@ export const CatalogPage: React.FC = () => {
         </div>
       ) : (
         <div className="space-y-2">
-          {/* Header visible en desktop para la tabla de catálogo */}
-          <div className="hidden lg:grid grid-cols-[80px_minmax(260px,1.7fr)_0.55fr_0.65fr_0.65fr_0.65fr_auto] gap-4 px-3.5 text-[11px] font-mono uppercase text-[#929097] select-none">
+          {/* Encabezado visible en desktop */}
+          <div className="hidden lg:grid grid-cols-[76px_minmax(320px,1.6fr)_100px_115px_125px_110px_120px] gap-4 px-3.5 text-[11px] font-mono uppercase text-[#929097] select-none">
             <span>Expediente</span>
             <span>Objeto / Entidad</span>
             <span>Importe</span>
@@ -257,7 +242,7 @@ export const CatalogPage: React.FC = () => {
             <span className="text-right">Acción</span>
           </div>
 
-          <div className="surface rounded-[18px] overflow-hidden divide-y divide-[rgba(30,24,38,0.06)] shadow-xs">
+          <div className="surface rounded-[18px] overflow-hidden divide-y divide-[rgba(30,24,38,0.055)] shadow-xs">
             {filteredTenders.map((tender) => {
               const deadlineDays = Math.ceil(
                 (new Date(tender.submissionDeadline).getTime() - Date.now()) /
@@ -271,9 +256,9 @@ export const CatalogPage: React.FC = () => {
                   onClick={() => navigate(`/app/oportunidades/${tender.id}`)}
                   className="tender-row group cursor-pointer"
                 >
-                  {/* Imagen / Placeholder contextual (Sección 63) */}
-                  <div className="w-14 h-12 rounded-[10px] bg-gradient-to-br from-[#f5f1ed] to-[#eeeaff] border border-[rgba(30,24,38,0.06)] flex items-center justify-center text-[#685cff] shrink-0">
-                    <FileText className="w-5 h-5 opacity-80" />
+                  {/* 22. Thumbnail 76x54px con degradado arquitectónico suave (Sección 22 & 39) */}
+                  <div className="w-[76px] h-[54px] rounded-[10px] bg-gradient-to-br from-[#f8f5f2] via-[#eee9f2] to-[#e7e1ff] border border-[rgba(30,24,38,0.06)] flex items-center justify-center text-[#685cff] shrink-0">
+                    <FileText className="w-5 h-5 opacity-70" />
                   </div>
 
                   {/* Título y Organismo */}
@@ -304,7 +289,7 @@ export const CatalogPage: React.FC = () => {
                     </span>
                   </div>
 
-                  {/* Plazo Crítico (Sección 29): fecha oscura, solo los días en rojo */}
+                  {/* 24. Plazo Crítico: fecha oscura, solo los días en rojo */}
                   <div className="hidden lg:block">
                     <span className="text-xs text-[#171719] font-medium block">
                       {new Intl.DateTimeFormat('es-ES', {

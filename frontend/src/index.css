@@ -3,16 +3,16 @@
 @tailwind utilities;
 
 :root {
-  /* Backgrounds cálidos premium */
+  /* 4. Backgrounds cálidos premium */
   --bg-app: #f5f1ed;
   --bg-app-secondary: #eee9e5;
 
-  /* Surfaces translúcidas y sólidas */
-  --surface: rgba(255, 255, 255, 0.72);
-  --surface-strong: rgba(255, 255, 255, 0.90);
-  --surface-soft: rgba(255, 255, 255, 0.48);
+  /* Surfaces translúcidas calibradas (mayor transparencia) */
+  --surface: rgba(255, 255, 255, 0.62);
+  --surface-strong: rgba(255, 255, 255, 0.82);
+  --surface-soft: rgba(255, 255, 255, 0.46);
 
-  /* Tipografía y jerarquía de texto */
+  /* Jerarquía de texto */
   --text-primary: #171719;
   --text-secondary: #69666d;
   --text-tertiary: #929097;
@@ -21,9 +21,8 @@
   --primary: #685cff;
   --primary-hover: #574af1;
   --primary-soft: #eeeaff;
-  --primary-soft-hover: #e7e1ff;
 
-  /* Semántica de negocio y riesgo */
+  /* Semántica y riesgo */
   --success: #218a58;
   --success-soft: #e8f7ef;
 
@@ -38,19 +37,23 @@
 
   --neutral-soft: #efedef;
 
-  /* Bordes sutiles de profundidad */
-  --border: rgba(30, 24, 38, 0.08);
-  --border-strong: rgba(30, 24, 38, 0.13);
+  /* Bordes ultra-sutiles */
+  --border: rgba(30, 24, 38, 0.055);
+  --border-strong: rgba(30, 24, 38, 0.10);
 
-  /* Sombras calibradas */
-  --shadow-xs: 0 1px 2px rgba(21, 17, 30, 0.03);
-  --shadow-sm: 0 4px 18px rgba(21, 17, 30, 0.05);
-  --shadow-md: 0 14px 40px rgba(21, 17, 30, 0.07);
-  --shadow-floating: 0 20px 60px rgba(21, 17, 30, 0.10);
+  /* Sombras suaves calibradas */
+  --shadow-xs: 0 1px 2px rgba(21, 17, 30, 0.025);
+  --shadow-sm: 0 4px 18px rgba(21, 17, 30, 0.04);
+  --shadow-md: 0 14px 40px rgba(21, 17, 30, 0.065);
+  --shadow-floating: 0 20px 60px rgba(21, 17, 30, 0.09);
 
-  /* Tipografías de dos niveles */
+  /* Motion curva premium */
+  --ease-premium: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Tipografías */
   --font-ui: "Inter", "Geist", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-editorial: "Newsreader", "Instrument Serif", Georgia, serif;
+  --font-pixel: "Doto", "BubbledotICG-FinePos", "Geist Pixel Circle", "Silkscreen", monospace;
 
   /* Radios */
   --radius-xs: 8px;
@@ -59,9 +62,6 @@
   --radius-lg: 18px;
   --radius-xl: 24px;
   --radius-pill: 999px;
-
-  /* Motion curva premium */
-  --ease-premium: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 @layer base {
@@ -76,12 +76,10 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
-  /* Directrices Vercel & Pliego AI: Números tabulares para importes y plazos */
   .tabular-nums {
     font-variant-numeric: tabular-nums;
   }
 
-  /* Foco visible accesible */
   :focus-visible {
     outline: 2px solid var(--primary);
     outline-offset: 3px;
@@ -92,76 +90,67 @@
   }
 }
 
-/* 6. Background global con gradientes ambientales */
+/* 5. Tipografía de Inicio: Saludo editorial + Atención tecnológica */
+.home-greeting {
+  font-family: var(--font-editorial);
+  font-size: clamp(42px, 3.8vw, 58px);
+  font-weight: 400;
+  letter-spacing: -0.04em;
+  line-height: 0.95;
+}
+
+.home-attention {
+  font-family: var(--font-pixel);
+  font-size: clamp(32px, 3.2vw, 46px);
+  line-height: 1.08;
+  letter-spacing: -0.035em;
+  color: #555159;
+}
+
+/* 6. Background global con gradientes ambientales elípticos y luz */
 .app-background {
   min-height: 100dvh;
+  position: relative;
   background:
     radial-gradient(
-      circle at 78% 12%,
-      rgba(111, 92, 255, 0.12),
-      transparent 31%
+      ellipse at 80% 12%,
+      rgba(171, 153, 220, 0.17),
+      transparent 35%
     ),
     radial-gradient(
-      circle at 4% 84%,
-      rgba(255, 255, 255, 0.85),
-      transparent 32%
+      ellipse at 18% 92%,
+      rgba(255, 255, 255, 0.92),
+      transparent 38%
     ),
     linear-gradient(
-      135deg,
-      #f3eeea 0%,
-      #f8f5f2 45%,
-      #eee9ef 100%
+      120deg,
+      #eee9e6 0%,
+      #f8f5f2 46%,
+      #eee9ed 100%
     );
-}
-
-/* 5. Glass Surfaces Jerárquicas */
-.glass {
-  background: rgba(255, 255, 255, 0.68);
-  border: 1px solid rgba(255, 255, 255, 0.62);
-  backdrop-filter: blur(22px);
-  -webkit-backdrop-filter: blur(22px);
-  box-shadow: 0 12px 40px rgba(20, 16, 30, 0.06);
-}
-
-.glass-soft {
-  background: rgba(255, 255, 255, 0.46);
-  border: 1px solid rgba(255, 255, 255, 0.48);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-}
-
-.surface {
-  background: rgba(255, 255, 255, 0.88);
-  border: 1px solid var(--border);
-}
-
-.surface-elevated {
-  background: #ffffff;
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow-sm);
 }
 
 /* 7. AppShell Grid */
 .app-shell {
-  display: grid;
-  grid-template-columns: 220px minmax(0, 1fr);
-  gap: 20px;
   min-height: 100dvh;
-  padding: 16px;
+  display: grid;
+  grid-template-columns: 214px minmax(0, 1fr);
+  gap: 18px;
+  padding: 14px;
 }
 
 @media (min-width: 1440px) {
   .app-shell {
-    grid-template-columns: 230px minmax(0, 1fr);
-    padding: 20px;
-    gap: 24px;
+    grid-template-columns: 218px minmax(0, 1fr);
+    padding: 16px;
+    gap: 20px;
   }
 }
 
 @media (max-width: 1024px) {
   .app-shell {
     grid-template-columns: 72px minmax(0, 1fr);
-    gap: 16px;
+    gap: 14px;
     padding: 12px;
   }
 }
@@ -171,34 +160,34 @@
     display: flex;
     flex-direction: column;
     padding: 12px;
-    gap: 16px;
+    gap: 14px;
   }
 }
 
-/* 8. Sidebar Flotante */
+/* 8. Sidebar Flotante como lámina de cristal mate */
 .sidebar {
   position: sticky;
-  top: 16px;
-  height: calc(100dvh - 32px);
+  top: 14px;
+  height: calc(100dvh - 28px);
+  padding: 18px 16px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.52);
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(26px);
+  -webkit-backdrop-filter: blur(26px);
+  box-shadow: 0 18px 50px rgba(35, 25, 45, 0.055);
   display: flex;
   flex-direction: column;
-  padding: 18px;
-  border-radius: 22px;
-  background: rgba(255, 255, 255, 0.62);
-  border: 1px solid rgba(255, 255, 255, 0.66);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  box-shadow: 0 18px 50px rgba(20, 16, 30, 0.06);
 }
 
 .sidebar-item {
-  min-height: 42px;
+  min-height: 41px;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 11px;
   padding: 0 12px;
   border-radius: 11px;
-  font-size: 14px;
+  font-size: 13.5px;
   color: var(--text-secondary);
   transition: all 160ms var(--ease-premium);
 }
@@ -210,42 +199,87 @@
 }
 
 .sidebar-item.active {
-  color: var(--primary);
+  color: #6355ff;
   font-weight: 600;
-  background: linear-gradient(
-    90deg,
-    rgba(104, 92, 255, 0.13),
-    rgba(104, 92, 255, 0.07)
-  );
-  box-shadow: inset 0 0 0 1px rgba(104, 92, 255, 0.08);
+  background:
+    linear-gradient(
+      90deg,
+      rgba(111, 91, 255, 0.15),
+      rgba(135, 110, 255, 0.08)
+    );
+  box-shadow:
+    inset 0 0 0 1px rgba(120, 100, 255, 0.08),
+    0 4px 18px rgba(105, 80, 255, 0.06);
 }
 
-/* 10. Topbar & Command Search */
+/* 10. Glassmorphism Jerárquico */
+.glass {
+  background: rgba(255, 255, 255, 0.58);
+  border: 1px solid rgba(255, 255, 255, 0.68);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: 0 12px 35px rgba(40, 25, 55, 0.05);
+}
+
+.glass-soft {
+  background: rgba(255, 255, 255, 0.46);
+  border: 1px solid rgba(255, 255, 255, 0.48);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.surface {
+  background: rgba(255, 255, 255, 0.74);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* 14. Panel IA con halo difuso */
+.ai-command {
+  position: relative;
+  padding: 24px;
+  border-radius: 22px;
+  background:
+    linear-gradient(
+      120deg,
+      rgba(250, 248, 255, 0.62),
+      rgba(242, 236, 255, 0.72)
+    );
+  border: 1px solid rgba(255, 255, 255, 0.74);
+  box-shadow: 0 20px 55px rgba(108, 81, 255, 0.10);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+}
+
+.ai-command::before {
+  content: "";
+  position: absolute;
+  inset: 20%;
+  background: rgba(119, 91, 255, 0.18);
+  filter: blur(45px);
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* 12. Topbar Contextual */
 .topbar {
-  height: 72px;
-  display: grid;
-  grid-template-columns: 1fr minmax(320px, 540px) 1fr;
+  height: 64px;
+  display: flex;
   align-items: center;
-}
-
-@media (max-width: 768px) {
-  .topbar {
-    display: flex;
-    justify-content: space-between;
-    height: 58px;
-  }
+  justify-content: space-between;
 }
 
 .command-search {
-  height: 46px;
+  height: 44px;
   display: flex;
   align-items: center;
   padding: 0 16px;
-  border-radius: 15px;
-  background: rgba(255, 255, 255, 0.65);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.60);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.68);
   transition: all 180ms var(--ease-premium);
 }
 
@@ -255,107 +289,100 @@
   box-shadow: 0 8px 30px rgba(104, 92, 255, 0.12);
 }
 
-/* 11. Motion System */
-.page-enter {
-  animation: pageEnter 420ms var(--ease-premium) both;
-}
-
-@keyframes pageEnter {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-.interactive-card {
-  transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
-}
-
-.interactive-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 16px 40px rgba(20, 16, 30, 0.08);
-}
-
-/* 15. AI Quick Panel */
-.ai-panel {
-  padding: 24px;
-  border-radius: 22px;
-  background: linear-gradient(
-    120deg,
-    rgba(255, 255, 255, 0.67),
-    rgba(238, 233, 255, 0.72)
-  );
-  border: 1px solid rgba(255, 255, 255, 0.72);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  box-shadow: 0 22px 55px rgba(85, 64, 200, 0.09);
-}
-
-/* 27. Filas de Catálogo */
+/* 22 & 23. Filas de Catálogo */
 .tender-row {
   display: grid;
-  grid-template-columns: 80px minmax(260px, 1.7fr) 0.55fr 0.65fr 0.65fr 0.65fr auto;
-  gap: 18px;
+  grid-template-columns: 76px minmax(320px, 1.6fr) 100px 115px 125px 110px 120px;
+  gap: 16px;
   align-items: center;
-  min-height: 76px;
+  min-height: 74px;
   padding: 10px 14px;
   background: rgba(255, 255, 255, 0.65);
   border-bottom: 1px solid var(--border);
   transition: all 180ms ease;
 }
 
-.tender-row:hover {
+.tender-row:hover,
+.tender-row.highlighted {
   position: relative;
   z-index: 2;
-  background: rgba(255, 255, 255, 0.90);
-  box-shadow: 0 10px 30px rgba(58, 45, 100, 0.07);
+  background:
+    linear-gradient(
+      90deg,
+      rgba(246, 243, 255, 0.90),
+      rgba(255, 255, 255, 0.72)
+    );
+  box-shadow:
+    0 0 0 1px rgba(111, 91, 255, 0.08),
+    0 8px 30px rgba(98, 74, 210, 0.06);
   transform: translateY(-1px);
 }
 
-/* 36. Filas de Portfolio */
+/* 29 & 31. Filas de Portfolio con franja roja lateral */
 .portfolio-row {
   position: relative;
   display: grid;
   grid-template-columns: minmax(260px, 1.8fr) 0.85fr 0.9fr 0.75fr 0.65fr 0.85fr 36px;
-  min-height: 62px;
+  min-height: 54px;
   align-items: center;
   gap: 12px;
-  padding: 9px 14px;
+  padding: 8px 14px;
   border-bottom: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.82);
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   transition: background 150ms ease;
 }
 
 .portfolio-row:hover {
-  background: rgba(255, 255, 255, 0.98);
+  background: rgba(255, 255, 255, 0.95);
 }
 
-/* 39. Línea roja lateral para filas críticas en Portfolio */
 .portfolio-row.critical::before {
   content: "";
   position: absolute;
   left: 0;
-  top: 8px;
-  bottom: 8px;
+  top: 9px;
+  bottom: 9px;
   width: 3px;
   border-radius: 3px;
   background: var(--danger);
 }
 
-/* 48. Drawer Lateral */
+/* 34. Tabs de Dossier con underline fino */
+.dossier-tab {
+  padding: 14px 8px;
+  color: var(--text-secondary);
+  background: transparent;
+  transition: color 150ms ease;
+}
+
+.dossier-tab.active {
+  position: relative;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.dossier-tab.active::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: var(--primary);
+}
+
+/* 36. Drawer Lateral */
 .drawer {
   position: fixed;
   top: 12px;
   right: 12px;
   bottom: 12px;
-  width: min(480px, calc(100vw - 24px));
+  width: min(460px, calc(100vw - 24px));
   padding: 24px;
   border-radius: 24px;
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.94);
   backdrop-filter: blur(28px);
   -webkit-backdrop-filter: blur(28px);
   box-shadow: -10px 0 60px rgba(18, 14, 30, 0.14);
@@ -377,7 +404,6 @@
   }
 }
 
-/* 49. Backdrop */
 .backdrop {
   position: fixed;
   inset: 0;
@@ -387,7 +413,34 @@
   z-index: 50;
 }
 
-/* 50. Skeleton sutil */
+/* 40. Motion: Entrada de página refinada */
+@keyframes pageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+    filter: blur(3px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: blur(0);
+  }
+}
+
+.page-enter {
+  animation: pageEnter 300ms var(--ease-premium) both;
+}
+
+.interactive-card {
+  transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+.interactive-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 35px rgba(40, 25, 55, 0.06);
+}
+
+/* 44. Skeleton sutil */
 .skeleton {
   border-radius: 8px;
   background: linear-gradient(
@@ -409,7 +462,7 @@
   }
 }
 
-/* 57. Respeto a Reduced Motion */
+/* 41. Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

@@ -131,7 +131,7 @@ export const DossierPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Card 2: 82% Cobertura Documental (MANDATO: NO PROBABILIDAD DE ÉXITO) */}
+        {/* Card 2: 82% Cobertura Documental con Progress Ring (Sección 33) */}
         <div className="surface p-5 rounded-[20px] flex items-center justify-between shadow-xs">
           <div className="space-y-1 pr-4">
             <span className="text-[10px] font-mono uppercase tracking-wider text-[#685cff] font-semibold">
@@ -147,8 +147,28 @@ export const DossierPage: React.FC = () => {
               Mantén actualizadas tus certificaciones, experiencia y evidencias.
             </p>
           </div>
-          <div className="w-12 h-12 rounded-[14px] bg-[#e8f7ef] text-[#218a58] flex items-center justify-center shrink-0">
-            <ShieldCheck className="w-6 h-6" />
+          <div className="relative w-16 h-16 flex items-center justify-center shrink-0">
+            <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
+              <path
+                className="text-[#efedef]"
+                strokeWidth="3.2"
+                stroke="currentColor"
+                fill="none"
+                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+              />
+              <path
+                className="text-[#685cff]"
+                strokeDasharray="82, 100"
+                strokeWidth="3.2"
+                strokeLinecap="round"
+                stroke="currentColor"
+                fill="none"
+                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+              />
+            </svg>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <ShieldCheck className="w-5 h-5 text-[#685cff]" />
+            </div>
           </div>
         </div>
       </div>

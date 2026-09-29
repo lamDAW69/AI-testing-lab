@@ -5,14 +5,10 @@ import {
   Sparkles,
   AlertTriangle,
   FileCheck2,
-  Search,
   Check,
   Circle,
   FileText,
-  Clock,
-  Building2,
   FolderOpen,
-  ShieldAlert,
 } from 'lucide-react';
 import { useAuth } from '../lib/auth-context';
 import { useData } from '../lib/data-context';
@@ -22,7 +18,7 @@ import { formatCurrency, formatDeadlineDays } from '../lib/formatters';
 export const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { portfolio, tenders } = useData();
+  const { portfolio } = useData();
 
   // Nombre de usuario para el saludo editorial
   const firstName = user?.fullName ? user.fullName.split(' ')[0] : 'Marta';
@@ -43,33 +39,32 @@ export const HomePage: React.FC = () => {
   const priorityItems = portfolio.slice(0, 3);
 
   return (
-    <div className="space-y-8 select-none">
-      {/* 13 & 14. HERO DE INICIO & AI QUICK PANEL */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Lado Izquierdo: Bienvenida Editorial (Sección 14) */}
-        <section className="lg:col-span-7 pt-2">
+    <div className="space-y-7 select-none">
+      {/* 13 & 14. HERO DE INICIO: EDITORIAL + TIPOGRAFÍA TECNOLÓGICA + PANEL IA CON HALO */}
+      <section className="home-hero grid grid-cols-1 lg:grid-cols-[minmax(400px,0.95fr)_minmax(460px,1.05fr)] gap-8 lg:gap-10 items-center">
+        {/* Lado Izquierdo: Saludo editorial + 4 oportunidades en Dot-Matrix */}
+        <div>
           <p className="text-xs font-mono uppercase tracking-widest text-[#929097] mb-2">
             {capitalizedDate}
           </p>
-          <h1 className="font-editorial text-4xl sm:text-5xl lg:text-[54px] font-normal tracking-[-0.035em] leading-[0.98] text-[#171719] mb-3">
-            <span>Hola, {firstName}.</span>
-            <br />
-            <span className="text-[#555159]">
-              {attentionCount} oportunidades<br />
-              necesitan tu atención.
-            </span>
+          <h1 className="home-greeting text-[#171719]">
+            Hola, {firstName}.
           </h1>
-        </section>
+          <div className="home-attention mt-1.5">
+            {attentionCount} oportunidades<br />
+            necesitan tu atención.
+          </div>
+        </div>
 
-        {/* Lado Derecho: AI Quick Panel (Sección 15) */}
-        <aside className="lg:col-span-5 ai-panel">
-          <div className="flex items-center justify-between mb-2">
+        {/* Lado Derecho: Panel IA con Halo Difuso (Sección 14) */}
+        <aside className="ai-command">
+          <div className="flex items-center justify-between mb-2.5">
             <div className="flex items-center gap-1.5 text-xs font-semibold text-[#685cff]">
               <span>✦</span>
-              <span>Pliego AI</span>
+              <span>Pliego AI · Beta</span>
             </div>
             <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#eeeaff] text-[#685cff] font-semibold border border-[#d5ccfe]">
-              Beta
+              Contextual
             </span>
           </div>
 
@@ -80,94 +75,102 @@ export const HomePage: React.FC = () => {
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => navigate('/app/portfolio/t-101')}
-              className="px-3 py-1.5 rounded-[10px] bg-white/80 hover:bg-white text-xs font-medium text-[#171719] border border-[rgba(30,24,38,0.08)] hover:border-[#685cff]/40 shadow-xs transition-all cursor-pointer"
+              className="px-3.5 py-1.5 rounded-[10px] bg-white/80 hover:bg-white text-xs font-medium text-[#171719] border border-[rgba(30,24,38,0.08)] hover:border-[#685cff]/40 shadow-xs transition-all cursor-pointer"
             >
               Analiza este pliego
             </button>
             <button
               onClick={() => navigate('/app/portfolio')}
-              className="px-3 py-1.5 rounded-[10px] bg-white/80 hover:bg-white text-xs font-medium text-[#171719] border border-[rgba(30,24,38,0.08)] hover:border-[#685cff]/40 shadow-xs transition-all cursor-pointer"
+              className="px-3.5 py-1.5 rounded-[10px] bg-white/80 hover:bg-white text-xs font-medium text-[#171719] border border-[rgba(30,24,38,0.08)] hover:border-[#685cff]/40 shadow-xs transition-all cursor-pointer"
             >
               Compara requisitos
             </button>
             <button
               onClick={() => navigate('/app/catalogo')}
-              className="px-3 py-1.5 rounded-[10px] bg-white/80 hover:bg-white text-xs font-medium text-[#171719] border border-[rgba(30,24,38,0.08)] hover:border-[#685cff]/40 shadow-xs transition-all cursor-pointer"
+              className="px-3.5 py-1.5 rounded-[10px] bg-white/80 hover:bg-white text-xs font-medium text-[#171719] border border-[rgba(30,24,38,0.08)] hover:border-[#685cff]/40 shadow-xs transition-all cursor-pointer"
             >
               Busca oportunidades
             </button>
             <button
               onClick={() => navigate('/app/portfolio/t-101')}
-              className="px-3 py-1.5 rounded-[10px] bg-white/80 hover:bg-white text-xs font-medium text-[#171719] border border-[rgba(30,24,38,0.08)] hover:border-[#685cff]/40 shadow-xs transition-all cursor-pointer"
+              className="px-3.5 py-1.5 rounded-[10px] bg-white/80 hover:bg-white text-xs font-medium text-[#171719] border border-[rgba(30,24,38,0.08)] hover:border-[#685cff]/40 shadow-xs transition-all cursor-pointer"
             >
               Resume documento
             </button>
           </div>
         </aside>
-      </div>
+      </section>
 
-      {/* 16. MÉTRICAS DE INICIO (Sección 16) */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
+      {/* 15. MÉTRICAS DE INICIO: ALTURA 88-96px (Sección 15) */}
+      <section className="metrics-grid grid grid-cols-2 md:grid-cols-4 gap-3.5">
         {/* 1. Activas */}
-        <div className="glass-soft p-4 rounded-[16px] border border-white/60">
-          <div className="text-2xl sm:text-3xl font-bold text-[#171719] tabular-nums tracking-tight">
+        <div className="glass-soft h-[92px] p-4 rounded-[16px] border border-white/60 flex flex-col justify-between">
+          <div className="text-2xl sm:text-3xl font-bold text-[#171719] tabular-nums tracking-tight leading-none">
             12
           </div>
-          <div className="text-xs font-semibold text-[#171719] mt-0.5">
-            Oportunidades activas
-          </div>
-          <div className="text-[11px] text-[#218a58] font-medium mt-1">
-            +20% vs mes anterior
+          <div>
+            <div className="text-xs font-semibold text-[#171719] leading-tight">
+              Oportunidades activas
+            </div>
+            <div className="text-[11px] text-[#218a58] font-medium">
+              +20% vs mes anterior
+            </div>
           </div>
         </div>
 
         {/* 2. En curso */}
-        <div className="glass-soft p-4 rounded-[16px] border border-white/60">
-          <div className="text-2xl sm:text-3xl font-bold text-[#171719] tabular-nums tracking-tight">
+        <div className="glass-soft h-[92px] p-4 rounded-[16px] border border-white/60 flex flex-col justify-between">
+          <div className="text-2xl sm:text-3xl font-bold text-[#171719] tabular-nums tracking-tight leading-none">
             7
           </div>
-          <div className="text-xs font-semibold text-[#171719] mt-0.5">
-            En curso
-          </div>
-          <div className="text-[11px] text-[#69666d] font-medium mt-1">
-            +2 nuevas esta semana
+          <div>
+            <div className="text-xs font-semibold text-[#171719] leading-tight">
+              En curso
+            </div>
+            <div className="text-[11px] text-[#69666d] font-medium">
+              +2 nuevas esta semana
+            </div>
           </div>
         </div>
 
         {/* 3. Bloqueos */}
-        <div className="glass-soft p-4 rounded-[16px] border border-white/60">
-          <div className="text-2xl sm:text-3xl font-bold text-[#e44848] tabular-nums tracking-tight">
+        <div className="glass-soft h-[92px] p-4 rounded-[16px] border border-white/60 flex flex-col justify-between">
+          <div className="text-2xl sm:text-3xl font-bold text-[#e44848] tabular-nums tracking-tight leading-none">
             3
           </div>
-          <div className="text-xs font-semibold text-[#171719] mt-0.5">
-            Bloqueos
-          </div>
-          <div className="text-[11px] text-[#e44848] font-medium mt-1">
-            Requieren tu atención
+          <div>
+            <div className="text-xs font-semibold text-[#171719] leading-tight">
+              Bloqueos
+            </div>
+            <div className="text-[11px] text-[#e44848] font-medium">
+              Requieren tu atención
+            </div>
           </div>
         </div>
 
-        {/* 4. Cobertura Documental (MANDATO: NO PROBABILIDAD DE GANAR) */}
-        <div className="glass-soft p-4 rounded-[16px] border border-white/60">
-          <div className="text-2xl sm:text-3xl font-bold text-[#685cff] tabular-nums tracking-tight">
+        {/* 4. Cobertura Documental (MANDATO ESTRICTO: NO PROBABILIDAD DE GANAR) */}
+        <div className="glass-soft h-[92px] p-4 rounded-[16px] border border-white/60 flex flex-col justify-between">
+          <div className="text-2xl sm:text-3xl font-bold text-[#685cff] tabular-nums tracking-tight leading-none">
             86%
           </div>
-          <div className="text-xs font-semibold text-[#171719] mt-0.5">
-            Cobertura documental
-          </div>
-          <div className="text-[11px] text-[#69666d] font-medium mt-1">
-            Evidencia acreditada
+          <div>
+            <div className="text-xs font-semibold text-[#171719] leading-tight">
+              Cobertura documental
+            </div>
+            <div className="text-[11px] text-[#69666d] font-medium">
+              Evidencia acreditada
+            </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* 17. BLOQUE CENTRAL: PRIORIDADES, ESTADO DE ANÁLISIS, ACTIVIDAD (Sección 17) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
-        {/* Columna 1 (1.55fr -> col-span-6): Oportunidades Prioritarias */}
-        <div className="lg:col-span-6 surface p-5 rounded-[20px] flex flex-col justify-between">
+      {/* 16. ÁREA OPERATIVA DE INICIO: 1.6fr 1fr 0.82fr (Sección 16 y 17) */}
+      <section className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr_0.82fr] gap-3.5 items-stretch">
+        {/* Columna 1 (1.6fr - Dominante): Oportunidades Prioritarias */}
+        <div className="surface p-5 rounded-[20px] flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between pb-3 border-b border-[rgba(30,24,38,0.08)]">
-              <h2 className="text-sm font-semibold text-[#171719]">
+            <div className="flex items-center justify-between pb-3 border-b border-[rgba(30,24,38,0.06)]">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-[#171719]">
                 Oportunidades prioritarias
               </h2>
               <Link
@@ -193,7 +196,7 @@ export const HomePage: React.FC = () => {
                     onClick={() => navigate(`/app/portfolio/${item.tenderId}`)}
                     className="py-3 px-2 rounded-[12px] hover:bg-white/80 transition-all cursor-pointer group flex items-center gap-3.5"
                   >
-                    {/* Thumbnail o Abstracción Geométrica (Sección 63) */}
+                    {/* Placeholder contextual de arquitectura/papel (Sección 39) */}
                     <div className="w-12 h-12 rounded-[10px] bg-gradient-to-br from-[#f3eeea] to-[#e7e1ff] border border-[rgba(30,24,38,0.06)] flex items-center justify-center shrink-0 text-[#685cff]">
                       <FileText className="w-5 h-5 opacity-80" />
                     </div>
@@ -247,12 +250,12 @@ export const HomePage: React.FC = () => {
           </div>
         </div>
 
-        {/* Columna 2 (0.9fr -> col-span-3): Estado de Análisis Técnico (Sección 19) */}
-        <div className="lg:col-span-3 surface p-5 rounded-[20px] flex flex-col justify-between">
+        {/* Columna 2 (1fr): Estado de Análisis Técnico (Sección 17: 78% Progreso Técnico) */}
+        <div className="surface p-5 rounded-[20px] flex flex-col justify-between">
           <div>
-            <div className="pb-3 border-b border-[rgba(30,24,38,0.08)]">
-              <h2 className="text-sm font-semibold text-[#171719]">
-                Estado de análisis técnico
+            <div className="pb-3 border-b border-[rgba(30,24,38,0.06)]">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-[#171719]">
+                Estado de análisis
               </h2>
             </div>
 
@@ -284,7 +287,7 @@ export const HomePage: React.FC = () => {
                 </div>
               </div>
               <p className="text-xs font-semibold text-[#171719] mt-2">
-                Análisis en curso
+                Análisis completado
               </p>
               <p className="text-[11px] text-[#69666d]">
                 17 de 24 documentos procesados
@@ -313,11 +316,11 @@ export const HomePage: React.FC = () => {
           </div>
         </div>
 
-        {/* Columna 3 (0.8fr -> col-span-3): Actividad Reciente (Sección 20) */}
-        <div className="lg:col-span-3 surface p-5 rounded-[20px] flex flex-col justify-between">
+        {/* Columna 3 (0.82fr): Actividad Reciente de baja densidad */}
+        <div className="surface p-5 rounded-[20px] flex flex-col justify-between">
           <div>
-            <div className="pb-3 border-b border-[rgba(30,24,38,0.08)]">
-              <h2 className="text-sm font-semibold text-[#171719]">
+            <div className="pb-3 border-b border-[rgba(30,24,38,0.06)]">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-[#171719]">
                 Actividad reciente
               </h2>
             </div>
@@ -363,7 +366,7 @@ export const HomePage: React.FC = () => {
               {/* Evento colaborativo 3 */}
               <div className="flex items-start gap-2.5">
                 <div className="p-1 rounded-md bg-[#efedef] text-[#69666d] shrink-0 mt-0.5">
-                  <Building2 className="w-3.5 h-3.5" />
+                  <FileText className="w-3.5 h-3.5" />
                 </div>
                 <div>
                   <p className="text-xs font-semibold text-[#171719] leading-tight">
@@ -380,11 +383,11 @@ export const HomePage: React.FC = () => {
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* 21. CARDS INFERIORES DE INICIO (Sección 21) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Card 1: Analiza una oportunidad */}
+      {/* 18. ACCIÓN INFERIOR “ANALIZAR” (Sin drag-and-drop, Sección 18) */}
+      <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Card 1: Analiza una oportunidad (Seleccionar oportunidad) */}
         <div className="surface p-5 rounded-[18px] flex flex-col justify-between interactive-card">
           <div>
             <div className="w-8 h-8 rounded-[10px] bg-[#eeeaff] text-[#685cff] flex items-center justify-center mb-3">
@@ -399,9 +402,9 @@ export const HomePage: React.FC = () => {
           </div>
           <button
             onClick={() => navigate('/app/catalogo')}
-            className="mt-4 w-full py-2 px-3 rounded-[10px] bg-[#171719] hover:bg-[#28282b] text-white text-xs font-medium transition-colors cursor-pointer"
+            className="mt-4 w-full py-2 px-3 rounded-[10px] bg-[#171719] hover:bg-[#28282b] text-white text-xs font-semibold transition-colors cursor-pointer"
           >
-            Buscar oportunidad
+            Seleccionar oportunidad
           </button>
         </div>
 
@@ -420,7 +423,7 @@ export const HomePage: React.FC = () => {
           </div>
           <button
             onClick={() => navigate('/app/dossier')}
-            className="mt-4 w-full py-2 px-3 rounded-[10px] bg-white hover:bg-[#f5f1ed] text-[#171719] border border-[rgba(30,24,38,0.12)] text-xs font-medium transition-colors cursor-pointer"
+            className="mt-4 w-full py-2 px-3 rounded-[10px] bg-white hover:bg-[#f5f1ed] text-[#171719] border border-[rgba(30,24,38,0.12)] text-xs font-semibold transition-colors cursor-pointer"
           >
             Ir al dossier
           </button>
@@ -441,12 +444,12 @@ export const HomePage: React.FC = () => {
           </div>
           <button
             onClick={() => navigate('/app/catalogo')}
-            className="mt-4 w-full py-2 px-3 rounded-[10px] bg-white hover:bg-[#f5f1ed] text-[#171719] border border-[rgba(30,24,38,0.12)] text-xs font-medium transition-colors cursor-pointer"
+            className="mt-4 w-full py-2 px-3 rounded-[10px] bg-white hover:bg-[#f5f1ed] text-[#171719] border border-[rgba(30,24,38,0.12)] text-xs font-semibold transition-colors cursor-pointer"
           >
             Ver catálogo oficial
           </button>
         </div>
-      </div>
+      </section>
     </div>
   );
 };
