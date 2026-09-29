@@ -17,6 +17,8 @@ dist/
 build/
 .output/
 .wrangler/
+.vite/
+frontend/.vite/
 
 # Logs y pruebas
 npm-debug.log*
