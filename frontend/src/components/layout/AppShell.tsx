@@ -9,8 +9,8 @@ export const AppShell: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
-    <div className="app-background relative min-h-screen text-[#171719] font-ui antialiased overflow-x-hidden">
-      {/* Fondo ambiental orgánico con ondas de seda translúcidas y refracción */}
+    <div className="app-background relative min-h-screen text-[#171719] font-ui antialiased overflow-x-hidden isolate">
+      {/* Fondo ambiental orgánico con ondas de cristal translúcido (z-0) */}
       <SilkBackground />
 
       {/* Modal global de atajo ⌘K */}

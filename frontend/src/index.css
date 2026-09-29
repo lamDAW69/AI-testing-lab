@@ -69,6 +69,11 @@
   html, body {
     min-height: 100dvh;
     background-color: var(--bg-app);
+    background-image: url('/images/glass-background.jpg');
+    background-size: cover;
+    background-position: left top;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
     color: var(--text-primary);
     font-family: var(--font-ui);
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
@@ -89,6 +94,18 @@
   button, a, input, select, textarea {
     touch-action: manipulation;
   }
+}
+
+/* Fondo ambiental de la aplicación con la imagen 3D fotorrealista */
+.app-background {
+  min-height: 100dvh;
+  position: relative;
+  background-color: var(--bg-app);
+  background-image: url('/images/glass-background.jpg');
+  background-size: cover;
+  background-position: left top;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
 }
 
 /* Tipografía de Inicio: Saludo editorial + Atención en Dot-Matrix */
