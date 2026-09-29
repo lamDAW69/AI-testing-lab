@@ -3,18 +3,22 @@ import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { CommandPalette } from './CommandPalette';
+import { SilkBackground } from './SilkBackground';
 
 export const AppShell: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
-    <div className="app-background relative min-h-screen text-[#171719] font-ui antialiased">
+    <div className="app-background relative min-h-screen text-[#171719] font-ui antialiased overflow-x-hidden">
+      {/* Fondo ambiental orgánico con ondas de seda translúcidas y refracción */}
+      <SilkBackground />
+
       {/* Modal global de atajo ⌘K */}
       <CommandPalette />
 
       {/* Grid del Shell de la aplicación (Sección 7) */}
-      <div className="app-shell">
-        {/* Barra lateral flotante */}
+      <div className="app-shell relative z-10">
+        {/* Barra lateral flotante ultra-glossy */}
         <Sidebar
           isOpenMobile={isMobileMenuOpen}
           onCloseMobile={() => setIsMobileMenuOpen(false)}
