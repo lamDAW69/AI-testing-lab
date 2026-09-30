@@ -11,34 +11,81 @@ import {
   Calendar,
   ShieldCheck,
   AlertTriangle,
+  Briefcase,
+  Users,
+  Coins,
+  Cpu,
 } from 'lucide-react';
 import { useAuth } from '../lib/auth-context';
 import { useData } from '../lib/data-context';
 import { DossierStatusBadge } from '../components/ui/StatusBadge';
 import { Drawer } from '../components/ui/Drawer';
-import { Certification, EvidenceStatus } from '../types/dossier';
+import { Certification, BusinessEvidence, EvidenceStatus } from '../types/dossier';
+import { formatCurrency } from '../lib/formatters';
 
 export const DossierPage: React.FC = () => {
   const { user, activeTenant, canPerformAction } = useAuth();
-  const { profile, certifications, evidences } = useData();
+  const {
+    profile,
+    certifications,
+    evidences,
+    addCertification,
+    updateCertification,
+    updateProfile,
+    addEvidence,
+  } = useData();
 
-  const [activeTab, setActiveTab] = useState<
-    'perfil' | 'certificaciones' | 'experiencia' | 'capacidades' | 'evidencias'
-  >('certificaciones');
+  const [activeTab, setActiveTab] = useState<'perfil' | 'certificaciones' | 'evidencias'>('certificaciones');
 
   const [searchTerm, setSearchTerm] = useState('');
+  const [evidenceSearchTerm, setEvidenceSearchTerm] = useState('');
+  const [evidenceCategory, setEvidenceCategory] = useState<
+    'ALL' | 'PREVIOUS_CONTRACTS' | 'TEAM_QUALIFICATION' | 'TECHNICAL_MEANS' | 'FINANCIAL_SOLVENCY'
+  >('ALL');
+
+  // Estado del Drawer de adición de evidencia
+  const [isEvidenceDrawerOpen, setIsEvidenceDrawerOpen] = useState(false);
+  const [evFormCategory, setEvFormCategory] = useState<BusinessEvidence['category']>('PREVIOUS_CONTRACTS');
+  const [evFormTitle, setEvFormTitle] = useState('');
+  const [evFormDesc, setEvFormDesc] = useState('');
+  const [evFormDocRef, setEvFormDocRef] = useState('');
+  const [evFormAmount, setEvFormAmount] = useState<string>('');
+  const [evFormValidUntil, setEvFormValidUntil] = useState('');
 
   // Estado del Drawer de edición / adición de certificación (Sección 48)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [selectedCert, setSelectedCert] = useState<Certification | null>(null);
 
-  // Formulario en el drawer
+  // Formulario en el drawer de certificación
   const [formName, setFormName] = useState('');
   const [formIssuer, setFormIssuer] = useState('');
   const [formValidUntil, setFormValidUntil] = useState('');
   const [formDocRef, setFormDocRef] = useState('');
 
+  // Estado del Drawer de edición de perfil de organización
+  const [isProfileDrawerOpen, setIsProfileDrawerOpen] = useState(false);
+  const [profileDesc, setProfileDesc] = useState('');
+  const [profileSolvency, setProfileSolvency] = useState<number>(0);
+  const [profileTeamSize, setProfileTeamSize] = useState<number>(0);
+
   const canEdit = canPerformAction('edit_dossier');
+
+  const handleOpenProfileDrawer = () => {
+    setProfileDesc(profile?.description || '');
+    setProfileSolvency(profile?.maxEconomicSolvency || 1450000);
+    setProfileTeamSize(profile?.averageTeamSize || 28);
+    setIsProfileDrawerOpen(true);
+  };
+
+  const handleSaveProfile = (e: React.FormEvent) => {
+    e.preventDefault();
+    updateProfile({
+      description: profileDesc.trim(),
+      maxEconomicSolvency: Number(profileSolvency) || 0,
+      averageTeamSize: Number(profileTeamSize) || 0,
+    });
+    setIsProfileDrawerOpen(false);
+  };
 
   // Abrir drawer para editar o actualizar
   const handleOpenDrawer = (cert?: Certification) => {
@@ -62,10 +109,86 @@ export const DossierPage: React.FC = () => {
     e.preventDefault();
     if (!formName.trim() || !formIssuer.trim()) return;
 
-    // Guardado seguro: Las nuevas declaraciones se registran como DECLARED o PENDING_REVIEW
-    // NUNCA como VERIFIED de forma fraudulenta (Regla de integridad y Sección 46)
+    if (selectedCert) {
+      updateCertification(selectedCert.id, {
+        name: formName.trim(),
+        issuer: formIssuer.trim(),
+        expiresAt: formValidUntil ? new Date(formValidUntil).toISOString() : '',
+        certificateNumber: formDocRef.trim(),
+      });
+    } else {
+      addCertification({
+        name: formName.trim(),
+        issuer: formIssuer.trim(),
+        certificateNumber: formDocRef.trim(),
+        issuedAt: new Date().toISOString(),
+        expiresAt: formValidUntil ? new Date(formValidUntil).toISOString() : '',
+      });
+    }
+
     setIsDrawerOpen(false);
   };
+
+  const handleOpenEvidenceDrawer = () => {
+    setEvFormCategory('PREVIOUS_CONTRACTS');
+    setEvFormTitle('');
+    setEvFormDesc('');
+    setEvFormDocRef('');
+    setEvFormAmount('');
+    setEvFormValidUntil('');
+    setIsEvidenceDrawerOpen(true);
+  };
+
+  const handleSaveEvidence = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!evFormTitle.trim() || !evFormDesc.trim()) return;
+
+    addEvidence({
+      category: evFormCategory,
+      title: evFormTitle.trim(),
+      description: evFormDesc.trim(),
+      documentReference: evFormDocRef.trim() || 'Documento_acreditativo.pdf',
+      verifiedAmount: evFormAmount ? Number(evFormAmount) : undefined,
+      validUntil: evFormValidUntil ? new Date(evFormValidUntil).toISOString() : undefined,
+    });
+
+    setIsEvidenceDrawerOpen(false);
+  };
+
+  // Metadatos y filtros de categoría de evidencias
+  const categoryFilters = [
+    { id: 'ALL', label: 'Todas', count: evidences.length },
+    { id: 'PREVIOUS_CONTRACTS', label: 'Contratos previos', count: evidences.filter((e) => e.category === 'PREVIOUS_CONTRACTS').length },
+    { id: 'TEAM_QUALIFICATION', label: 'Cualificación de equipo', count: evidences.filter((e) => e.category === 'TEAM_QUALIFICATION').length },
+    { id: 'TECHNICAL_MEANS', label: 'Medios técnicos', count: evidences.filter((e) => e.category === 'TECHNICAL_MEANS').length },
+    { id: 'FINANCIAL_SOLVENCY', label: 'Solvencia financiera', count: evidences.filter((e) => e.category === 'FINANCIAL_SOLVENCY').length },
+  ] as const;
+
+  const getEvidenceCategoryMeta = (category: BusinessEvidence['category']) => {
+    switch (category) {
+      case 'PREVIOUS_CONTRACTS':
+        return { label: 'Contrato previo', icon: Briefcase, color: 'text-[#218a58] bg-[#e8f7ef]' };
+      case 'TEAM_QUALIFICATION':
+        return { label: 'Equipo técnico', icon: Users, color: 'text-[#685cff] bg-[#eeeaff]' };
+      case 'TECHNICAL_MEANS':
+        return { label: 'Medio técnico', icon: Cpu, color: 'text-[#2563eb] bg-[#eff6ff]' };
+      case 'FINANCIAL_SOLVENCY':
+        return { label: 'Solvencia económica', icon: Coins, color: 'text-[#ca8517] bg-[#fff3db]' };
+      default:
+        return { label: 'Evidencia', icon: FileText, color: 'text-[#69666d] bg-[#f5f1ed]' };
+    }
+  };
+
+  // Filtrado de evidencias por categoría y buscador
+  const filteredEvidences = evidences.filter((ev) => {
+    const matchesCategory = evidenceCategory === 'ALL' || ev.category === evidenceCategory;
+    const matchesSearch =
+      evidenceSearchTerm === '' ||
+      ev.title.toLowerCase().includes(evidenceSearchTerm.toLowerCase()) ||
+      ev.description.toLowerCase().includes(evidenceSearchTerm.toLowerCase()) ||
+      ev.documentReference.toLowerCase().includes(evidenceSearchTerm.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
 
   // Filtrado de certificaciones
   const filteredCertifications = certifications.filter(
@@ -100,7 +223,7 @@ export const DossierPage: React.FC = () => {
         {/* Botón Editar Perfil */}
         <div>
           <button
-            onClick={() => handleOpenDrawer()}
+            onClick={handleOpenProfileDrawer}
             className="px-4 py-2 rounded-[11px] bg-white hover:bg-[#f5f1ed] text-xs font-semibold text-[#171719] border border-[rgba(30,24,38,0.12)] transition-colors shadow-xs cursor-pointer"
           >
             Editar perfil
@@ -131,49 +254,32 @@ export const DossierPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Card 2: 82% Cobertura Documental con Progress Ring (Sección 33) */}
+        {/* Card 2: Fondo Documental y Acreditaciones (Sin porcentajes ficticios) */}
         <div className="surface p-5 rounded-[20px] flex items-center justify-between shadow-xs">
-          <div className="space-y-1 pr-4">
-            <span className="text-[10px] font-mono uppercase tracking-wider text-[#685cff] font-semibold">
-              Evidencia acreditada
+          <div className="space-y-1">
+            <span className="text-[10px] font-mono uppercase tracking-wider text-[#929097]">
+              Fondo Documental
             </span>
-            <div className="text-3xl font-bold text-[#171719] font-ui tabular-nums tracking-tight">
-              82%
+            <div className="text-2xl sm:text-3xl font-bold text-[#171719] font-ui tabular-nums tracking-tight">
+              {certifications.length + evidences.length}{' '}
+              <span className="text-sm font-medium text-[#69666d]">acreditaciones</span>
             </div>
-            <h3 className="text-xs font-semibold text-[#171719]">
-              Cobertura documental
-            </h3>
-            <p className="text-xs text-[#69666d] leading-relaxed">
-              Mantén actualizadas tus certificaciones, experiencia y evidencias.
+            <p className="text-xs text-[#69666d]">
+              {certifications.length} certificaciones en vigor · {evidences.length} evidencias registradas
+            </p>
+            <p className="text-xs text-[#929097] mt-0.5">
+              {certifications.filter((c) => c.status === 'EXPIRED').length > 0
+                ? `${certifications.filter((c) => c.status === 'EXPIRED').length} certificación requiere renovación`
+                : 'Expediente documental completo para análisis de solvencia'}
             </p>
           </div>
-          <div className="relative w-16 h-16 flex items-center justify-center shrink-0">
-            <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
-              <path
-                className="text-[#efedef]"
-                strokeWidth="3.2"
-                stroke="currentColor"
-                fill="none"
-                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-              />
-              <path
-                className="text-[#685cff]"
-                strokeDasharray="82, 100"
-                strokeWidth="3.2"
-                strokeLinecap="round"
-                stroke="currentColor"
-                fill="none"
-                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-              />
-            </svg>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <ShieldCheck className="w-5 h-5 text-[#685cff]" />
-            </div>
+          <div className="w-12 h-12 rounded-[14px] bg-[#e8f7ef] text-[#218a58] flex items-center justify-center shrink-0">
+            <ShieldCheck className="w-6 h-6" />
           </div>
         </div>
       </div>
 
-      {/* 44 & 56. NAVEGACIÓN INTERNA: TABS CON SCROLL HORIZONTAL (Sección 44 y 56) */}
+      {/* 44 & 56. NAVEGACIÓN INTERNA: 3 TABS REALES */}
       <div className="border-b border-[rgba(30,24,38,0.08)] overflow-x-auto">
         <div className="dossier-tabs flex gap-7 min-h-[46px] whitespace-nowrap min-w-max">
           <button
@@ -202,39 +308,17 @@ export const DossierPage: React.FC = () => {
           </button>
 
           <button
-            onClick={() => setActiveTab('experiencia')}
-            className={`dossier-tab text-xs sm:text-sm font-medium transition-colors cursor-pointer pb-2.5 relative flex items-center gap-1.5 ${
-              activeTab === 'experiencia'
-                ? 'text-[#171719] font-semibold active'
-                : 'text-[#69666d] hover:text-[#171719]'
-            }`}
-          >
-            <span>Experiencia</span>
-            <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-[#f5f1ed] text-[#69666d]">
-              {evidences.length}
-            </span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('capacidades')}
-            className={`dossier-tab text-xs sm:text-sm font-medium transition-colors cursor-pointer pb-2.5 relative ${
-              activeTab === 'capacidades'
-                ? 'text-[#171719] font-semibold active'
-                : 'text-[#69666d] hover:text-[#171719]'
-            }`}
-          >
-            Capacidades
-          </button>
-
-          <button
             onClick={() => setActiveTab('evidencias')}
-            className={`dossier-tab text-xs sm:text-sm font-medium transition-colors cursor-pointer pb-2.5 relative ${
+            className={`dossier-tab text-xs sm:text-sm font-medium transition-colors cursor-pointer pb-2.5 relative flex items-center gap-1.5 ${
               activeTab === 'evidencias'
                 ? 'text-[#171719] font-semibold active'
                 : 'text-[#69666d] hover:text-[#171719]'
             }`}
           >
-            Evidencias
+            <span>Evidencias</span>
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-[#f5f1ed] text-[#69666d]">
+              {evidences.length}
+            </span>
           </button>
         </div>
       </div>
@@ -330,10 +414,10 @@ export const DossierPage: React.FC = () => {
                       )}
 
                       <button
-                        onClick={() => alert(`Visualizando acreditación: ${cert.certificateNumber || cert.name}`)}
+                        onClick={() => handleOpenDrawer(cert)}
                         className="px-3 py-1.5 rounded-[9px] bg-white hover:bg-[#f5f1ed] text-[#171719] border border-[rgba(30,24,38,0.1)] text-xs font-medium transition-colors cursor-pointer"
                       >
-                        Ver documento
+                        Ver acreditación
                       </button>
 
                       <button
@@ -373,45 +457,132 @@ export const DossierPage: React.FC = () => {
             </div>
             <div>
               <span className="text-[#929097] block">Facturación Anual Auditada</span>
-              <span className="font-mono text-[#171719] tabular-nums">4.200.000 €</span>
+              <span className="font-mono text-[#171719] tabular-nums">
+                {formatCurrency(profile?.maxEconomicSolvency || 1450000)}
+              </span>
             </div>
           </div>
         </div>
       )}
 
-      {/* TAB EXPERIENCIA Y EVIDENCIAS */}
-      {(activeTab === 'experiencia' || activeTab === 'evidencias' || activeTab === 'capacidades') && (
-        <div className="surface rounded-[18px] divide-y divide-[rgba(30,24,38,0.06)] overflow-hidden shadow-xs">
-          {evidences.map((ev) => (
-            <div key={ev.id} className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex items-start gap-3">
-                <div className="w-9 h-9 rounded-[10px] bg-[#f5f1ed] text-[#685cff] flex items-center justify-center shrink-0">
-                  <CheckCircle2 className="w-4 h-4" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h4 className="text-xs sm:text-sm font-semibold text-[#171719]">
-                      {ev.title}
-                    </h4>
-                    <DossierStatusBadge status={ev.status} />
-                  </div>
-                  <p className="text-xs text-[#69666d] mt-0.5">
-                    {ev.description}
-                  </p>
-                </div>
-              </div>
-              <div className="text-right shrink-0">
-                {ev.verifiedAmount && (
-                  <span className="text-xs font-mono font-semibold text-[#171719] tabular-nums block">
-                    {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(ev.verifiedAmount)}
-                  </span>
-                )}
-                <span className="text-[11px] text-[#929097]">
-                  {ev.documentReference}
-                </span>
-              </div>
+      {/* TAB EVIDENCIAS CON FILTRADO POR CATEGORÍA (Opción A) */}
+      {activeTab === 'evidencias' && (
+        <div className="space-y-4">
+          {/* Toolbar de evidencias: Buscador y Botón Añadir */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="relative w-full sm:w-80">
+              <Search className="w-3.5 h-3.5 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#929097]" />
+              <input
+                type="text"
+                placeholder="Buscar evidencias por título, descripción o archivo..."
+                value={evidenceSearchTerm}
+                onChange={(e) => setEvidenceSearchTerm(e.target.value)}
+                className="w-full h-10 pl-9 pr-3 bg-white/80 focus:bg-white border border-[rgba(30,24,38,0.08)] focus:border-[#685cff] rounded-[11px] text-xs text-[#171719] placeholder-[#929097] focus:outline-none shadow-xs transition-all"
+              />
             </div>
-          ))}
+
+            <button
+              onClick={handleOpenEvidenceDrawer}
+              className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-[11px] bg-[#171719] hover:bg-[#28282b] text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Añadir evidencia</span>
+            </button>
+          </div>
+
+          {/* Chips de filtro por categoría */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 min-w-max">
+            {categoryFilters.map((filter) => {
+              const isSelected = evidenceCategory === filter.id;
+              return (
+                <button
+                  key={filter.id}
+                  onClick={() => setEvidenceCategory(filter.id)}
+                  className={`px-3 py-1.5 rounded-[10px] text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
+                    isSelected
+                      ? 'bg-[#171719] text-white shadow-xs font-semibold'
+                      : 'bg-white hover:bg-[#f5f1ed] text-[#69666d] border border-[rgba(30,24,38,0.08)]'
+                  }`}
+                >
+                  <span>{filter.label}</span>
+                  <span
+                    className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
+                      isSelected ? 'bg-white/20 text-white' : 'bg-[#f5f1ed] text-[#929097]'
+                    }`}
+                  >
+                    {filter.count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Lista de Evidencias */}
+          {filteredEvidences.length === 0 ? (
+            <div className="surface p-8 rounded-[18px] text-center space-y-2">
+              <p className="text-xs font-semibold text-[#171719]">No hay evidencias que coincidan con la búsqueda</p>
+              <p className="text-xs text-[#69666d]">Prueba a cambiar el filtro de categoría o limpiar el término de búsqueda.</p>
+            </div>
+          ) : (
+            <div className="surface rounded-[18px] divide-y divide-[rgba(30,24,38,0.06)] overflow-hidden shadow-xs">
+              {filteredEvidences.map((ev) => {
+                const meta = getEvidenceCategoryMeta(ev.category);
+                const IconComponent = meta.icon;
+
+                return (
+                  <div
+                    key={ev.id}
+                    className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-white/70 transition-colors"
+                  >
+                    <div className="flex items-start gap-3.5">
+                      <div className={`w-10 h-10 rounded-[10px] ${meta.color} flex items-center justify-center shrink-0`}>
+                        <IconComponent className="w-5 h-5" />
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-[10px] font-mono uppercase tracking-wider text-[#929097] bg-black/[0.03] px-2 py-0.5 rounded-[5px]">
+                            {meta.label}
+                          </span>
+                          <h4 className="text-sm font-semibold text-[#171719]">
+                            {ev.title}
+                          </h4>
+                          <DossierStatusBadge status={ev.status} />
+                        </div>
+                        <p className="text-xs text-[#69666d] max-w-2xl">
+                          {ev.description}
+                        </p>
+                        <div className="flex items-center gap-3 text-[11px] text-[#929097] pt-0.5">
+                          <span className="flex items-center gap-1 font-mono">
+                            <FileText className="w-3 h-3" />
+                            {ev.documentReference}
+                          </span>
+                          {ev.validUntil && (
+                            <span className="flex items-center gap-1">
+                              <Calendar className="w-3 h-3" />
+                              Válido hasta: {new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(ev.validUntil))}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="text-left sm:text-right shrink-0">
+                      {ev.verifiedAmount && (
+                        <div>
+                          <span className="text-[10px] font-mono uppercase text-[#929097] block">
+                            Importe acreditado
+                          </span>
+                          <span className="text-sm font-mono font-bold text-[#171719] tabular-nums block">
+                            {formatCurrency(ev.verifiedAmount)}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
@@ -497,6 +668,199 @@ export const DossierPage: React.FC = () => {
           {/* Nota de integridad y seguridad */}
           <div className="p-3 rounded-[12px] bg-[#f5f1ed] border border-[rgba(30,24,38,0.06)] text-[11px] text-[#69666d] leading-relaxed">
             <span className="font-semibold text-[#171719]">Aviso de Integridad:</span> Todas las nuevas acreditaciones se registran con estado <span className="font-mono text-[#685cff]">DECLARED</span> hasta su verificación documental. Los usuarios no pueden forzar unilateralmente el estado de verificación.
+          </div>
+        </form>
+      </Drawer>
+
+      {/* DRAWER DE EDICIÓN DE PERFIL */}
+      <Drawer
+        isOpen={isProfileDrawerOpen}
+        onClose={() => setIsProfileDrawerOpen(false)}
+        title="Editar perfil empresarial"
+        subtitle="Actualiza la solvencia económica auditada y datos del dossier"
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => setIsProfileDrawerOpen(false)}
+              className="px-3.5 py-2 rounded-[10px] bg-white hover:bg-[#f5f1ed] text-xs font-medium text-[#171719] border border-[rgba(30,24,38,0.12)] transition-colors cursor-pointer"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={handleSaveProfile}
+              className="px-4 py-2 rounded-[10px] bg-[#171719] hover:bg-[#28282b] text-xs font-semibold text-white transition-colors cursor-pointer shadow-xs"
+            >
+              Guardar cambios
+            </button>
+          </>
+        }
+      >
+        <form onSubmit={handleSaveProfile} className="space-y-4">
+          <div>
+            <label className="block text-xs font-medium text-[#171719] mb-1">
+              Razón Social (Inmutable por Tenant)
+            </label>
+            <input
+              type="text"
+              disabled
+              value={activeTenant?.name || ''}
+              className="w-full h-10 px-3 rounded-[11px] bg-stone-100 text-[#929097] border border-[rgba(30,24,38,0.08)] text-xs cursor-not-allowed font-medium"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-[#171719] mb-1">
+              Sector / Descripción de Actividad
+            </label>
+            <input
+              type="text"
+              required
+              value={profileDesc}
+              onChange={(e) => setProfileDesc(e.target.value)}
+              placeholder="Ej: Consultoría TI y Servicios Cloud"
+              className="w-full h-10 px-3 rounded-[11px] bg-[#f5f1ed]/80 focus:bg-white border border-[rgba(30,24,38,0.08)] focus:border-[#685cff] text-xs text-[#171719] focus:outline-none transition-all"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-[#171719] mb-1">
+              Solvencia Económica Máxima (€ / año)
+            </label>
+            <input
+              type="number"
+              required
+              value={profileSolvency}
+              onChange={(e) => setProfileSolvency(Number(e.target.value))}
+              placeholder="Ej: 1450000"
+              className="w-full h-10 px-3 rounded-[11px] bg-[#f5f1ed]/80 focus:bg-white border border-[rgba(30,24,38,0.08)] focus:border-[#685cff] text-xs text-[#171719] focus:outline-none transition-all font-mono"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-[#171719] mb-1">
+              Plantilla media de profesionales
+            </label>
+            <input
+              type="number"
+              required
+              value={profileTeamSize}
+              onChange={(e) => setProfileTeamSize(Number(e.target.value))}
+              placeholder="Ej: 28"
+              className="w-full h-10 px-3 rounded-[11px] bg-[#f5f1ed]/80 focus:bg-white border border-[rgba(30,24,38,0.08)] focus:border-[#685cff] text-xs text-[#171719] focus:outline-none transition-all font-mono"
+            />
+          </div>
+        </form>
+      </Drawer>
+
+      {/* DRAWER PARA AÑADIR EVIDENCIA (Opción A) */}
+      <Drawer
+        isOpen={isEvidenceDrawerOpen}
+        onClose={() => setIsEvidenceDrawerOpen(false)}
+        title="Nueva Evidencia Documental"
+        subtitle="Añade un contrato, solvencia técnica o económica al dossier empresarial"
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => setIsEvidenceDrawerOpen(false)}
+              className="px-3.5 py-2 rounded-[10px] bg-white hover:bg-[#f5f1ed] text-xs font-medium text-[#171719] border border-[rgba(30,24,38,0.12)] transition-colors cursor-pointer"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={handleSaveEvidence}
+              className="px-4 py-2 rounded-[10px] bg-[#171719] hover:bg-[#28282b] text-xs font-semibold text-white transition-colors cursor-pointer shadow-xs"
+            >
+              Guardar declaración
+            </button>
+          </>
+        }
+      >
+        <form onSubmit={handleSaveEvidence} className="space-y-4">
+          <div>
+            <label className="block text-xs font-medium text-[#171719] mb-1">
+              Categoría de la evidencia
+            </label>
+            <select
+              value={evFormCategory}
+              onChange={(e) => setEvFormCategory(e.target.value as BusinessEvidence['category'])}
+              className="w-full h-10 px-3 rounded-[11px] bg-[#f5f1ed]/80 focus:bg-white border border-[rgba(30,24,38,0.08)] focus:border-[#685cff] text-xs text-[#171719] focus:outline-none transition-all"
+            >
+              <option value="PREVIOUS_CONTRACTS">Contrato previo (experiencia pública/privada)</option>
+              <option value="TEAM_QUALIFICATION">Cualificación de equipo técnico</option>
+              <option value="TECHNICAL_MEANS">Medios técnicos e infraestructura</option>
+              <option value="FINANCIAL_SOLVENCY">Solvencia financiera / Cuentas anuales</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-[#171719] mb-1">
+              Título de la evidencia
+            </label>
+            <input
+              type="text"
+              required
+              value={evFormTitle}
+              onChange={(e) => setEvFormTitle(e.target.value)}
+              placeholder="Ej: Contrato de soporte cloud con la Agencia Tributaria"
+              className="w-full h-10 px-3 rounded-[11px] bg-[#f5f1ed]/80 focus:bg-white border border-[rgba(30,24,38,0.08)] focus:border-[#685cff] text-xs text-[#171719] focus:outline-none transition-all"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-[#171719] mb-1">
+              Descripción o alcance
+            </label>
+            <textarea
+              required
+              rows={3}
+              value={evFormDesc}
+              onChange={(e) => setEvFormDesc(e.target.value)}
+              placeholder="Detalla los servicios prestados, destinatario y certificados de buena ejecución asociados."
+              className="w-full p-3 rounded-[11px] bg-[#f5f1ed]/80 focus:bg-white border border-[rgba(30,24,38,0.08)] focus:border-[#685cff] text-xs text-[#171719] focus:outline-none transition-all resize-none"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-[#171719] mb-1">
+              Referencia documental / Nombre de archivo
+            </label>
+            <input
+              type="text"
+              required
+              value={evFormDocRef}
+              onChange={(e) => setEvFormDocRef(e.target.value)}
+              placeholder="Ej: Certificado_Buena_Ejecucion_AEAT_2025.pdf"
+              className="w-full h-10 px-3 rounded-[11px] bg-[#f5f1ed]/80 focus:bg-white border border-[rgba(30,24,38,0.08)] focus:border-[#685cff] text-xs text-[#171719] focus:outline-none transition-all font-mono"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-[#171719] mb-1">
+              Importe acreditado (€ opcional)
+            </label>
+            <input
+              type="number"
+              value={evFormAmount}
+              onChange={(e) => setEvFormAmount(e.target.value)}
+              placeholder="Ej: 350000"
+              className="w-full h-10 px-3 rounded-[11px] bg-[#f5f1ed]/80 focus:bg-white border border-[rgba(30,24,38,0.08)] focus:border-[#685cff] text-xs text-[#171719] focus:outline-none transition-all font-mono"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-[#171719] mb-1">
+              Fecha de validez (opcional)
+            </label>
+            <input
+              type="date"
+              value={evFormValidUntil}
+              onChange={(e) => setEvFormValidUntil(e.target.value)}
+              className="w-full h-10 px-3 rounded-[11px] bg-[#f5f1ed]/80 focus:bg-white border border-[rgba(30,24,38,0.08)] focus:border-[#685cff] text-xs text-[#171719] focus:outline-none transition-all font-mono"
+            />
           </div>
         </form>
       </Drawer>

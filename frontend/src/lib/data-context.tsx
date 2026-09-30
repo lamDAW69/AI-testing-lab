@@ -548,6 +548,8 @@ interface DataContextValue {
   markAlertAsRead: (id: string) => void;
   markAllAlertsAsRead: () => void;
   addEvidence: (evidence: Omit<BusinessEvidence, 'id' | 'status'>) => void;
+  addCertification: (certification: Omit<Certification, 'id' | 'status'>) => void;
+  updateCertification: (id: string, certification: Partial<Certification>) => void;
   updateProfile: (profile: Partial<CompanyProfile>) => void;
 }
 
@@ -788,9 +790,24 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const newEvidence: BusinessEvidence = {
       ...evidence,
       id: `ev-${Date.now()}`,
-      status: 'VERIFIED',
+      status: 'DECLARED',
     };
     setEvidences((prev) => [newEvidence, ...prev]);
+  };
+
+  const addCertification = (certification: Omit<Certification, 'id' | 'status'>) => {
+    const newCert: Certification = {
+      ...certification,
+      id: `cert-${Date.now()}`,
+      status: 'DECLARED',
+    };
+    setCertifications((prev) => [newCert, ...prev]);
+  };
+
+  const updateCertification = (id: string, updated: Partial<Certification>) => {
+    setCertifications((prev) =>
+      prev.map((c) => (c.id === id ? { ...c, ...updated } : c))
+    );
   };
 
   const updateProfile = (updatedFields: Partial<CompanyProfile>) => {
@@ -818,6 +835,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         markAlertAsRead,
         markAllAlertsAsRead,
         addEvidence,
+        addCertification,
+        updateCertification,
         updateProfile,
       }}
     >

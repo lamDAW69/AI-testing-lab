@@ -49,7 +49,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       to: '/app/alertas',
       label: 'Alertas',
       icon: <Bell className="w-[18px] h-[18px] shrink-0" />,
-      badge: unreadAlertsCount > 0 ? unreadAlertsCount : 3,
+      badge: unreadAlertsCount > 0 ? unreadAlertsCount : undefined,
     },
     {
       to: '/app/dossier',

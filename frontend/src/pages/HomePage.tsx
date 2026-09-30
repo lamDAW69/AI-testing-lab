@@ -26,7 +26,7 @@ import { formatCurrency, formatDeadlineDays } from '../lib/formatters';
 export const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { portfolio } = useData();
+  const { portfolio, tenders, alerts, certifications, evidences } = useData();
 
   const firstName = user?.fullName ? user.fullName.split(' ')[0] : 'Marta';
 
@@ -38,15 +38,38 @@ export const HomePage: React.FC = () => {
   }).format(new Date());
   const capitalizedDate = formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
 
-  const attentionCount = portfolio.filter(
+  // Métricas dinámicas calculadas desde el store real del tenant
+  const totalInPortfolio = portfolio.length;
+  const inProgressCount = portfolio.filter(
+    (p) => p.decision === 'REVIEW' || p.decision === 'UNDECIDED'
+  ).length;
+  const blockersCount = portfolio.filter(
     (p) => p.hasBlockers || p.validity === 'REQUIRES_REANALYSIS'
-  ).length || 4;
+  ).length;
+  const totalDossierAccreditations = certifications.length + evidences.length;
+
+  // Oportunidades prioritarias (las que tienen bloqueos o fecha límite más próxima)
+  const priorityOpportunities = [...portfolio]
+    .sort((a, b) => {
+      if ((a.hasBlockers || a.validity === 'REQUIRES_REANALYSIS') && !(b.hasBlockers || b.validity === 'REQUIRES_REANALYSIS')) return -1;
+      if (!(a.hasBlockers || a.validity === 'REQUIRES_REANALYSIS') && (b.hasBlockers || b.validity === 'REQUIRES_REANALYSIS')) return 1;
+      return new Date(a.submissionDeadline).getTime() - new Date(b.submissionDeadline).getTime();
+    })
+    .slice(0, 3);
+
+  // Salud del pipeline de decisiones
+  const decidedCount = portfolio.filter((p) => p.decision !== 'UNDECIDED').length;
+  const pipelinePercent = totalInPortfolio > 0 ? Math.round((decidedCount / totalInPortfolio) * 100) : 0;
+  const eligibleCount = portfolio.filter((p) => p.eligibility === 'POTENTIALLY_ELIGIBLE').length;
+
+  // Actividad reciente desde las alertas reales
+  const recentAlerts = alerts.slice(0, 4);
 
   return (
     <div className="space-y-6 select-none">
-      {/* 1. HERO DE INICIO: EDITORIAL + DOT-MATRIX + PANEL IA CON HALO */}
+      {/* 1. HERO DE INICIO: EDITORIAL + DOT-MATRIX + ACCESO OPERATIVO */}
       <section className="home-hero grid grid-cols-1 lg:grid-cols-[minmax(400px,0.95fr)_minmax(480px,1.05fr)] gap-8 lg:gap-10 items-center">
-        {/* Lado Izquierdo: Saludo editorial + 4 oportunidades en Dot-Matrix */}
+        {/* Lado Izquierdo: Saludo editorial + oportunidades en Dot-Matrix */}
         <div>
           <p className="text-xs font-mono uppercase tracking-widest text-[#929097] mb-2 flex items-center gap-2">
             <span>{capitalizedDate}</span>
@@ -54,27 +77,20 @@ export const HomePage: React.FC = () => {
           <h1 className="home-greeting text-[#171719]">
             Hola, {firstName}.
           </h1>
-          <div className="home-attention mt-1.5">
-            {attentionCount} oportunidades<br />
-            necesitan tu atención.
-          </div>
         </div>
 
-        {/* Lado Derecho: Panel IA con Halo Difuso y Botón de flecha circular */}
+        {/* Lado Derecho: Acceso Rápido y Panel Operativo */}
         <aside className="ai-command">
           <div className="flex items-center justify-between mb-3">
             <div className="w-7 h-7 rounded-full bg-[#685cff]/10 flex items-center justify-center text-[#685cff]">
-              <span className="text-sm font-bold">✦</span>
+              <span className="text-sm font-bold">◈</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-[#171719]">Pliego AI</span>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#eeeaff] text-[#685cff] font-semibold">
-                Beta
-              </span>
+              <span className="text-xs font-semibold text-[#171719]">Flujos Operativos</span>
               <button
-                onClick={() => navigate('/app/catalogo')}
+                onClick={() => navigate('/app/portfolio')}
                 className="w-6 h-6 rounded-full bg-[#685cff] text-white flex items-center justify-center hover:scale-105 transition-transform cursor-pointer shadow-xs"
-                title="Explorar"
+                title="Ver Cartera"
               >
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
@@ -82,109 +98,109 @@ export const HomePage: React.FC = () => {
           </div>
 
           <h2 className="text-sm font-semibold text-[#171719] mb-4">
-            ¿En qué puedo ayudarte hoy?
+            Gestión y Control de Licitaciones
           </h2>
 
           <div className="flex flex-wrap gap-2">
             <button
-              onClick={() => navigate('/app/portfolio/t-101')}
+              onClick={() => navigate('/app/catalogo')}
               className="px-3.5 py-1.5 rounded-[12px] bg-white/75 hover:bg-white text-xs font-medium text-[#685cff] border border-[#685cff]/20 hover:border-[#685cff]/40 shadow-xs transition-all cursor-pointer"
             >
-              Analiza este pliego
+              Explorar Catálogo
             </button>
             <button
               onClick={() => navigate('/app/portfolio')}
               className="px-3.5 py-1.5 rounded-[12px] bg-white/75 hover:bg-white text-xs font-medium text-[#171719] border border-[rgba(30,24,38,0.08)] hover:border-[#685cff]/40 shadow-xs transition-all cursor-pointer"
             >
-              Compara requisitos
+              Ver Cartera
             </button>
             <button
-              onClick={() => navigate('/app/catalogo')}
+              onClick={() => navigate('/app/alertas')}
               className="px-3.5 py-1.5 rounded-[12px] bg-white/75 hover:bg-white text-xs font-medium text-[#171719] border border-[rgba(30,24,38,0.08)] hover:border-[#685cff]/40 shadow-xs transition-all cursor-pointer"
             >
-              Busca oportunidades
+              Bandeja de Alertas
             </button>
             <button
-              onClick={() => navigate('/app/portfolio/t-101')}
+              onClick={() => navigate('/app/dossier')}
               className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-[12px] bg-white/75 hover:bg-white text-xs font-medium text-[#171719] border border-[rgba(30,24,38,0.08)] hover:border-[#685cff]/40 shadow-xs transition-all cursor-pointer"
             >
-              <span>Resume un documento</span>
+              <span>Gestionar Dossier</span>
               <ArrowRight className="w-3 h-3 text-[#929097]" />
             </button>
           </div>
         </aside>
       </section>
 
-      {/* 2. MÉTRICAS CON BADGES CUADRADOS EXACTOS DEL MOCKUP */}
+      {/* 2. MÉTRICAS DINÁMICAS BASADAS EN LOS DATOS REALES DEL TENANT */}
       <section className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
-        {/* Métrica 1: 12 Oportunidades activas */}
+        {/* Métrica 1: Oportunidades en cartera */}
         <div className="glass-soft p-4 rounded-[18px] flex items-center gap-3.5">
           <div className="w-10 h-10 rounded-[12px] bg-white/80 border border-[rgba(30,24,38,0.06)] flex items-center justify-center text-[#171719] shrink-0 shadow-2xs">
             <Layers className="w-5 h-5 text-[#423d4c]" />
           </div>
           <div>
             <div className="text-2xl font-bold text-[#171719] tabular-nums tracking-tight leading-none">
-              12
+              {totalInPortfolio}
             </div>
             <div className="text-xs font-semibold text-[#171719] mt-1 leading-tight">
-              Oportunidades activas
+              Oportunidades en cartera
             </div>
             <div className="text-[11px] text-[#69666d] mt-0.5">
-              +20% vs. mes anterior
+              {totalInPortfolio === 1 ? '1 expediente analizado' : `${totalInPortfolio} expedientes analizados`}
             </div>
           </div>
         </div>
 
-        {/* Métrica 2: 7 En curso */}
+        {/* Métrica 2: En curso */}
         <div className="glass-soft p-4 rounded-[18px] flex items-center gap-3.5">
           <div className="w-10 h-10 rounded-[12px] bg-[#eeeaff] border border-[#d5ccfe] flex items-center justify-center text-[#685cff] shrink-0 shadow-2xs">
             <Filter className="w-5 h-5" />
           </div>
           <div>
             <div className="text-2xl font-bold text-[#171719] tabular-nums tracking-tight leading-none">
-              7
+              {inProgressCount}
             </div>
             <div className="text-xs font-semibold text-[#171719] mt-1 leading-tight">
-              En curso
+              En evaluación
             </div>
             <div className="text-[11px] text-[#69666d] mt-0.5">
-              +2 nuevas esta semana
+              Pendientes de decisión
             </div>
           </div>
         </div>
 
-        {/* Métrica 3: 3 Bloqueos */}
+        {/* Métrica 3: Bloqueos */}
         <div className="glass-soft p-4 rounded-[18px] flex items-center gap-3.5">
           <div className="w-10 h-10 rounded-[12px] bg-[#ffeded] border border-[#fcd2d2] flex items-center justify-center text-[#e44848] shrink-0 shadow-2xs">
             <AlertTriangle className="w-5 h-5" />
           </div>
           <div>
             <div className="text-2xl font-bold text-[#e44848] tabular-nums tracking-tight leading-none">
-              3
+              {blockersCount}
             </div>
             <div className="text-xs font-semibold text-[#171719] mt-1 leading-tight">
-              Bloqueos
+              Bloqueos o adendas
             </div>
             <div className="text-[11px] text-[#69666d] mt-0.5">
-              Requieren tu atención
+              {blockersCount > 0 ? 'Requieren tu atención' : 'Cartera al día'}
             </div>
           </div>
         </div>
 
-        {/* Métrica 4: 86% Cobertura Documental */}
+        {/* Métrica 4: Acreditaciones */}
         <div className="glass-soft p-4 rounded-[18px] flex items-center gap-3.5">
           <div className="w-10 h-10 rounded-[12px] bg-[#e8f7ef] border border-[#c6f0d4] flex items-center justify-center text-[#218a58] shrink-0 shadow-2xs">
             <FileCheck2 className="w-5 h-5" />
           </div>
           <div>
             <div className="text-2xl font-bold text-[#171719] tabular-nums tracking-tight leading-none">
-              86%
+              {totalDossierAccreditations}
             </div>
             <div className="text-xs font-semibold text-[#171719] mt-1 leading-tight">
-              Cobertura documental
+              Acreditaciones en dossier
             </div>
             <div className="text-[11px] text-[#69666d] mt-0.5">
-              +12% vs. mes anterior
+              {certifications.length} certs · {evidences.length} evidencias
             </div>
           </div>
         </div>
@@ -209,141 +225,86 @@ export const HomePage: React.FC = () => {
             </div>
 
             <div className="divide-y divide-[rgba(30,24,38,0.055)] mt-1">
-              {/* Oportunidad 1: Ministerio de Transformación Digital */}
-              <div
-                onClick={() => navigate('/app/portfolio/t-101')}
-                className="py-3 px-2 rounded-[14px] hover:bg-white/70 transition-all cursor-pointer group flex items-center gap-3.5"
-              >
-                <div className="w-14 h-14 rounded-[12px] bg-stone-200 overflow-hidden shrink-0 border border-white/80 shadow-2xs">
-                  <img
-                    src="https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=160&q=80"
-                    alt="Ministerio TIC"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    loading="lazy"
-                  />
+              {priorityOpportunities.length === 0 ? (
+                <div className="py-8 text-center text-[#69666d]">
+                  <p className="text-xs">No tienes licitaciones en seguimiento actualmente.</p>
+                  <button
+                    onClick={() => navigate('/app/catalogo')}
+                    className="mt-3 text-xs font-semibold text-[#685cff] hover:underline cursor-pointer"
+                  >
+                    Explorar el catálogo oficial →
+                  </button>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-xs sm:text-sm font-semibold text-[#171719] truncate group-hover:text-[#685cff] transition-colors">
-                    Servicio de mantenimiento de infraestructura TIC
-                  </h3>
-                  <p className="text-[11px] text-[#69666d] truncate">
-                    Ministerio de Transformación Digital
-                  </p>
-                  <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                    <StatusBadge tone="danger" icon="warning">
-                      Alta prioridad
-                    </StatusBadge>
-                    <StatusBadge tone="danger" icon="warning">
-                      Cambio documental
-                    </StatusBadge>
+              ) : (
+                priorityOpportunities.map((item) => (
+                  <div
+                    key={item.id}
+                    onClick={() => navigate(`/app/portfolio/${item.tenderId}`)}
+                    className="py-3 px-2 rounded-[14px] hover:bg-white/70 transition-all cursor-pointer group flex items-center gap-3.5"
+                  >
+                    <div className="w-12 h-12 rounded-[12px] bg-[#eeeaff] text-[#685cff] flex items-center justify-center shrink-0 border border-white/80 shadow-2xs font-mono font-bold text-[10px]">
+                      {item.fileReference.length > 12 ? item.fileReference.slice(0, 12) : item.fileReference}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-xs sm:text-sm font-semibold text-[#171719] truncate group-hover:text-[#685cff] transition-colors">
+                        {item.title}
+                      </h3>
+                      <p className="text-[11px] text-[#69666d] truncate">
+                        {item.contractingAuthority}
+                      </p>
+                      <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                        {item.hasBlockers ? (
+                          <StatusBadge tone="danger" icon="warning">
+                            Bloqueo crítico
+                          </StatusBadge>
+                        ) : item.validity === 'REQUIRES_REANALYSIS' ? (
+                          <StatusBadge tone="warning" icon="warning">
+                            Cambio documental
+                          </StatusBadge>
+                        ) : item.decision === 'PURSUE' ? (
+                          <StatusBadge tone="success" icon="check">
+                            Presentar oferta
+                          </StatusBadge>
+                        ) : item.decision === 'DISCARD' ? (
+                          <StatusBadge tone="neutral">Descartada</StatusBadge>
+                        ) : (
+                          <StatusBadge tone="primary" icon="clock">
+                            En evaluación
+                          </StatusBadge>
+                        )}
+                        <span className="text-[11px] text-[#69666d] bg-black/[0.04] px-2 py-0.5 rounded-full border border-black/[0.04]">
+                          {formatDeadlineDays(item.submissionDeadline).label}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <span className="text-xs font-bold text-[#171719] tabular-nums font-mono block">
+                        {formatCurrency(item.budgetAmount)}
+                      </span>
+                      <span className="text-[11px] text-[#69666d] block">
+                        {new Date(item.submissionDeadline).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+                      </span>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-[#929097] group-hover:text-[#171719] group-hover:translate-x-0.5 transition-all shrink-0" />
                   </div>
-                </div>
-                <div className="text-right shrink-0">
-                  <span className="text-xs font-bold text-[#171719] tabular-nums font-mono block">
-                    12,5 M€
-                  </span>
-                  <span className="text-[11px] text-[#69666d] block">
-                    24 oct 2026
-                  </span>
-                </div>
-                <ChevronRight className="w-4 h-4 text-[#929097] group-hover:text-[#171719] group-hover:translate-x-0.5 transition-all shrink-0" />
-              </div>
-
-              {/* Oportunidad 2: Junta de Andalucía */}
-              <div
-                onClick={() => navigate('/app/portfolio/t-102')}
-                className="py-3 px-2 rounded-[14px] hover:bg-white/70 transition-all cursor-pointer group flex items-center gap-3.5"
-              >
-                <div className="w-14 h-14 rounded-[12px] bg-stone-200 overflow-hidden shrink-0 border border-white/80 shadow-2xs">
-                  <img
-                    src="https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=160&q=80"
-                    alt="Junta de Andalucía"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    loading="lazy"
-                  />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-xs sm:text-sm font-semibold text-[#171719] truncate group-hover:text-[#685cff] transition-colors">
-                    Asistencia técnica para la gestión de fondos europeos
-                  </h3>
-                  <p className="text-[11px] text-[#69666d] truncate">
-                    Junta de Andalucía
-                  </p>
-                  <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                    <StatusBadge tone="primary" icon="clock">
-                      En análisis
-                    </StatusBadge>
-                    <span className="text-[11px] text-[#69666d] bg-black/[0.04] px-2 py-0.5 rounded-full border border-black/[0.04]">
-                      Entrega en 7 días
-                    </span>
-                  </div>
-                </div>
-                <div className="text-right shrink-0">
-                  <span className="text-xs font-bold text-[#171719] tabular-nums font-mono block">
-                    8,2 M€
-                  </span>
-                  <span className="text-[11px] text-[#69666d] block">
-                    27 oct 2026
-                  </span>
-                </div>
-                <ChevronRight className="w-4 h-4 text-[#929097] group-hover:text-[#171719] group-hover:translate-x-0.5 transition-all shrink-0" />
-              </div>
-
-              {/* Oportunidad 3: Ayuntamiento de Madrid */}
-              <div
-                onClick={() => navigate('/app/portfolio/t-103')}
-                className="py-3 px-2 rounded-[14px] hover:bg-white/70 transition-all cursor-pointer group flex items-center gap-3.5"
-              >
-                <div className="w-14 h-14 rounded-[12px] bg-stone-200 overflow-hidden shrink-0 border border-white/80 shadow-2xs">
-                  <img
-                    src="https://images.unsplash.com/photo-1539037116277-4db20889f2d4?auto=format&fit=crop&w=160&q=80"
-                    alt="Ayuntamiento de Madrid"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    loading="lazy"
-                  />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-xs sm:text-sm font-semibold text-[#171719] truncate group-hover:text-[#685cff] transition-colors">
-                    Desarrollo de plataforma de administración electrónica
-                  </h3>
-                  <p className="text-[11px] text-[#69666d] truncate">
-                    Ayuntamiento de Madrid
-                  </p>
-                  <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                    <StatusBadge tone="primary" icon="clock">
-                      En propuesta
-                    </StatusBadge>
-                    <span className="text-[11px] text-[#69666d] bg-black/[0.04] px-2 py-0.5 rounded-full border border-black/[0.04]">
-                      Entrega en 12 días
-                    </span>
-                  </div>
-                </div>
-                <div className="text-right shrink-0">
-                  <span className="text-xs font-bold text-[#171719] tabular-nums font-mono block">
-                    4,1 M€
-                  </span>
-                  <span className="text-[11px] text-[#69666d] block">
-                    2 nov 2026
-                  </span>
-                </div>
-                <ChevronRight className="w-4 h-4 text-[#929097] group-hover:text-[#171719] group-hover:translate-x-0.5 transition-all shrink-0" />
-              </div>
+                ))
+              )}
             </div>
           </div>
         </div>
 
-        {/* Columna 2: Estado de análisis técnico */}
+        {/* Columna 2: Estado de análisis y salud de la cartera */}
         <div className="surface p-5 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between pb-3 border-b border-[rgba(30,24,38,0.06)]">
               <h2 className="text-sm font-semibold text-[#171719]">
-                Estado de análisis
+                Salud de la cartera
               </h2>
               <Link
                 to="/app/portfolio"
                 className="text-xs font-medium text-[#685cff] hover:underline flex items-center gap-1"
               >
-                <span>Ver todas</span>
+                <span>Ver cartera</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
@@ -360,7 +321,7 @@ export const HomePage: React.FC = () => {
                   />
                   <path
                     className="text-[#685cff]"
-                    strokeDasharray="78, 100"
+                    strokeDasharray={`${pipelinePercent}, 100`}
                     strokeWidth="3.2"
                     strokeLinecap="round"
                     stroke="currentColor"
@@ -370,197 +331,150 @@ export const HomePage: React.FC = () => {
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
                   <span className="text-lg font-bold text-[#171719] font-ui tabular-nums">
-                    78%
+                    {pipelinePercent}%
                   </span>
                 </div>
               </div>
               <div>
                 <p className="text-xs font-bold text-[#171719]">
-                  Análisis en curso
+                  Decisiones tomadas
                 </p>
                 <p className="text-[11px] text-[#69666d] mt-0.5 leading-relaxed">
-                  La IA está analizando la documentación y extrayendo los requisitos clave.
+                  {decidedCount} de {totalInPortfolio} oportunidades cuentan con decisión estratégica.
                 </p>
               </div>
             </div>
 
-            {/* Checklist de 4 pasos */}
+            {/* Desglose dinámico de la cartera */}
             <div className="space-y-2.5 text-xs pt-2 border-t border-[rgba(30,24,38,0.06)]">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="w-4 h-4 rounded-full bg-[#e8f7ef] text-[#218a58] flex items-center justify-center text-[10px]">✓</span>
-                  <span className="text-[#171719] font-medium">Documentación procesada</span>
+                  <span className="text-[#171719] font-medium">Potencialmente elegibles</span>
                 </div>
-                <span className="text-[11px] text-[#69666d]">17 de 24 documentos</span>
+                <span className="text-[11px] text-[#218a58] font-bold tabular-nums">{eligibleCount} licitaciones</span>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="w-4 h-4 rounded-full bg-[#eeeaff] text-[#685cff] flex items-center justify-center text-[10px]">✓</span>
-                  <span className="text-[#171719] font-medium">Extracción de requisitos</span>
+                  <span className="w-4 h-4 rounded-full bg-[#eeeaff] text-[#685cff] flex items-center justify-center text-[10px]">●</span>
+                  <span className="text-[#171719] font-medium">En evaluación / revisión</span>
                 </div>
-                <span className="text-[11px] text-[#69666d]">124 requisitos identificados</span>
+                <span className="text-[11px] text-[#685cff] font-semibold tabular-nums">{inProgressCount} licitaciones</span>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="w-4 h-4 rounded-full bg-[#685cff] text-white flex items-center justify-center text-[10px] animate-pulse">●</span>
-                  <span className="text-[#685cff] font-semibold">Análisis de elegibilidad</span>
+                  <span className="w-4 h-4 rounded-full bg-[#ffeded] text-[#e44848] flex items-center justify-center text-[10px]">!</span>
+                  <span className="text-[#171719] font-medium">Bloqueos o reanálisis</span>
                 </div>
-                <span className="text-[11px] text-[#685cff]">En curso...</span>
+                <span className="text-[11px] text-[#e44848] font-bold tabular-nums">{blockersCount} {blockersCount === 1 ? 'bloqueo' : 'bloqueos'}</span>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="w-4 h-4 rounded-full border border-[#929097] text-[#929097] flex items-center justify-center text-[10px]">○</span>
-                  <span className="text-[#929097]">Generación de resultados</span>
+                  <span className="w-4 h-4 rounded-full bg-stone-100 text-[#69666d] flex items-center justify-center text-[10px]">◈</span>
+                  <span className="text-[#69666d]">Total en seguimiento</span>
                 </div>
-                <span className="text-[11px] text-[#929097]">Pendiente</span>
+                <span className="text-[11px] text-[#69666d] font-mono tabular-nums">{totalInPortfolio} expedientes</span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Columna 3: Actividad reciente (5 items) */}
+        {/* Columna 3: Alertas recientes dinámicas */}
         <div className="surface p-5 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between pb-3 border-b border-[rgba(30,24,38,0.06)]">
               <h2 className="text-sm font-semibold text-[#171719]">
-                Actividad reciente
+                Alertas recientes
               </h2>
               <Link
                 to="/app/alertas"
                 className="text-xs font-medium text-[#685cff] hover:underline flex items-center gap-1"
               >
-                <span>Ver toda</span>
+                <span>Ver todas</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
 
             <div className="space-y-3 mt-3">
-              {/* Item 1 */}
-              <div className="flex items-start gap-2.5">
-                <div className="p-1 rounded-md bg-[#ffeded] text-[#e44848] shrink-0 mt-0.5">
-                  <AlertTriangle className="w-3.5 h-3.5" />
+              {recentAlerts.length === 0 ? (
+                <div className="py-8 text-center text-[#69666d]">
+                  <p className="text-xs">No hay alertas activas en tu bandeja.</p>
                 </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-semibold text-[#171719] truncate leading-tight">
-                    Cambio documental detectado
-                  </p>
-                  <p className="text-[11px] text-[#69666d] truncate">
-                    Plataforma de contratación del Estado
-                  </p>
-                </div>
-                <span className="text-[10px] text-[#929097] font-mono shrink-0">
-                  Hace 2h
-                </span>
-              </div>
-
-              {/* Item 2 */}
-              <div className="flex items-start gap-2.5">
-                <div className="p-1 rounded-md bg-[#eeeaff] text-[#685cff] shrink-0 mt-0.5">
-                  <FileText className="w-3.5 h-3.5" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-semibold text-[#171719] truncate leading-tight">
-                    Nuevo análisis completado
-                  </p>
-                  <p className="text-[11px] text-[#69666d] truncate">
-                    Servicio de limpieza de edificios
-                  </p>
-                </div>
-                <span className="text-[10px] text-[#929097] font-mono shrink-0">
-                  Hace 4h
-                </span>
-              </div>
-
-              {/* Item 3 */}
-              <div className="flex items-start gap-2.5">
-                <div className="p-1 rounded-md bg-stone-100 text-[#171719] shrink-0 mt-0.5">
-                  <User className="w-3.5 h-3.5 text-[#69666d]" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-semibold text-[#171719] truncate leading-tight">
-                    María López ha comentado
-                  </p>
-                  <p className="text-[11px] text-[#69666d] truncate">
-                    Documento técnico · Lote 2
-                  </p>
-                </div>
-                <span className="text-[10px] text-[#929097] font-mono shrink-0">
-                  Hace 5h
-                </span>
-              </div>
-
-              {/* Item 4 */}
-              <div className="flex items-start gap-2.5">
-                <div className="p-1 rounded-md bg-[#ffeded] text-[#e44848] shrink-0 mt-0.5">
-                  <ShieldAlert className="w-3.5 h-3.5" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-semibold text-[#171719] truncate leading-tight">
-                    Se ha detectado un posible bloqueo
-                  </p>
-                  <p className="text-[11px] text-[#69666d] truncate">
-                    Garantía provisional insuficiente
-                  </p>
-                </div>
-                <span className="text-[10px] text-[#929097] font-mono shrink-0">
-                  Hace 1d
-                </span>
-              </div>
-
-              {/* Item 5 */}
-              <div className="flex items-start gap-2.5">
-                <div className="p-1 rounded-md bg-[#eeeaff] text-[#685cff] shrink-0 mt-0.5">
-                  <BellRing className="w-3.5 h-3.5" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-semibold text-[#171719] truncate leading-tight">
-                    Nueva oportunidad relevante
-                  </p>
-                  <p className="text-[11px] text-[#69666d] truncate">
-                    CPV 72000000 · Servicios TI
-                  </p>
-                </div>
-                <span className="text-[10px] text-[#929097] font-mono shrink-0">
-                  Hace 1d
-                </span>
-              </div>
+              ) : (
+                recentAlerts.map((alert) => (
+                  <div
+                    key={alert.id}
+                    onClick={() => navigate(`/app/portfolio/${alert.tenderId}`)}
+                    className="flex items-start gap-2.5 p-1.5 rounded-[10px] hover:bg-white/60 transition-colors cursor-pointer"
+                  >
+                    <div
+                      className={`p-1 rounded-md shrink-0 mt-0.5 ${
+                        alert.severity === 'CRITICAL'
+                          ? 'bg-[#ffeded] text-[#e44848]'
+                          : alert.severity === 'WARNING'
+                          ? 'bg-[#fff3db] text-[#ca8517]'
+                          : 'bg-[#eeeaff] text-[#685cff]'
+                      }`}
+                    >
+                      {alert.severity === 'CRITICAL' ? (
+                        <ShieldAlert className="w-3.5 h-3.5" />
+                      ) : alert.severity === 'WARNING' ? (
+                        <AlertTriangle className="w-3.5 h-3.5" />
+                      ) : (
+                        <BellRing className="w-3.5 h-3.5" />
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-semibold text-[#171719] truncate leading-tight">
+                        {alert.title}
+                      </p>
+                      <p className="text-[11px] text-[#69666d] truncate">
+                        {alert.tenderTitle || alert.message}
+                      </p>
+                    </div>
+                    <span className="text-[10px] text-[#929097] font-mono shrink-0">
+                      {new Date(alert.createdAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+                    </span>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>
       </section>
 
-      {/* 4. BLOQUE INFERIOR: 3 CARDS EXACTAS AL MOCKUP */}
+      {/* 4. BLOQUE INFERIOR: ACCIONES Y COBERTURA DOCUMENTAL */}
       <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Card 1: Analiza un nuevo pliego con caja de subida/selección */}
+        {/* Card 1: Precalifica un expediente de la PLACSP */}
         <div className="surface p-5 border border-[#d5ccfe]/80 bg-white/75 flex flex-col justify-between interactive-card">
           <div>
             <div className="flex items-center gap-2 mb-2">
               <div className="w-7 h-7 rounded-[9px] bg-[#eeeaff] text-[#685cff] flex items-center justify-center">
-                <UploadCloud className="w-4 h-4" />
+                <FileText className="w-4 h-4" />
               </div>
               <h3 className="text-sm font-semibold text-[#171719]">
-                Analiza un nuevo pliego
+                Precalifica una licitación
               </h3>
             </div>
             <p className="text-xs text-[#69666d] leading-relaxed mb-4">
-              Sube la documentación o introduce la URL para analizar requisitos, riesgos y elegibilidad.
+              Selecciona cualquier expediente del catálogo oficial para analizar requisitos, solvencia y riesgos frente a tu dossier.
             </p>
           </div>
 
-          <div
+          <button
             onClick={() => navigate('/app/catalogo')}
-            className="p-3.5 rounded-[14px] bg-[#f8f6fc]/80 border border-dashed border-[#685cff]/30 hover:border-[#685cff] flex items-center justify-center gap-2.5 cursor-pointer transition-colors group"
+            className="w-full p-3 rounded-[14px] bg-[#f8f6fc]/80 hover:bg-[#eeeaff]/60 border border-[#685cff]/30 hover:border-[#685cff] flex items-center justify-center gap-2 cursor-pointer transition-colors text-xs font-semibold text-[#685cff]"
           >
-            <FileText className="w-4 h-4 text-[#685cff]" />
-            <div className="text-xs text-center">
-              <span className="font-semibold text-[#171719] block">Arrastra un archivo aquí</span>
-              <span className="text-[11px] text-[#685cff] group-hover:underline">o selecciona un documento</span>
-            </div>
-          </div>
+            <span>Explorar catálogo oficial</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
         </div>
 
-        {/* Card 2: Gestiona tu dossier con barra 82% y fichas apiladas */}
-        <div className="surface p-5 flex flex-col justify-between interactive-card">
+        {/* Card 2: Gestiona tu dossier con datos dinámicos */}
+        <div
+          onClick={() => navigate('/app/dossier')}
+          className="surface p-5 flex flex-col justify-between interactive-card cursor-pointer"
+        >
           <div>
             <div className="flex items-center gap-2 mb-2">
               <div className="w-7 h-7 rounded-[9px] bg-[#e8f7ef] text-[#218a58] flex items-center justify-center">
@@ -571,37 +485,46 @@ export const HomePage: React.FC = () => {
               </h3>
             </div>
             <p className="text-xs text-[#69666d] leading-relaxed mb-4">
-              Mantén actualizadas tus certificaciones, experiencia y evidencias empresariales.
+              Mantén actualizadas tus acreditaciones empresariales, solvencia y certificaciones activas.
             </p>
           </div>
 
           <div className="flex items-center justify-between pt-2 border-t border-[rgba(30,24,38,0.06)]">
             <div>
               <div className="flex items-baseline gap-1.5">
-                <span className="text-lg font-bold text-[#171719] tabular-nums font-ui">82%</span>
-                <span className="text-[11px] text-[#69666d]">Cobertura documental</span>
+                <span className="text-lg font-bold text-[#171719] tabular-nums font-ui">
+                  {totalDossierAccreditations}
+                </span>
+                <span className="text-[11px] text-[#69666d]">Acreditaciones</span>
               </div>
-              <div className="w-28 h-1.5 bg-[#efedef] rounded-full overflow-hidden mt-1">
-                <div className="w-[82%] h-full bg-[#685cff] rounded-full" />
+              <div className="text-[10px] text-[#218a58] font-medium mt-0.5">
+                {certifications.filter((c) => c.status === 'VERIFIED').length} verificadas · {evidences.length} evidencias
               </div>
             </div>
 
-            {/* Fichas apiladas +12 */}
-            <div
-              onClick={() => navigate('/app/dossier')}
-              className="flex items-center gap-1 cursor-pointer hover:opacity-85 transition-opacity"
-            >
+            {/* Fichas apiladas de certificaciones reales */}
+            <div className="flex items-center gap-1">
               <div className="flex -space-x-2">
-                <div className="w-6 h-8 rounded-[4px] bg-white border border-[rgba(30,24,38,0.12)] shadow-2xs text-[8px] flex items-center justify-center font-mono">ISO</div>
-                <div className="w-6 h-8 rounded-[4px] bg-white border border-[rgba(30,24,38,0.12)] shadow-2xs text-[8px] flex items-center justify-center font-mono">ENS</div>
-                <div className="w-6 h-8 rounded-[4px] bg-white border border-[rgba(30,24,38,0.12)] shadow-2xs text-[8px] flex items-center justify-center font-mono">UNE</div>
+                {certifications.slice(0, 3).map((cert) => (
+                  <div
+                    key={cert.id}
+                    title={cert.name}
+                    className="w-7 h-8 rounded-[4px] bg-white border border-[rgba(30,24,38,0.12)] shadow-2xs text-[8px] flex items-center justify-center font-mono font-bold text-[#171719] uppercase overflow-hidden"
+                  >
+                    {cert.name.slice(0, 3)}
+                  </div>
+                ))}
               </div>
-              <span className="text-[11px] font-semibold text-[#685cff] ml-1">+12</span>
+              {certifications.length > 3 && (
+                <span className="text-[11px] font-semibold text-[#685cff] ml-1">
+                  +{certifications.length - 3}
+                </span>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Card 3: Explora el catálogo con cinta 3D violeta */}
+        {/* Card 3: Explora el catálogo con acceso directo */}
         <div className="surface p-5 relative overflow-hidden flex flex-col justify-between interactive-card">
           <div className="relative z-10">
             <div className="flex items-center gap-2 mb-2">
@@ -613,7 +536,7 @@ export const HomePage: React.FC = () => {
               </h3>
             </div>
             <p className="text-xs text-[#69666d] leading-relaxed max-w-[210px] mb-4">
-              Busca nuevas oportunidades públicas y filtra por sector, importe o territorio.
+              Busca nuevas oportunidades públicas y filtra por sector, importe o plazos de entrega.
             </p>
           </div>
 

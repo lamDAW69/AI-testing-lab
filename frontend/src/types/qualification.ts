@@ -1,5 +1,11 @@
 export type HumanDecision = 'UNDECIDED' | 'PURSUE' | 'REVIEW' | 'DISCARD';
-export type EligibilityStatus = 'POTENTIALLY_ELIGIBLE' | 'NEEDS_REVIEW' | 'POTENTIALLY_INELIGIBLE';
+export type EligibilityStatus =
+  | 'PENDING'
+  | 'ELIGIBLE'
+  | 'POTENTIALLY_ELIGIBLE'
+  | 'NEEDS_EXPERT_REVIEW'
+  | 'NEEDS_REVIEW'
+  | 'POTENTIALLY_INELIGIBLE';
 export type AnalysisValidity = 'VALID' | 'STALE' | 'REQUIRES_REANALYSIS';
 export type RequirementStatus = 'SUPPORTED' | 'PARTIALLY_SUPPORTED' | 'NOT_SUPPORTED' | 'UNKNOWN';
 

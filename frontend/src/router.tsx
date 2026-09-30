@@ -80,4 +80,8 @@ export const router = createBrowserRouter([
     path: '*',
     element: <Navigate to="/app/inicio" replace />,
   },
-]);
+], {
+  future: {
+    v7_relativeSplatPath: true,
+  },
+});

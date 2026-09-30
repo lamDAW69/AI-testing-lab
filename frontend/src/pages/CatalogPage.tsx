@@ -20,33 +20,41 @@ export const CatalogPage: React.FC = () => {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCpv, setSelectedCpv] = useState<string>('all');
-  const [selectedTerritory, setSelectedTerritory] = useState<string>('all');
   const [selectedState, setSelectedState] = useState<string>('PUBLISHED');
   const [sortBy, setSortBy] = useState<'deadline' | 'amount' | 'date'>('deadline');
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
 
-  // Filtros interactivos reales
-  const filteredTenders = tenders.filter((tender) => {
-    const matchesSearch =
-      searchTerm === '' ||
-      tender.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      tender.fileReference.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      tender.contractingAuthority.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      tender.cpvCode.toLowerCase().includes(searchTerm.toLowerCase());
+  // Filtros y ordenación deterministas reales
+  const filteredTenders = tenders
+    .filter((tender) => {
+      const matchesSearch =
+        searchTerm === '' ||
+        tender.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        tender.fileReference.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        tender.contractingAuthority.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        tender.cpvCode.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesCpv =
-      selectedCpv === 'all' || tender.cpvCode.startsWith(selectedCpv);
+      const matchesCpv =
+        selectedCpv === 'all' || tender.cpvCode.startsWith(selectedCpv);
 
-    const matchesState =
-      selectedState === 'all' || tender.status === selectedState;
+      const matchesState =
+        selectedState === 'all' || tender.status === selectedState;
 
-    return matchesSearch && matchesCpv && matchesState;
-  });
+      return matchesSearch && matchesCpv && matchesState;
+    })
+    .sort((a, b) => {
+      if (sortBy === 'deadline') {
+        return new Date(a.submissionDeadline).getTime() - new Date(b.submissionDeadline).getTime();
+      }
+      if (sortBy === 'amount') {
+        return b.budgetAmount - a.budgetAmount;
+      }
+      return 0;
+    });
 
   const clearFilters = () => {
     setSearchTerm('');
     setSelectedCpv('all');
-    setSelectedTerritory('all');
     setSelectedState('all');
   };
 
@@ -69,17 +77,6 @@ export const CatalogPage: React.FC = () => {
           <p className="text-xs sm:text-sm text-[#69666d] mt-1 max-w-xl">
             Encuentra oportunidades públicas relevantes y analiza su potencial para tu organización.
           </p>
-        </div>
-
-        {/* Botones de acción derecha (Sección 25: Ocultar "Buscar con IA" al no existir backend real) */}
-        <div className="flex items-center gap-2.5">
-          <button
-            onClick={() => alert('Búsqueda guardada en tu perfil.')}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-[11px] bg-white hover:bg-[#f5f1ed] text-xs font-semibold text-[#171719] border border-[rgba(30,24,38,0.10)] transition-all cursor-pointer shadow-xs"
-          >
-            <Bookmark className="w-3.5 h-3.5 text-[#69666d]" />
-            <span>Guardar búsqueda</span>
-          </button>
         </div>
       </div>
 
@@ -111,36 +108,6 @@ export const CatalogPage: React.FC = () => {
             <option value="384">CPV 38400000 · Sensores IoT ▾</option>
           </select>
 
-          {/* Organismo */}
-          <button className="h-[34px] px-3.5 rounded-full bg-white/65 hover:bg-white border border-[rgba(30,24,38,0.06)] text-xs text-[#69666d] hover:text-[#171719] transition-colors cursor-pointer flex items-center gap-1 shadow-xs">
-            <span>Organismo</span>
-            <ChevronDown className="w-3 h-3 text-[#929097]" />
-          </button>
-
-          {/* Territorio */}
-          <select
-            value={selectedTerritory}
-            onChange={(e) => setSelectedTerritory(e.target.value)}
-            className="h-[34px] px-3.5 rounded-full bg-white/65 hover:bg-white border border-[rgba(30,24,38,0.06)] text-xs text-[#171719] cursor-pointer focus:outline-none shadow-xs"
-          >
-            <option value="all">Territorio: Nacional ▾</option>
-            <option value="madrid">Comunidad de Madrid ▾</option>
-            <option value="valencia">Comunitat Valenciana ▾</option>
-            <option value="cataluna">Cataluña ▾</option>
-          </select>
-
-          {/* Importe */}
-          <button className="h-[34px] px-3.5 rounded-full bg-white/65 hover:bg-white border border-[rgba(30,24,38,0.06)] text-xs text-[#69666d] hover:text-[#171719] transition-colors cursor-pointer flex items-center gap-1 shadow-xs">
-            <span>Importe</span>
-            <ChevronDown className="w-3 h-3 text-[#929097]" />
-          </button>
-
-          {/* Plazo */}
-          <button className="h-[34px] px-3.5 rounded-full bg-white/65 hover:bg-white border border-[rgba(30,24,38,0.06)] text-xs text-[#69666d] hover:text-[#171719] transition-colors cursor-pointer flex items-center gap-1 shadow-xs">
-            <span>Plazo</span>
-            <ChevronDown className="w-3 h-3 text-[#929097]" />
-          </button>
-
           {/* Estado */}
           <select
             value={selectedState}
@@ -151,6 +118,15 @@ export const CatalogPage: React.FC = () => {
             <option value="PUBLISHED">Estado: Abierto (Publicado) ▾</option>
             <option value="EVALUATION">Estado: En Evaluación ▾</option>
           </select>
+
+          {(selectedCpv !== 'all' || selectedState !== 'PUBLISHED' || searchTerm !== '') && (
+            <button
+              onClick={clearFilters}
+              className="h-[34px] px-3 rounded-full bg-[#ffeded] text-[#e44848] text-xs font-semibold hover:bg-[#fcd2d2] transition-colors cursor-pointer"
+            >
+              Limpiar filtros
+            </button>
+          )}
         </div>
       </div>
 
@@ -160,12 +136,6 @@ export const CatalogPage: React.FC = () => {
           <span className="font-semibold text-[#171719]">
             {filteredTenders.length} {filteredTenders.length === 1 ? 'resultado' : 'resultados'}
           </span>
-          <button
-            onClick={() => alert('Filtros guardados.')}
-            className="text-[#685cff] hover:underline cursor-pointer font-medium"
-          >
-            Guardar filtros
-          </button>
         </div>
 
         <div className="flex items-center gap-3">
@@ -228,6 +198,67 @@ export const CatalogPage: React.FC = () => {
             <RotateCcw className="w-3.5 h-3.5" />
             <span>Limpiar filtros</span>
           </button>
+        </div>
+      ) : viewMode === 'grid' ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredTenders.map((tender) => (
+            <div
+              key={tender.id}
+              onClick={() => navigate(`/app/oportunidades/${tender.id}`)}
+              className="surface p-5 rounded-[18px] flex flex-col justify-between interactive-card cursor-pointer group space-y-4 hover:border-[#685cff]/40 transition-all"
+            >
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-[#eeeaff] text-[#685cff] font-semibold border border-[#d5ccfe]/60">
+                    {tender.fileReference}
+                  </span>
+                  <StatusBadge tone="success" icon="check">
+                    Abierto
+                  </StatusBadge>
+                </div>
+
+                <div>
+                  <h3 className="text-sm font-semibold text-[#171719] line-clamp-2 group-hover:text-[#685cff] transition-colors leading-snug">
+                    {tender.title}
+                  </h3>
+                  <p className="text-xs text-[#69666d] truncate mt-1">
+                    {tender.contractingAuthority}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-[#f5f1ed] text-[#69666d] border border-[rgba(30,24,38,0.06)]">
+                    {tender.cpvCode.split(' · ')[0]}
+                  </span>
+                  <span className="text-[11px] text-[#929097] truncate">
+                    {tender.cpvCode.split(' · ')[1] || 'Servicios'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-[rgba(30,24,38,0.06)] flex items-center justify-between">
+                <div>
+                  <span className="text-xs font-bold text-[#171719] tabular-nums font-mono block">
+                    {formatCurrency(tender.budgetAmount)}
+                  </span>
+                  <span className="text-[11px] text-[#69666d] block">
+                    {formatDeadlineDays(tender.submissionDeadline).label}
+                  </span>
+                </div>
+
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/app/oportunidades/${tender.id}`);
+                  }}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-[10px] bg-white group-hover:bg-[#171719] text-[#171719] group-hover:text-white border border-[rgba(30,24,38,0.12)] group-hover:border-[#171719] text-xs font-semibold transition-all shadow-xs cursor-pointer"
+                >
+                  <span>Detalle</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       ) : (
         <div className="space-y-2">

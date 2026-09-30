@@ -78,12 +78,14 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
 // Aliases y Badges Semánticos del Dominio Pliego AI
 export const EligibilityBadge: React.FC<{ status: EligibilityStatus }> = ({ status }) => {
   switch (status) {
+    case 'ELIGIBLE':
     case 'POTENTIALLY_ELIGIBLE':
       return (
         <StatusBadge tone="success" icon="check">
           Potencialmente Elegible
         </StatusBadge>
       );
+    case 'NEEDS_EXPERT_REVIEW':
     case 'NEEDS_REVIEW':
       return (
         <StatusBadge tone="warning" icon="warning">
@@ -96,8 +98,9 @@ export const EligibilityBadge: React.FC<{ status: EligibilityStatus }> = ({ stat
           Potencialmente Inelegible
         </StatusBadge>
       );
+    case 'PENDING':
     default:
-      return <StatusBadge tone="neutral">Desconocido</StatusBadge>;
+      return <StatusBadge tone="neutral">Pendiente</StatusBadge>;
   }
 };
 

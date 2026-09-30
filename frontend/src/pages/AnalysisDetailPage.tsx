@@ -195,13 +195,7 @@ export const AnalysisDetailPage: React.FC = () => {
   const currentTender = getTenderById(activeTenderId);
   const rawAnalysis = getAnalysisByTenderId(activeTenderId);
 
-  // Auto-crear análisis para expediente si aún no existía en el store
-  React.useEffect(() => {
-    if (!rawAnalysis && currentTender) {
-      startAnalysisForTender(activeTenderId);
-    }
-  }, [rawAnalysis, currentTender, activeTenderId, startAnalysisForTender]);
-
+  // Si no hay análisis en memoria, se utiliza DEMO_ANALYSIS como previsualización de consulta
   const analysis = rawAnalysis || DEMO_ANALYSIS;
 
   const [activeTab, setActiveTab] = useState<string>('dimensiones');
