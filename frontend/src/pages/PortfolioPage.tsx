@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   Search,
-  MoreVertical,
   FolderOpen,
+  FileText,
+  ArrowRight,
 } from 'lucide-react';
 import { useData } from '../lib/data-context';
 import {
@@ -15,7 +16,7 @@ import {
 import { formatCurrency, formatDeadlineDays } from '../lib/formatters';
 
 export const PortfolioPage: React.FC = () => {
-  const { portfolio } = useData();
+  const { portfolio, tenders } = useData();
   const navigate = useNavigate();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -302,20 +303,21 @@ export const PortfolioPage: React.FC = () => {
           </button>
         </div>
       ) : (
-        <div className="surface rounded-[16px] overflow-hidden border border-[rgba(30,24,38,0.06)] shadow-xs">
-          {/* Encabezado de columnas de la tabla (Desktop) */}
-          <div className="hidden lg:grid grid-cols-[minmax(260px,1.8fr)_0.85fr_0.9fr_0.75fr_0.65fr_0.85fr_36px] gap-3 px-3.5 py-2.5 bg-[#f8f5f2]/80 border-b border-[rgba(30,24,38,0.06)] text-[11px] font-mono uppercase text-[#929097] select-none">
-            <span>Oportunidad</span>
+        <div className="space-y-2">
+          {/* Encabezado visible en desktop idéntico a Catálogo */}
+          <div className="hidden lg:grid grid-cols-[76px_minmax(260px,1.8fr)_100px_110px_125px_135px_90px_90px_120px] gap-3.5 px-3.5 text-[11px] font-mono uppercase text-[#929097] select-none">
+            <span>Expediente</span>
+            <span>Objeto / Entidad</span>
+            <span>Importe</span>
+            <span>Plazo Límite</span>
             <span>Estado</span>
             <span>Elegibilidad</span>
             <span>Decisión</span>
-            <span>Plazo</span>
             <span>Vigencia</span>
-            <span className="text-right">···</span>
+            <span className="text-right">Acción</span>
           </div>
 
-          {/* Filas operativas de 50-58px (.portfolio-row) */}
-          <div className="divide-y divide-[rgba(30,24,38,0.055)]">
+          <div className="surface rounded-[18px] overflow-hidden divide-y divide-[rgba(30,24,38,0.055)] shadow-xs">
             {paginatedItems.map((item) => {
               const isCritical =
                 item.hasBlockers || item.validity === 'REQUIRES_REANALYSIS';
@@ -325,29 +327,84 @@ export const PortfolioPage: React.FC = () => {
                   (1000 * 60 * 60 * 24)
               );
               const isCriticalDeadline = deadlineDays <= 7 && deadlineDays > 0;
+              const tender = tenders.find((t) => t.id === item.tenderId);
+              const cpvTag = tender?.cpvCode ? tender.cpvCode.split(' · ')[0] : 'CPV 72200000';
+              const cpvDesc = tender?.cpvCode ? tender.cpvCode.split(' · ')[1] : 'Servicios TIC';
 
               return (
                 <div
                   key={item.id}
                   onClick={() => navigate(`/app/portfolio/${item.tenderId}`)}
-                  className={`portfolio-row cursor-pointer ${
+                  className={`portfolio-row group cursor-pointer ${
                     isCritical ? 'critical' : ''
                   }`}
                 >
-                  {/* Columna 1: Oportunidad */}
+                  {/* 1. Thumbnail 76x54px con degradado arquitectónico suave (Idéntico a Catálogo) */}
+                  <div className="w-[76px] h-[54px] rounded-[10px] bg-gradient-to-br from-[#f8f5f2] via-[#eee9f2] to-[#e7e1ff] border border-[rgba(30,24,38,0.06)] flex items-center justify-center text-[#685cff] shrink-0 relative">
+                    <FileText className="w-5 h-5 opacity-70" />
+                    {isCritical && (
+                      <span
+                        className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#e44848] ring-2 ring-white"
+                        title="Requiere atención o reanálisis"
+                      />
+                    )}
+                  </div>
+
+                  {/* 2. Título, Entidad y Tags (Idéntico a Catálogo) */}
                   <div className="min-w-0 pr-2">
-                    <h3 className="text-xs sm:text-sm font-semibold text-[#171719] truncate hover:text-[#685cff] transition-colors leading-tight">
+                    <h3 className="text-xs sm:text-sm font-semibold text-[#171719] truncate group-hover:text-[#685cff] transition-colors leading-tight">
                       {item.title}
                     </h3>
-                    <p className="text-[11px] text-[#69666d] truncate">
+                    <p className="text-xs text-[#69666d] truncate mt-0.5">
                       {item.contractingAuthority}
                     </p>
-                    <span className="text-[10px] font-mono text-[#929097] tabular-nums">
-                      {item.fileReference} · {formatCurrency(item.budgetAmount)}
+                    <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-[#f5f1ed] text-[#69666d] border border-[rgba(30,24,38,0.06)]">
+                        {item.fileReference}
+                      </span>
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-[#f5f1ed] text-[#69666d] border border-[rgba(30,24,38,0.06)]">
+                        {cpvTag}
+                      </span>
+                      <span className="text-[11px] text-[#929097] truncate hidden sm:inline">
+                        {cpvDesc}
+                      </span>
+                      <span className="text-[10px] font-mono font-medium px-1.5 py-0.5 rounded bg-white/80 text-[#685cff] border border-[#685cff]/20">
+                        {item.evidenceCoveragePercentage}% evidencias
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* 3. Importe en tabular-nums (Idéntico a Catálogo) */}
+                  <div className="hidden lg:block">
+                    <span className="text-xs sm:text-sm font-semibold text-[#171719] tabular-nums font-mono">
+                      {formatCurrency(item.budgetAmount)}
+                    </span>
+                    <span className="block text-[10px] text-[#929097]">
+                      Presupuesto base
                     </span>
                   </div>
 
-                  {/* Columna 2: Estado */}
+                  {/* 4. Plazo Crítico (Idéntico a Catálogo) */}
+                  <div className="hidden lg:block">
+                    <span className="text-xs text-[#171719] font-medium block">
+                      {new Intl.DateTimeFormat('es-ES', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric',
+                      }).format(new Date(item.submissionDeadline))}
+                    </span>
+                    <span
+                      className={`text-[11px] tabular-nums ${
+                        isCriticalDeadline
+                          ? 'text-[#e44848] font-semibold'
+                          : 'text-[#69666d]'
+                      }`}
+                    >
+                      {formatDeadlineDays(item.submissionDeadline).label}
+                    </span>
+                  </div>
+
+                  {/* 5. Estado de Análisis */}
                   <div className="hidden lg:block">
                     {item.hasBlockers ? (
                       <StatusBadge tone="danger" icon="warning">
@@ -364,103 +421,86 @@ export const PortfolioPage: React.FC = () => {
                     )}
                   </div>
 
-                  {/* Columna 3: Elegibilidad */}
+                  {/* 6. Elegibilidad */}
                   <div className="hidden lg:block">
                     <EligibilityBadge status={item.eligibility} />
                   </div>
 
-                  {/* Columna 4: Decisión humana */}
+                  {/* 7. Decisión Humana */}
                   <div className="hidden lg:block">
                     <DecisionBadge decision={item.decision} />
                   </div>
 
-                  {/* Columna 5: Plazo */}
-                  <div className="hidden lg:block">
-                    <div
-                      className={`text-xs font-semibold tabular-nums leading-tight ${
-                        isCriticalDeadline ? 'text-[#e44848]' : 'text-[#171719]'
-                      }`}
-                    >
-                      {formatDeadlineDays(item.submissionDeadline).label}
-                    </div>
-                    <div className="text-[10px] text-[#929097]">
-                      {new Intl.DateTimeFormat('es-ES', {
-                        day: 'numeric',
-                        month: 'short',
-                      }).format(new Date(item.submissionDeadline))}
-                    </div>
-                  </div>
-
-                  {/* Columna 6: Vigencia / Cambio Documental */}
+                  {/* 8. Vigencia / Cambio Documental */}
                   <div className="hidden lg:block">
                     <ValidityBadge validity={item.validity} />
                   </div>
 
-                  {/* Columna 7: Acción */}
+                  {/* 9. Botón Ver Análisis (Píldora Idéntica a Catálogo) */}
                   <div className="text-right">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         navigate(`/app/portfolio/${item.tenderId}`);
                       }}
-                      className="p-1 rounded-md text-[#929097] hover:text-[#171719] hover:bg-black/[0.04] transition-colors"
-                      title="Abrir análisis completo"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] bg-white group-hover:bg-[#171719] text-[#171719] group-hover:text-white border border-[rgba(30,24,38,0.12)] group-hover:border-[#171719] text-xs font-semibold transition-all shadow-xs cursor-pointer whitespace-nowrap"
                     >
-                      <MoreVertical className="w-4 h-4" />
+                      <span>Ver análisis</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>
               );
             })}
-          </div>
 
-          {/* PAGINACIÓN */}
-          <div className="p-3 bg-[#f8f5f2]/70 border-t border-[rgba(30,24,38,0.055)] flex items-center justify-between text-xs text-[#69666d]">
-            <div>
-              Mostrando{' '}
-              <span className="font-semibold text-[#171719]">
-                {filteredItems.length === 0
-                  ? 0
-                  : (currentPage - 1) * itemsPerPage + 1}
-                –{Math.min(currentPage * itemsPerPage, filteredItems.length)}
-              </span>{' '}
-              de{' '}
-              <span className="font-semibold text-[#171719]">
-                {filteredItems.length}
-              </span>{' '}
-              resultados
-            </div>
+            {/* PAGINACIÓN */}
+            <div className="p-3 bg-[#f8f5f2]/70 border-t border-[rgba(30,24,38,0.055)] flex items-center justify-between text-xs text-[#69666d]">
+              <div>
+                Mostrando{' '}
+                <span className="font-semibold text-[#171719]">
+                  {filteredItems.length === 0
+                    ? 0
+                    : (currentPage - 1) * itemsPerPage + 1}
+                  –{Math.min(currentPage * itemsPerPage, filteredItems.length)}
+                </span>{' '}
+                de{' '}
+                <span className="font-semibold text-[#171719]">
+                  {filteredItems.length}
+                </span>{' '}
+                resultados
+              </div>
 
-            <div className="flex items-center gap-1.5">
-              <button
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                className="w-7 h-7 rounded-[7px] border border-[rgba(30,24,38,0.06)] bg-white disabled:opacity-40 hover:bg-[#f5f1ed] text-[#171719] flex items-center justify-center cursor-pointer transition-colors"
-              >
-                ‹
-              </button>
-
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <div className="flex items-center gap-1.5">
                 <button
-                  key={page}
-                  onClick={() => setCurrentPage(page)}
-                  className={`w-7 h-7 rounded-[7px] text-xs font-semibold transition-colors cursor-pointer ${
-                    currentPage === page
-                      ? 'bg-[#685cff] text-white shadow-xs'
-                      : 'bg-white hover:bg-[#f5f1ed] text-[#171719] border border-[rgba(30,24,38,0.06)]'
-                  }`}
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  className="w-7 h-7 rounded-[7px] border border-[rgba(30,24,38,0.06)] bg-white disabled:opacity-40 hover:bg-[#f5f1ed] text-[#171719] flex items-center justify-center cursor-pointer transition-colors"
                 >
-                  {page}
+                  ‹
                 </button>
-              ))}
 
-              <button
-                disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                className="w-7 h-7 rounded-[7px] border border-[rgba(30,24,38,0.06)] bg-white disabled:opacity-40 hover:bg-[#f5f1ed] text-[#171719] flex items-center justify-center cursor-pointer transition-colors"
-              >
-                ›
-              </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`w-7 h-7 rounded-[7px] text-xs font-semibold transition-colors cursor-pointer ${
+                      currentPage === page
+                        ? 'bg-[#685cff] text-white shadow-xs'
+                        : 'bg-white hover:bg-[#f5f1ed] text-[#171719] border border-[rgba(30,24,38,0.06)]'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+
+                <button
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  className="w-7 h-7 rounded-[7px] border border-[rgba(30,24,38,0.06)] bg-white disabled:opacity-40 hover:bg-[#f5f1ed] text-[#171719] flex items-center justify-center cursor-pointer transition-colors"
+                >
+                  ›
+                </button>
+              </div>
             </div>
           </div>
         </div>

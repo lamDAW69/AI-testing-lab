@@ -352,33 +352,42 @@
   transform: translateY(-1px);
 }
 
-/* 29 & 31. Filas de Portfolio con franja roja lateral */
+/* 29 & 31. Filas de Portfolio alineadas con el diseño de Catálogo */
 .portfolio-row {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(260px, 1.8fr) 0.85fr 0.9fr 0.75fr 0.65fr 0.85fr 36px;
-  min-height: 54px;
+  grid-template-columns: 76px minmax(260px, 1.8fr) 100px 110px 125px 135px 90px 90px 120px;
+  gap: 14px;
   align-items: center;
-  gap: 12px;
-  padding: 8px 14px;
+  min-height: 74px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.62);
   border-bottom: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.68);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  transition: background 150ms ease;
+  transition: all 180ms ease;
 }
 
-.portfolio-row:hover {
-  background: rgba(255, 255, 255, 0.92);
+.portfolio-row:hover,
+.portfolio-row.highlighted {
+  position: relative;
+  z-index: 2;
+  background: linear-gradient(
+    90deg,
+    rgba(246, 243, 255, 0.92),
+    rgba(255, 255, 255, 0.72)
+  );
+  box-shadow:
+    0 0 0 1px rgba(111, 91, 255, 0.08),
+    0 8px 30px rgba(98, 74, 210, 0.06);
+  transform: translateY(-1px);
 }
 
 .portfolio-row.critical::before {
   content: "";
   position: absolute;
   left: 0;
-  top: 9px;
-  bottom: 9px;
-  width: 3px;
+  top: 10px;
+  bottom: 10px;
+  width: 3.5px;
   border-radius: 3px;
   background: var(--danger);
 }
