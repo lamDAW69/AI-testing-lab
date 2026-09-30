@@ -44,14 +44,17 @@ export const Badge: React.FC<BadgeProps> = ({
 
 export const EligibilityBadge: React.FC<{ status: EligibilityStatus }> = ({ status }) => {
   switch (status) {
+    case 'ELIGIBLE':
     case 'POTENTIALLY_ELIGIBLE':
       return <Badge variant="success">Potencialmente Elegible</Badge>;
+    case 'NEEDS_EXPERT_REVIEW':
     case 'NEEDS_REVIEW':
       return <Badge variant="warning">Necesita Revisión Humana</Badge>;
     case 'POTENTIALLY_INELIGIBLE':
       return <Badge variant="danger">Potencialmente Inelegible</Badge>;
+    case 'PENDING':
     default:
-      return <Badge variant="neutral">Estado Desconocido</Badge>;
+      return <Badge variant="neutral">Pendiente</Badge>;
   }
 };
 

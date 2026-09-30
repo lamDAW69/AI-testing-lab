@@ -212,7 +212,7 @@ export const TenderDetailPage: React.FC = () => {
 
             <div className="flex items-center justify-between py-1 border-b border-[rgba(20,20,20,0.04)]">
               <span className="text-[#68656A]">Dossier verificado</span>
-              <span className="font-mono font-bold text-[#137A43]">TechConsulting Soluciones S.L.</span>
+              <span className="font-mono font-bold text-[#137A43]">{activeTenant?.name || 'TechConsulting Soluciones S.L.'}</span>
             </div>
 
             <div className="flex items-center justify-between py-1 border-b border-[rgba(20,20,20,0.04)]">

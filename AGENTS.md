@@ -118,3 +118,51 @@ Cuando el usuario pida implementar una función, el agente debe seguir este fluj
 2. **Definición de Tipos y Validación**: Definir los esquemas de validación de datos primero.
 3. **Implementación Segura**: Escribir el código limpio, modular, tipado y documentado con comentarios que enseñen buenas prácticas.
 4. **Verificación y Prueba**: Proporcionar el comando de prueba (ej: `curl` o test unitario) para validar tanto el camino feliz como el caso de intento de hackeo/bypass.
+
+---
+
+## 8. REGLAS ANTI-SLOP Y FIDELIDAD DE DATOS (ZERO-FICTITIOUS METRICS)
+
+1. **Prohibición Absoluta de Métricas y Porcentajes Inventados**:
+   - Queda estrictamente prohibido incrustar porcentajes fijos, barras de progreso o donas SVG con valores hardcodeados de mockups (ej: "82% de cobertura", "78% de éxito", "12,5 M€ ficticios").
+   - Toda cifra o indicador visual debe derivarse matemáticamente del estado real (`data-context` / API). Si una métrica no tiene sentido estadístico en un contexto global (como la cobertura documental antes de evaluar un pliego específico), se debe mostrar el **recuento factual verificable** (ej: "X acreditaciones registradas") en lugar de un porcentaje arbitrario.
+2. **Erradicación de Componentes Inertes o Promesas Falsas**:
+   - Prohibido dejar componentes visuales que simulen capacidades inexistentes en el backend (ej: cajas de chatbot genérico sin backend conversacional conectado, zonas *drag & drop* de subida de PDF sin endpoint de ingesta, o botones interactivos con `onClick` vacíos).
+   - Todo componente interactivo debe estar conectado a un handler real o eliminarse de la vista.
+3. **Alineación Semántica de Pestañas (No-Duplication)**:
+   - Cada pestaña en una vista debe representar una entidad diferenciada del modelo de datos.
+   - Prohibido crear pestañas redundantes (ej: tener "Capacidades" y "Experiencia" renderizando la misma lista de evidencias). Las subdivisiones dentro de una colección deben modelarse como **chips de filtro por categoría** (`category`).
+
+---
+
+## 9. PARIDAD DE ENUMS Y AUTORIDAD DE ESTADOS (CANONICAL ENUM PARITY)
+
+1. **Paridad Canónica Frontend-Backend**:
+   - Los tipos y badges de estado en el cliente deben mantener paridad estricta con los enums canónicos de la base de datos (`api/src/db/schema.ts`):
+     - Elegibilidad: `POTENTIALLY_ELIGIBLE`, `NEEDS_REVIEW`, `POTENTIALLY_INELIGIBLE` (admitiendo alias de backend como `ELIGIBLE`).
+     - Decisión: `PURSUE`, `REVIEW`, `DISCARD`, `UNDECIDED`.
+     - Validez: `VALID`, `REQUIRES_REANALYSIS`, `STALE`.
+     - Severidad y tipo de alertas: `CRITICAL`, `WARNING`, `INFO`; `DOCUMENT_CHANGE`, `DEADLINE_APPROACHING`, `NEW_TENDER_MATCH`.
+2. **Principio de Autoridad en Declaraciones**:
+   - Los operadores y usuarios del cliente solo tienen autorización para registrar datos con estado inicial `DECLARED` o `PENDING_REVIEW`.
+   - Prohibido que una acción de usuario en el frontend asigne directamente el estado `VERIFIED`. La verificación es una potestad exclusiva de validadores oficiales o del motor de análisis del backend.
+
+---
+
+## 10. SEPARACIÓN DE IDENTIDADES: USUARIO VS. ENTIDAD JURÍDICA (TENANT)
+
+1. **Aislamiento de Responsabilidades**:
+   - **Cuenta de Usuario (Configuración / Settings)**: Gestiona la identidad personal autenticada del operador (`auth.users` / Supabase Auth: correo electrónico, nombre, contraseña, preferencias personales).
+   - **Dossier de Empresa (Dossier)**: Gestiona la entidad jurídica mercantil que licita (`company_profiles`, `company_certifications`, `company_dossier_items`: CIF/NIF, solvencia técnica, solvencia económica, certificaciones ENS/ISO).
+2. **Prohibición de Duplicidad Funcional**:
+   - No duplicar formularios de edición corporativa dentro del perfil de usuario personal ni viceversa.
+
+---
+
+## 11. PROTOCOLO DE PRUEBAS EN ENTORNO LOCAL (WINDOWS / POWERSHELL)
+
+1. **Scripts Limpios vs. Comandos Inline**:
+   - Al ejecutar pruebas automatizadas o diagnósticos con Node.js desde PowerShell, **nunca** usar sentencias inline extensas `node -e "..."` con comillas dobles anidadas, ya que PowerShell corrompe las comillas y genera errores de sintaxis (`SyntaxError: Invalid or unexpected token`).
+   - Se debe escribir un archivo de script temporal (`.mjs` o `.js`) en el directorio de `scratch/` y ejecutarlo de forma limpia con `node <ruta_al_script>`.
+2. **Verificación de Consola y Rutas**:
+   - Toda refactorización de frontend debe verificar que no se introducen `console.error` ni advertencias de React Router en consola (usar flags de futuro `v7_relativeSplatPath` y `v7_startTransition`).

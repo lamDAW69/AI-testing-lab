@@ -1,5 +1,5 @@
 export type AlertSeverity = 'CRITICAL' | 'WARNING' | 'INFO';
-export type AlertType = 'DOCUMENT_CHANGE' | 'DEADLINE_APPROACHING' | 'ANALYSIS_INVALIDATED' | 'REQUIREMENT_UPDATE';
+export type AlertType = 'DOCUMENT_CHANGED' | 'DOCUMENT_CHANGE' | 'DEADLINE_APPROACHING' | 'ANALYSIS_INVALIDATED' | 'REQUIREMENT_UPDATE';
 
 export interface TenantAlert {
   id: string; // UUIDv7

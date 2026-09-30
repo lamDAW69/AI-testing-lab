@@ -1,156 +1,376 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Search, ArrowRight, Sparkles, CheckCircle2 } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
+import {
+  Search,
+  ArrowRight,
+  Bookmark,
+  ChevronDown,
+  LayoutList,
+  LayoutGrid,
+  FileText,
+  RotateCcw,
+} from 'lucide-react';
 import { formatCurrency, formatDeadlineDays } from '../lib/formatters';
 import { useData } from '../lib/data-context';
+import { StatusBadge } from '../components/ui/StatusBadge';
 
 export const CatalogPage: React.FC = () => {
   const { tenders } = useData();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCpv, setSelectedCpv] = useState<string>('all');
   const navigate = useNavigate();
 
-  const cpvFilters = [
-    { id: 'all', label: 'Todos los CPVs' },
-    { id: '722', label: 'CPV 722 · Software' },
-    { id: '728', label: 'CPV 728 · Auditoría TIC' },
-    { id: '384', label: 'CPV 384 · Sensores e IoT' },
-  ];
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCpv, setSelectedCpv] = useState<string>('all');
+  const [selectedState, setSelectedState] = useState<string>('PUBLISHED');
+  const [sortBy, setSortBy] = useState<'deadline' | 'amount' | 'date'>('deadline');
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
 
-  const filteredTenders = tenders.filter((tender) => {
-    const matchesSearch =
-      searchTerm === '' ||
-      tender.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      tender.fileReference.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      tender.contractingAuthority.toLowerCase().includes(searchTerm.toLowerCase());
+  // Filtros y ordenación deterministas reales
+  const filteredTenders = tenders
+    .filter((tender) => {
+      const matchesSearch =
+        searchTerm === '' ||
+        tender.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        tender.fileReference.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        tender.contractingAuthority.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        tender.cpvCode.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesCpv =
-      selectedCpv === 'all' || tender.cpvCode.startsWith(selectedCpv);
+      const matchesCpv =
+        selectedCpv === 'all' || tender.cpvCode.startsWith(selectedCpv);
 
-    return matchesSearch && matchesCpv;
-  });
+      const matchesState =
+        selectedState === 'all' || tender.status === selectedState;
+
+      return matchesSearch && matchesCpv && matchesState;
+    })
+    .sort((a, b) => {
+      if (sortBy === 'deadline') {
+        return new Date(a.submissionDeadline).getTime() - new Date(b.submissionDeadline).getTime();
+      }
+      if (sortBy === 'amount') {
+        return b.budgetAmount - a.budgetAmount;
+      }
+      return 0;
+    });
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setSelectedCpv('all');
+    setSelectedState('all');
+  };
 
   return (
     <div className="space-y-6 select-none">
-      {/* Cabecera Unificada */}
-      <div>
-        <h1 className="text-3xl font-extrabold text-[#161616] tracking-tight">
-          Catálogo Oficial
-        </h1>
-        <p className="text-xs text-[#68656A] mt-0.5">
-          Oportunidades públicas indexadas en tiempo real desde la Plataforma de Contratación del Sector Público (PLACSP).
-        </p>
+      {/* 19. HEADER DE CATÁLOGO (Sección 19) */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <nav className="text-xs text-[#929097] flex items-center gap-1.5 mb-1.5">
+            <Link to="/app/inicio" className="hover:text-[#171719] transition-colors">
+              Inicio
+            </Link>
+            <span>›</span>
+            <span className="text-[#171719] font-medium">Catálogo</span>
+          </nav>
+
+          <h1 className="font-editorial text-4xl sm:text-5xl font-normal text-[#171719] tracking-tight">
+            Catálogo
+          </h1>
+          <p className="text-xs sm:text-sm text-[#69666d] mt-1 max-w-xl">
+            Encuentra oportunidades públicas relevantes y analiza su potencial para tu organización.
+          </p>
+        </div>
       </div>
 
-      {/* Buscador amplio + Chips de Filtro Desplegables */}
-      <div className="p-4 rounded-[20px] bg-white/75 backdrop-blur-[20px] border border-white/80 shadow-[0_2px_12px_rgba(20,20,30,0.03)] space-y-3 sticky top-[72px] z-20">
-        <div className="relative">
-          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#8F8B92]" />
+      {/* 20 & 21. SEARCH & FILTROS (Secciones 20 y 21) */}
+      <div className="space-y-3">
+        {/* Search Input: height 48px, max-w-640px, radius 14px (Sección 20) */}
+        <div className="relative max-w-[640px]">
+          <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-[#929097]" />
           <input
             type="text"
-            placeholder="Buscar licitación por expediente, objeto, ministerio o entidad contratante…"
+            placeholder="Buscar por título, organismo, CPV..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-[#F6F3EF]/70 border border-[rgba(20,20,20,0.06)] rounded-[12px] text-xs text-[#161616] placeholder-[#8F8B92] focus:bg-white focus:border-[#695CFF] focus:outline-none transition-all"
+            className="w-full h-12 pl-11 pr-4 bg-white/70 hover:bg-white focus:bg-white border border-[rgba(30,24,38,0.06)] focus:border-[#685cff] rounded-[14px] text-xs sm:text-sm text-[#171719] placeholder-[#929097] transition-all shadow-xs focus:outline-none"
           />
         </div>
 
-        {/* Chips de filtro */}
-        <div className="flex items-center gap-2 flex-wrap text-xs">
-          <span className="text-[11px] font-mono text-[#8F8B92] uppercase mr-1">Filtros:</span>
-          {cpvFilters.map((f) => (
+        {/* Chips de Filtro: height 34px, radius 999px (Sección 21) */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* CPV */}
+          <select
+            value={selectedCpv}
+            onChange={(e) => setSelectedCpv(e.target.value)}
+            className="h-[34px] px-3.5 rounded-full bg-white/65 hover:bg-white border border-[rgba(30,24,38,0.06)] text-xs text-[#171719] cursor-pointer focus:outline-none shadow-xs"
+          >
+            <option value="all">CPV: Todos los sectores ▾</option>
+            <option value="722">CPV 72200000 · Software ▾</option>
+            <option value="728">CPV 72800000 · Auditoría TIC ▾</option>
+            <option value="384">CPV 38400000 · Sensores IoT ▾</option>
+          </select>
+
+          {/* Estado */}
+          <select
+            value={selectedState}
+            onChange={(e) => setSelectedState(e.target.value)}
+            className="h-[34px] px-3.5 rounded-full bg-white/65 hover:bg-white border border-[rgba(30,24,38,0.06)] text-xs text-[#171719] cursor-pointer focus:outline-none shadow-xs"
+          >
+            <option value="all">Estado: Todos ▾</option>
+            <option value="PUBLISHED">Estado: Abierto (Publicado) ▾</option>
+            <option value="EVALUATION">Estado: En Evaluación ▾</option>
+          </select>
+
+          {(selectedCpv !== 'all' || selectedState !== 'PUBLISHED' || searchTerm !== '') && (
             <button
-              key={f.id}
-              onClick={() => setSelectedCpv(f.id)}
-              className={`px-3 py-1 rounded-[10px] text-xs font-semibold transition-all cursor-pointer ${
-                selectedCpv === f.id
-                  ? 'bg-[#695CFF] text-white shadow-xs'
-                  : 'bg-[#F6F3EF] text-[#68656A] hover:bg-[#EEEAE5] hover:text-[#161616] border border-[rgba(20,20,20,0.06)]'
-              }`}
+              onClick={clearFilters}
+              className="h-[34px] px-3 rounded-full bg-[#ffeded] text-[#e44848] text-xs font-semibold hover:bg-[#fcd2d2] transition-colors cursor-pointer"
             >
-              {f.label}
+              Limpiar filtros
             </button>
-          ))}
-          <button className="px-3 py-1 rounded-[10px] text-xs font-medium bg-[#F6F3EF] text-[#68656A] hover:bg-[#EEEAE5] border border-[rgba(20,20,20,0.06)] cursor-pointer">
-            Territorio ▾
-          </button>
-          <button className="px-3 py-1 rounded-[10px] text-xs font-medium bg-[#F6F3EF] text-[#68656A] hover:bg-[#EEEAE5] border border-[rgba(20,20,20,0.06)] cursor-pointer">
-            Importe ▾
-          </button>
-          <button className="px-3 py-1 rounded-[10px] text-xs font-medium bg-[#F6F3EF] text-[#68656A] hover:bg-[#EEEAE5] border border-[rgba(20,20,20,0.06)] cursor-pointer">
-            Plazo ▾
-          </button>
-          <button className="px-3 py-1 rounded-[10px] text-xs font-medium bg-[#F6F3EF] text-[#68656A] hover:bg-[#EEEAE5] border border-[rgba(20,20,20,0.06)] cursor-pointer">
-            Estado: Abierto ▾
-          </button>
+          )}
         </div>
       </div>
 
-      {/* Resultados con animación táctil viva */}
-      <div className="space-y-3">
-        {filteredTenders.map((tender) => (
-          <motion.div
-            key={tender.id}
-            whileHover={{ y: -3, scale: 1.008 }}
-            transition={{ type: 'spring', stiffness: 450, damping: 28 }}
-            onClick={() => navigate(`/app/oportunidades/${tender.id}`)}
-            className="group min-h-[76px] p-5 rounded-[20px] bg-white/80 backdrop-blur-[18px] border border-white/80 hover:border-[#695CFF]/35 shadow-[0_2px_12px_rgba(20,20,30,0.03)] hover:shadow-[0_16px_36px_rgba(20,20,30,0.08)] transition-all cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-4"
-          >
-            {/* Info expediente y ente */}
-            <div className="space-y-1.5 flex-1">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-mono text-xs px-2.5 py-0.5 rounded-[8px] bg-[#EEEAE5] text-[#161616] font-semibold">
-                  {tender.fileReference}
-                </span>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-[6px] bg-[#EEEAFE] text-[#5749F5] font-semibold">
-                  CPV {tender.cpvCode}
-                </span>
-                {tender.hasActiveAnalysis ? (
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#EDFBF2] text-[#137A43] border border-[#C6F0D4] font-semibold flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3 text-[#10B981]" /> Precalificado
-                  </span>
-                ) : (
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#F6F3EF] text-[#8F8B92] font-medium">
-                    Sin Analizar
-                  </span>
-                )}
-              </div>
-              <h3 className="text-sm font-bold text-[#161616] group-hover:text-[#695CFF] transition-colors leading-snug">
-                {tender.title}
-              </h3>
-              <p className="text-xs text-[#68656A]">
-                {tender.contractingAuthority}
-              </p>
-            </div>
+      {/* TOOLBAR DEL CATÁLOGO */}
+      <div className="flex items-center justify-between text-xs text-[#69666d] pt-2 pb-1 border-b border-[rgba(30,24,38,0.055)]">
+        <div className="flex items-center gap-4">
+          <span className="font-semibold text-[#171719]">
+            {filteredTenders.length} {filteredTenders.length === 1 ? 'resultado' : 'resultados'}
+          </span>
+        </div>
 
-            {/* Cifras y flecha animada */}
-            <div className="flex items-center justify-between md:justify-end gap-6 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-[rgba(20,20,20,0.06)]">
-              <div>
-                <span className="text-[10px] text-[#8F8B92] font-mono uppercase tracking-wider block">
-                  Presupuesto Base
-                </span>
-                <span className="text-sm font-bold text-[#161616] font-mono tabular-nums">
-                  {formatCurrency(tender.budgetAmount)}
-                </span>
-              </div>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5">
+            <span>Ordenar por</span>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as any)}
+              className="bg-transparent text-[#171719] font-medium cursor-pointer focus:outline-none"
+            >
+              <option value="deadline">Fecha presentación ▾</option>
+              <option value="date">Fecha publicación ▾</option>
+              <option value="amount">Importe licitación ▾</option>
+            </select>
+          </div>
 
-              <div>
-                <span className="text-[10px] text-[#8F8B92] font-mono uppercase tracking-wider block">
-                  Plazo Restante
-                </span>
-                <span className="text-xs text-[#975A16] font-semibold">
-                  {formatDeadlineDays(tender.submissionDeadline).label}
-                </span>
-              </div>
-
-              <div className="w-8 h-8 rounded-full bg-[#F6F3EF] flex items-center justify-center text-[#8F8B92] group-hover:text-[#695CFF] group-hover:bg-[#EEEAFE] group-hover:translate-x-[3px] transition-all">
-                <ArrowRight className="w-4 h-4" />
-              </div>
-            </div>
-          </motion.div>
-        ))}
+          <div className="hidden sm:flex items-center gap-1 pl-2 border-l border-[rgba(30,24,38,0.08)]">
+            <button
+              onClick={() => setViewMode('list')}
+              className={`p-1 rounded-md transition-colors ${
+                viewMode === 'list'
+                  ? 'bg-white text-[#171719] shadow-xs'
+                  : 'text-[#929097] hover:text-[#171719]'
+              }`}
+              title="Vista de lista"
+            >
+              <LayoutList className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setViewMode('grid')}
+              className={`p-1 rounded-md transition-colors ${
+                viewMode === 'grid'
+                  ? 'bg-white text-[#171719] shadow-xs'
+                  : 'text-[#929097] hover:text-[#171719]'
+              }`}
+              title="Vista de cuadrícula"
+            >
+              <LayoutGrid className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
       </div>
+
+      {/* 22, 23, 24. FILAS DE CATÁLOGO (Secciones 22-24) */}
+      {filteredTenders.length === 0 ? (
+        <div className="surface p-12 rounded-[20px] text-center max-w-lg mx-auto space-y-3">
+          <div className="w-12 h-12 rounded-full bg-[#f5f1ed] text-[#69666d] flex items-center justify-center mx-auto text-xl">
+            ◈
+          </div>
+          <h3 className="font-editorial text-2xl text-[#171719]">
+            No encontramos oportunidades con estos filtros.
+          </h3>
+          <p className="text-xs text-[#69666d] leading-relaxed">
+            Prueba eliminando alguno de los filtros o ampliando los términos de búsqueda.
+          </p>
+          <button
+            onClick={clearFilters}
+            className="mt-2 inline-flex items-center gap-1.5 px-4 py-2 rounded-[11px] bg-[#171719] text-white text-xs font-semibold hover:bg-[#28282b] transition-colors cursor-pointer"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span>Limpiar filtros</span>
+          </button>
+        </div>
+      ) : viewMode === 'grid' ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredTenders.map((tender) => (
+            <div
+              key={tender.id}
+              onClick={() => navigate(`/app/oportunidades/${tender.id}`)}
+              className="surface p-5 rounded-[18px] flex flex-col justify-between interactive-card cursor-pointer group space-y-4 hover:border-[#685cff]/40 transition-all"
+            >
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-[#eeeaff] text-[#685cff] font-semibold border border-[#d5ccfe]/60">
+                    {tender.fileReference}
+                  </span>
+                  <StatusBadge tone="success" icon="check">
+                    Abierto
+                  </StatusBadge>
+                </div>
+
+                <div>
+                  <h3 className="text-sm font-semibold text-[#171719] line-clamp-2 group-hover:text-[#685cff] transition-colors leading-snug">
+                    {tender.title}
+                  </h3>
+                  <p className="text-xs text-[#69666d] truncate mt-1">
+                    {tender.contractingAuthority}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-[#f5f1ed] text-[#69666d] border border-[rgba(30,24,38,0.06)]">
+                    {tender.cpvCode.split(' · ')[0]}
+                  </span>
+                  <span className="text-[11px] text-[#929097] truncate">
+                    {tender.cpvCode.split(' · ')[1] || 'Servicios'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-[rgba(30,24,38,0.06)] flex items-center justify-between">
+                <div>
+                  <span className="text-xs font-bold text-[#171719] tabular-nums font-mono block">
+                    {formatCurrency(tender.budgetAmount)}
+                  </span>
+                  <span className="text-[11px] text-[#69666d] block">
+                    {formatDeadlineDays(tender.submissionDeadline).label}
+                  </span>
+                </div>
+
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/app/oportunidades/${tender.id}`);
+                  }}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-[10px] bg-white group-hover:bg-[#171719] text-[#171719] group-hover:text-white border border-[rgba(30,24,38,0.12)] group-hover:border-[#171719] text-xs font-semibold transition-all shadow-xs cursor-pointer"
+                >
+                  <span>Detalle</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {/* Encabezado visible en desktop */}
+          <div className="hidden lg:grid grid-cols-[76px_minmax(320px,1.6fr)_100px_115px_125px_110px_120px] gap-4 px-3.5 text-[11px] font-mono uppercase text-[#929097] select-none">
+            <span>Expediente</span>
+            <span>Objeto / Entidad</span>
+            <span>Importe</span>
+            <span>Plazo Límite</span>
+            <span>Territorio</span>
+            <span>Estado</span>
+            <span className="text-right">Acción</span>
+          </div>
+
+          <div className="surface rounded-[18px] overflow-hidden divide-y divide-[rgba(30,24,38,0.055)] shadow-xs">
+            {filteredTenders.map((tender) => {
+              const deadlineDays = Math.ceil(
+                (new Date(tender.submissionDeadline).getTime() - Date.now()) /
+                  (1000 * 60 * 60 * 24)
+              );
+              const isCritical = deadlineDays <= 7 && deadlineDays > 0;
+
+              return (
+                <div
+                  key={tender.id}
+                  onClick={() => navigate(`/app/oportunidades/${tender.id}`)}
+                  className="tender-row group cursor-pointer"
+                >
+                  {/* 22. Thumbnail 76x54px con degradado arquitectónico suave (Sección 22 & 39) */}
+                  <div className="w-[76px] h-[54px] rounded-[10px] bg-gradient-to-br from-[#f8f5f2] via-[#eee9f2] to-[#e7e1ff] border border-[rgba(30,24,38,0.06)] flex items-center justify-center text-[#685cff] shrink-0">
+                    <FileText className="w-5 h-5 opacity-70" />
+                  </div>
+
+                  {/* Título y Organismo */}
+                  <div className="min-w-0 pr-2">
+                    <h3 className="text-xs sm:text-sm font-semibold text-[#171719] truncate group-hover:text-[#685cff] transition-colors">
+                      {tender.title}
+                    </h3>
+                    <p className="text-xs text-[#69666d] truncate mt-0.5">
+                      {tender.contractingAuthority}
+                    </p>
+                    <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-[#f5f1ed] text-[#69666d] border border-[rgba(30,24,38,0.06)]">
+                        {tender.cpvCode.split(' · ')[0]}
+                      </span>
+                      <span className="text-[11px] text-[#929097] truncate">
+                        {tender.cpvCode.split(' · ')[1] || 'Servicios'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Importe en tabular-nums */}
+                  <div className="hidden lg:block">
+                    <span className="text-xs sm:text-sm font-semibold text-[#171719] tabular-nums font-mono">
+                      {formatCurrency(tender.budgetAmount)}
+                    </span>
+                    <span className="block text-[10px] text-[#929097]">
+                      Presupuesto base
+                    </span>
+                  </div>
+
+                  {/* 24. Plazo Crítico: fecha oscura, solo los días en rojo */}
+                  <div className="hidden lg:block">
+                    <span className="text-xs text-[#171719] font-medium block">
+                      {new Intl.DateTimeFormat('es-ES', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric',
+                      }).format(new Date(tender.submissionDeadline))}
+                    </span>
+                    <span
+                      className={`text-[11px] tabular-nums ${
+                        isCritical
+                          ? 'text-[#e44848] font-semibold'
+                          : 'text-[#69666d]'
+                      }`}
+                    >
+                      {formatDeadlineDays(tender.submissionDeadline).label}
+                    </span>
+                  </div>
+
+                  {/* Territorio */}
+                  <div className="hidden lg:block text-xs text-[#69666d]">
+                    Nacional
+                  </div>
+
+                  {/* Estado Oficial */}
+                  <div className="hidden lg:block">
+                    <StatusBadge tone="success" icon="check">
+                      Abierto
+                    </StatusBadge>
+                  </div>
+
+                  {/* Botón Ver Detalle */}
+                  <div className="text-right">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/app/oportunidades/${tender.id}`);
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] bg-white group-hover:bg-[#171719] text-[#171719] group-hover:text-white border border-[rgba(30,24,38,0.12)] group-hover:border-[#171719] text-xs font-semibold transition-all shadow-xs cursor-pointer"
+                    >
+                      <span>Ver detalle</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

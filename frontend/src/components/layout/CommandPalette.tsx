@@ -99,6 +99,24 @@ export const CommandPalette: React.FC = () => {
     item.action();
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setSelectedIndex((prev) => (filteredItems.length > 0 ? (prev + 1) % filteredItems.length : 0));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSelectedIndex((prev) => (filteredItems.length > 0 ? (prev - 1 + filteredItems.length) % filteredItems.length : 0));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (filteredItems[selectedIndex]) {
+        handleSelect(filteredItems[selectedIndex]);
+      }
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      setIsCommandPaletteOpen(false);
+    }
+  };
+
   return (
     <AnimatePresence>
       <div
@@ -136,6 +154,7 @@ export const CommandPalette: React.FC = () => {
                 setQuery(e.target.value);
                 setSelectedIndex(0);
               }}
+              onKeyDown={handleKeyDown}
               className="w-full bg-transparent text-sm text-[#161616] placeholder-[#8F8B92] focus:outline-none"
             />
             <div className="flex items-center gap-1 text-[10px] font-mono text-[#8F8B92] bg-[#F6F3EF] px-2 py-0.5 rounded-[6px]">
