@@ -13,7 +13,6 @@ jobs:
   deploy-frontend:
     name: Desplegar Frontend (Cloudflare Pages)
     runs-on: ubuntu-latest
-    if: ${{ secrets.CLOUDFLARE_API_TOKEN != '' && secrets.CLOUDFLARE_ACCOUNT_ID != '' }}
 
     steps:
       - name: Clonar Repositorio
@@ -38,7 +37,22 @@ jobs:
           VITE_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: npm run build
 
+      - name: Comprobar credenciales de Cloudflare Pages
+        id: check-cf
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "⚠️ CLOUDFLARE_API_TOKEN no configurado en Secrets. Se omite la subida hasta configurar los secretos del repositorio."
+          else
+            echo "Credenciales de Cloudflare detectadas."
+          fi
+
       - name: Publicar en Cloudflare Pages con Wrangler
+        if: ${{ env.CLOUDFLARE_API_TOKEN != '' }}
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -50,10 +64,23 @@ jobs:
     name: Desplegar API en VPS Propio (Docker & PostgreSQL)
     runs-on: ubuntu-latest
     needs: deploy-frontend
-    if: ${{ always() && (needs.deploy-frontend.result == 'success' || needs.deploy-frontend.result == 'skipped') && secrets.VPS_HOST != '' }}
 
     steps:
+      - name: Comprobar credenciales de servidor VPS
+        id: check-vps
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+        run: |
+          if [ -z "$VPS_HOST" ]; then
+            echo "⚠️ VPS_HOST no configurado en Secrets. Se omite el despliegue SSH hasta configurar los secretos del repositorio."
+          else
+            echo "Credenciales de VPS detectadas."
+          fi
+
       - name: Ejecutar Despliegue Remoto vía SSH
+        if: ${{ env.VPS_HOST != '' }}
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.VPS_HOST }}
