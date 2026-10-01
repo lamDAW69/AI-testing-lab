@@ -1,0 +1,92 @@
+name: CD - Despliegue Continuo a Producción
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  # TRABAJO 1: Desplegar Frontend a Cloudflare Pages
+  deploy-frontend:
+    name: Desplegar Frontend (Cloudflare Pages)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Clonar Repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Instalar Dependencias del Frontend
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Compilar Frontend (Build de Producción)
+        working-directory: ./frontend
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL || 'https://api.pliegoai.com' }}
+          VITE_SUPABASE_URL: ${{ secrets.SUPABASE_PROJECT_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: npm run build
+
+      - name: Publicar en Cloudflare Pages con Wrangler
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy frontend/dist --project-name=licitaia-frontend
+
+  # TRABAJO 2: Desplegar Backend al Hosting Propio (VPS)
+  deploy-backend:
+    name: Desplegar API en VPS Propio (Docker & PostgreSQL)
+    runs-on: ubuntu-latest
+    needs: deploy-frontend
+
+    steps:
+      - name: Ejecutar Despliegue Remoto vía SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_SSH_PORT || 22 }}
+          script: |
+            set -e
+            echo "🚀 Iniciando despliegue de LicitaIA en VPS..."
+
+            # 1. Directorio de la aplicación en el servidor
+            APP_DIR="${{ secrets.VPS_APP_DIR || '/home/deployer/app' }}"
+            cd "$APP_DIR"
+
+            # 2. Descargar últimos cambios del repositorio
+            echo "📥 Obteniendo cambios de git (rama main)..."
+            git pull origin main
+
+            # 3. Reconstruir contenedores de aplicación y worker
+            echo "🐳 Construyendo imágenes Docker de producción..."
+            docker compose -f docker-compose.prod.yml build api extraction-worker
+
+            # 4. Asegurar arranque de base de datos y ejecución de migraciones versionadas
+            echo "🔄 Ejecutando migraciones de base de datos..."
+            docker compose -f docker-compose.prod.yml up -d postgres
+            docker compose -f docker-compose.prod.yml run --rm migrate
+
+            # 5. Levantamiento con Zero-Downtime de todos los servicios
+            echo "⚡ Actualizando servicios en segundo plano..."
+            docker compose -f docker-compose.prod.yml up -d --remove-orphans
+
+            # 6. Limpieza de imágenes intermedias no utilizadas para no saturar disco
+            docker image prune -f
+
+            # 7. Verificación de estado de salud
+            echo "🏥 Comprobando contenedores..."
+            docker compose -f docker-compose.prod.yml ps
+            echo "✅ Despliegue de Backend finalizado con éxito."
