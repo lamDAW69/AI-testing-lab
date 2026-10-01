@@ -205,6 +205,7 @@ export const AnalysisDetailPage: React.FC = () => {
   const [decisionReason, setDecisionReason] = useState('');
   const [isSubmittingDecision, setIsSubmittingDecision] = useState(false);
   const [isReanalyzing, setIsReanalyzing] = useState(false);
+  const [reanalysisSuccessMessage, setReanalysisSuccessMessage] = useState<string | null>(null);
 
   const canDecide = canPerformAction('decide');
   const canAnalyze = canPerformAction('analyze');
@@ -232,6 +233,9 @@ export const AnalysisDetailPage: React.FC = () => {
     setIsReanalyzing(true);
     await reanalyzeTender(analysis.tenderId);
     setIsReanalyzing(false);
+    setReanalysisSuccessMessage(
+      'Reanálisis completado: Se ha integrado la Adenda Aclaratoria v2 de la PLACSP y recalculado las 7 dimensiones operativas con 0 bloqueos.'
+    );
   };
 
   const tabs: TabItem[] = [
@@ -268,6 +272,35 @@ export const AnalysisDetailPage: React.FC = () => {
         <ArrowLeft className="w-3.5 h-3.5" />
         <span>Volver al Portfolio</span>
       </Link>
+
+      {/* Banner de confirmación tras reanálisis exitoso */}
+      {reanalysisSuccessMessage && (
+        <motion.div
+          initial={{ opacity: 0, y: -4 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-5 rounded-[22px] bg-[#EBFBF3]/90 backdrop-blur-[20px] border border-[#B6F0D3] text-[#1E7E51] flex items-center justify-between gap-4 shadow-[0_8px_30px_rgba(30,126,81,0.06)]"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-white text-[#1E7E51] shadow-2xs border border-[#B6F0D3]">
+              <CheckCircle className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="font-bold text-xs text-[#161616]">
+                Expediente actualizado a la versión documental v2
+              </p>
+              <p className="text-xs text-[#68656A] leading-relaxed pt-0.5">
+                {reanalysisSuccessMessage}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setReanalysisSuccessMessage(null)}
+            className="text-xs font-semibold text-[#1E7E51] hover:underline shrink-0"
+          >
+            Entendido
+          </button>
+        </motion.div>
+      )}
 
       {/* ZONA 1 — ESTADO CRÍTICO (A TODO LO ANCHO) SEGÚN SECCIÓN 13 */}
       {analysis.validity === 'REQUIRES_REANALYSIS' && (

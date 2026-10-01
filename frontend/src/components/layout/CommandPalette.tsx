@@ -21,6 +21,8 @@ export const CommandPalette: React.FC = () => {
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -31,7 +33,17 @@ export const CommandPalette: React.FC = () => {
     }
   }, [isCommandPaletteOpen]);
 
-  if (!isCommandPaletteOpen) return null;
+  // Listener global de teclado para cerrar con Escape desde cualquier foco del modal (WCAG)
+  useEffect(() => {
+    if (!isCommandPaletteOpen) return;
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsCommandPaletteOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, [isCommandPaletteOpen, setIsCommandPaletteOpen]);
 
   // Acciones y opciones de navegación rápida
   const navigationItems = [
@@ -94,6 +106,16 @@ export const CommandPalette: React.FC = () => {
     item.title.toLowerCase().includes(query.toLowerCase())
   );
 
+  // Mantener visible el elemento seleccionado durante la navegación por flechas
+  useEffect(() => {
+    if (itemRefs.current[selectedIndex]) {
+      itemRefs.current[selectedIndex]?.scrollIntoView({
+        block: 'nearest',
+        behavior: 'smooth',
+      });
+    }
+  }, [selectedIndex]);
+
   const handleSelect = (item: typeof allItems[0]) => {
     setIsCommandPaletteOpen(false);
     item.action();
@@ -119,11 +141,13 @@ export const CommandPalette: React.FC = () => {
 
   return (
     <AnimatePresence>
-      <div
-        className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh] px-4 select-none"
-        role="dialog"
-        aria-modal="true"
-      >
+      {isCommandPaletteOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh] px-4 select-none"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Paleta de comandos"
+        >
         {/* Backdrop con oscurecimiento según Sección 7 */}
         <motion.div
           initial={{ opacity: 0 }}
@@ -148,6 +172,10 @@ export const CommandPalette: React.FC = () => {
             <input
               ref={inputRef}
               type="text"
+              role="combobox"
+              aria-expanded="true"
+              aria-autocomplete="list"
+              aria-controls="command-results"
               placeholder="Escribe para buscar pliegos, clientes, expedientes o módulos…"
               value={query}
               onChange={(e) => {
@@ -163,7 +191,12 @@ export const CommandPalette: React.FC = () => {
           </div>
 
           {/* Lista de Resultados */}
-          <div className="max-h-[360px] overflow-y-auto p-2 space-y-1">
+          <div
+            id="command-results"
+            ref={listRef}
+            role="listbox"
+            className="max-h-[360px] overflow-y-auto p-2 space-y-1"
+          >
             {filteredItems.length === 0 ? (
               <div className="p-8 text-center text-xs text-[#8F8B92]">
                 No se encontraron resultados para "{query}"
@@ -172,6 +205,11 @@ export const CommandPalette: React.FC = () => {
               filteredItems.map((item, idx) => (
                 <div
                   key={item.id}
+                  ref={(el) => {
+                    itemRefs.current[idx] = el;
+                  }}
+                  role="option"
+                  aria-selected={selectedIndex === idx}
                   onClick={() => handleSelect(item)}
                   onMouseEnter={() => setSelectedIndex(idx)}
                   className={`flex items-center justify-between p-3 rounded-[12px] text-xs transition-colors cursor-pointer ${
@@ -201,6 +239,7 @@ export const CommandPalette: React.FC = () => {
           </div>
         </motion.div>
       </div>
+      )}
     </AnimatePresence>
   );
 };
