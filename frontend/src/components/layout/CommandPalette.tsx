@@ -21,6 +21,8 @@ export const CommandPalette: React.FC = () => {
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -31,7 +33,17 @@ export const CommandPalette: React.FC = () => {
     }
   }, [isCommandPaletteOpen]);
 
-  if (!isCommandPaletteOpen) return null;
+  // Listener global de teclado para cerrar con Escape desde cualquier foco del modal (WCAG)
+  useEffect(() => {
+    if (!isCommandPaletteOpen) return;
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsCommandPaletteOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, [isCommandPaletteOpen, setIsCommandPaletteOpen]);
 
   // Acciones y opciones de navegación rápida
   const navigationItems = [
@@ -94,9 +106,6 @@ export const CommandPalette: React.FC = () => {
     item.title.toLowerCase().includes(query.toLowerCase())
   );
 
-  const listRef = useRef<HTMLDivElement>(null);
-  const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
-
   // Mantener visible el elemento seleccionado durante la navegación por flechas
   useEffect(() => {
     if (itemRefs.current[selectedIndex]) {
@@ -132,12 +141,13 @@ export const CommandPalette: React.FC = () => {
 
   return (
     <AnimatePresence>
-      <div
-        className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh] px-4 select-none"
-        role="dialog"
-        aria-modal="true"
-        aria-label="Paleta de comandos"
-      >
+      {isCommandPaletteOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh] px-4 select-none"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Paleta de comandos"
+        >
         {/* Backdrop con oscurecimiento según Sección 7 */}
         <motion.div
           initial={{ opacity: 0 }}
@@ -229,6 +239,7 @@ export const CommandPalette: React.FC = () => {
           </div>
         </motion.div>
       </div>
+      )}
     </AnimatePresence>
   );
 };

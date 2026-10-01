@@ -9,7 +9,7 @@ test.describe('Navegación y Catálogo de Licitaciones', () => {
 
     // Verificar presencia de los KPIs superiores
     await expect(page.locator('text=Oportunidades en cartera')).toBeVisible();
-    await expect(page.locator('text=En evaluación')).toBeVisible();
+    await expect(page.getByText('En evaluación', { exact: true })).toBeVisible();
 
     // Navegar al catálogo mediante la barra lateral
     await page.click('a[href="/app/catalogo"]');
