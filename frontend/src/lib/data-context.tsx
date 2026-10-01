@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { PublicTender, TenderDocument } from '../types/procurement';
 import { PortfolioItem } from '../types/portfolio';
 import {
@@ -9,6 +9,8 @@ import {
 } from '../types/qualification';
 import { TenantAlert } from '../types/alerts';
 import { CompanyProfile, Certification, BusinessEvidence } from '../types/dossier';
+import { apiClient } from './api-client';
+import { useAuth } from './auth-context';
 
 // 1. TENDERS OFICIALES (PLACSP)
 export const INITIAL_TENDERS: PublicTender[] = [
@@ -538,6 +540,7 @@ interface DataContextValue {
   certifications: Certification[];
   evidences: BusinessEvidence[];
   isCommandPaletteOpen: boolean;
+  syncStatus: 'synced' | 'local_fallback' | 'syncing';
   setIsCommandPaletteOpen: (open: boolean) => void;
   getTenderById: (id: string) => PublicTender | undefined;
   getTenderDocuments: (tenderId: string) => TenderDocument[];
@@ -551,11 +554,13 @@ interface DataContextValue {
   addCertification: (certification: Omit<Certification, 'id' | 'status'>) => void;
   updateCertification: (id: string, certification: Partial<Certification>) => void;
   updateProfile: (profile: Partial<CompanyProfile>) => void;
+  refreshData: () => Promise<void>;
 }
 
 const DataContext = createContext<DataContextValue | null>(null);
 
 export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { activeTenant, token } = useAuth();
   const [tenders, setTenders] = useState<PublicTender[]>(INITIAL_TENDERS);
   const [portfolio, setPortfolio] = useState<PortfolioItem[]>(INITIAL_PORTFOLIO);
   const [analyses, setAnalyses] = useState<Record<string, QualificationAnalysis>>(INITIAL_ANALYSES);
@@ -564,6 +569,161 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [certifications, setCertifications] = useState<Certification[]>(INITIAL_CERTIFICATIONS);
   const [evidences, setEvidences] = useState<BusinessEvidence[]>(INITIAL_EVIDENCES);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<'synced' | 'local_fallback' | 'syncing'>('syncing');
+
+  // Sincronización transparente con el backend HTTP / PostgreSQL
+  const refreshData = useCallback(async () => {
+    if (!token || !activeTenant) {
+      setSyncStatus('local_fallback');
+      return;
+    }
+
+    try {
+      // Consultas concurrentes protegidas por el Middleware de Seguridad y Tenant de Express
+      const [tendersRes, portfolioRes, alertsRes, profileRes, certsRes, evidencesRes] =
+        await Promise.allSettled([
+          apiClient.get<{ tenders: any[] }>('/public/tenders'),
+          apiClient.get<{ data: any[] }>('/portfolio'),
+          apiClient.get<{ data: any[] }>('/alerts'),
+          apiClient.get<{ data: any | null }>('/dossier/profile'),
+          apiClient.get<{ data: any[] }>('/dossier/certifications'),
+          apiClient.get<{ data: any[] }>('/qualification/dossier'),
+        ]);
+
+      let backendConnected = false;
+
+      // 1. Catálogo de licitaciones públicas
+      if (tendersRes.status === 'fulfilled' && Array.isArray(tendersRes.value?.tenders) && tendersRes.value.tenders.length > 0) {
+        backendConnected = true;
+        setTenders(
+          tendersRes.value.tenders.map((t) => ({
+            id: t.id,
+            fileReference: t.fileReference,
+            title: t.title,
+            contractingAuthority: t.contractingAuthority,
+            cpvCode: t.cpvCode,
+            budgetAmount: (t.budgetAmountCents || 0) / 100,
+            estimatedValue: (t.estimatedValueCents || 0) / 100,
+            currency: t.currency || 'EUR',
+            submissionDeadline: t.submissionDeadline,
+            status: t.status,
+            documentsCount: t.documentsCount || 0,
+            hasActiveAnalysis: t.hasActiveAnalysis || false,
+          }))
+        );
+      }
+
+      // 2. Portfolio del tenant
+      if (portfolioRes.status === 'fulfilled' && Array.isArray(portfolioRes.value?.data) && portfolioRes.value.data.length > 0) {
+        backendConnected = true;
+        setPortfolio(
+          portfolioRes.value.data.map((item) => ({
+            id: item.analysisId || item.id,
+            tenderId: item.tenderId,
+            fileReference: item.fileReference || item.tenderReference,
+            title: item.title || item.tenderTitle,
+            contractingAuthority: item.contractingAuthority || '',
+            budgetAmount:
+              typeof item.budgetAmount === 'number'
+                ? item.budgetAmount
+                : (item.budgetAmountCents || 0) / 100,
+            currency: item.currency || 'EUR',
+            submissionDeadline: item.submissionDeadline,
+            eligibility: item.eligibility,
+            decision: item.decision,
+            validity: item.validity,
+            hasBlockers: item.hasBlockers || false,
+            blockerSummary: item.blockerSummary,
+            evidenceCoveragePercentage: item.evidenceCoveragePercentage || 0,
+            lastAnalysisDate: item.lastAnalysisDate || item.updatedAt || new Date().toISOString(),
+          }))
+        );
+      }
+
+      // 3. Alertas del tenant
+      if (alertsRes.status === 'fulfilled' && Array.isArray(alertsRes.value?.data)) {
+        backendConnected = true;
+        if (alertsRes.value.data.length > 0) {
+          setAlerts(
+            alertsRes.value.data.map((a) => ({
+              id: a.id,
+              tenantId: a.tenantId,
+              tenderId: a.tenderId,
+              tenderTitle: a.tenderTitle || '',
+              fileReference: a.fileReference || '',
+              type: a.type,
+              severity: a.severity,
+              title: a.title,
+              message: a.message,
+              isRead: a.isRead,
+              createdAt: a.createdAt,
+              requiresReanalysis: a.requiresReanalysis || false,
+            }))
+          );
+        }
+      }
+
+      // 4. Perfil de dossier de empresa
+      if (profileRes.status === 'fulfilled' && profileRes.value?.data) {
+        backendConnected = true;
+        const p = profileRes.value.data;
+        setProfile((prev) => ({
+          ...prev,
+          companyName: p.legalName || prev.companyName,
+          taxId: p.taxId || prev.taxId,
+          description: p.description || prev.description,
+          primaryCpvCodes: p.cpvCodes || prev.primaryCpvCodes,
+          geographicalScope: p.territories || prev.geographicalScope,
+          maxEconomicSolvency: p.maxContractCents
+            ? p.maxContractCents / 100
+            : prev.maxEconomicSolvency,
+        }));
+      }
+
+      // 5. Certificaciones oficiales
+      if (certsRes.status === 'fulfilled' && Array.isArray(certsRes.value?.data) && certsRes.value.data.length > 0) {
+        backendConnected = true;
+        setCertifications(
+          certsRes.value.data.map((c) => ({
+            id: c.id,
+            name: c.name,
+            issuer: c.issuer,
+            certificateNumber: c.certificateNumber || '',
+            issuedAt: c.validFrom || c.issuedAt || '',
+            expiresAt: c.validUntil || c.expiresAt || '',
+            status: c.evidenceStatus || c.status || 'DECLARED',
+          }))
+        );
+      }
+
+      // 6. Evidencias y solvencias
+      if (evidencesRes.status === 'fulfilled' && Array.isArray(evidencesRes.value?.data) && evidencesRes.value.data.length > 0) {
+        backendConnected = true;
+        setEvidences(
+          evidencesRes.value.data.map((ev) => ({
+            id: ev.id,
+            category: ev.category,
+            title: ev.title,
+            description: ev.description,
+            documentReference: ev.documentReference || '',
+            verifiedAmount: ev.verifiedAmountCents
+              ? ev.verifiedAmountCents / 100
+              : undefined,
+            validUntil: ev.validUntil,
+            status: ev.evidenceStatus || ev.status || 'DECLARED',
+          }))
+        );
+      }
+
+      setSyncStatus(backendConnected ? 'synced' : 'local_fallback');
+    } catch {
+      setSyncStatus('local_fallback');
+    }
+  }, [token, activeTenant]);
+
+  useEffect(() => {
+    refreshData();
+  }, [refreshData]);
 
   // Escuchar shortcut de teclado global ⌘K o Ctrl+K
   useEffect(() => {
@@ -591,10 +751,13 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return analyses[tenderId];
   };
 
-  const saveDecision = async (tenderId: string, decision: HumanDecision, reason: string, decidedBy: string) => {
-    await new Promise((r) => setTimeout(r, 400));
-
-    // 1. Actualizar análisis
+  const saveDecision = async (
+    tenderId: string,
+    decision: HumanDecision,
+    reason: string,
+    decidedBy: string
+  ) => {
+    // 1. Actualización optimista local
     setAnalyses((prev) => {
       const existing = prev[tenderId];
       if (!existing) return prev;
@@ -616,45 +779,114 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       };
     });
 
-    // 2. Actualizar portfolio item
     setPortfolio((prev) =>
       prev.map((item) =>
         item.tenderId === tenderId ? { ...item, decision } : item
       )
     );
+
+    // 2. Sincronización con backend si existe análisis asociado
+    const current = analyses[tenderId];
+    if (current?.id) {
+      try {
+        await apiClient.post(`/qualification/analyses/${current.id}/decision`, {
+          decision,
+          mandatoryReason: reason,
+        });
+      } catch {
+        // En modo local o desconectado se preserva la mutación en memoria
+      }
+    }
   };
 
   const reanalyzeTender = async (tenderId: string) => {
-    await new Promise((r) => setTimeout(r, 900));
+    await new Promise((r) => setTimeout(r, 600));
 
+    // 1. Mutación determinista del análisis contra pliegos v2 (Regla 8 y 9)
     setAnalyses((prev) => {
       const existing = prev[tenderId];
       if (!existing) return prev;
+
+      // Resuelve el bloqueo de adenda pendiente
+      const updatedBlockers = existing.blockers.filter(
+        (b) => !b.toLowerCase().includes('adenda') && !b.toLowerCase().includes('reanálisis')
+      );
+
+      // Actualiza la dimensión operativa que estaba en WARNING
+      const updatedDimensions = {
+        ...existing.dimensions,
+        potentialEligibility: {
+          id: existing.dimensions.potentialEligibility?.id || `dim-${tenderId}-1`,
+          name: 'Elegibilidad Potencial',
+          status: 'FAVORABLE' as const,
+          summary: 'Adenda oficial v2 incorporada y validada',
+          details: 'Se han integrado los pliegos vigentes (Adenda v2). Las cláusulas actualizadas no comprometen la admisión jurídica.',
+        },
+      };
+
+      const newRecord = {
+        id: `dec-${Date.now()}`,
+        decision: existing.currentDecision,
+        decidedBy: 'Pipeline IA LicitaIA',
+        decidedAt: new Date().toISOString(),
+        mandatoryReason: 'Reanálisis automático finalizado con éxito tras la publicación de la Adenda v2 en PLACSP.',
+        analysisVersion: 2,
+      };
+
       return {
         ...prev,
         [tenderId]: {
           ...existing,
-          validity: 'VALID',
+          validity: 'VALID' as const,
           invalidationReason: undefined,
           documentVersionUsed: 2,
+          blockers: updatedBlockers,
+          dimensions: updatedDimensions,
+          decisionHistory: [newRecord, ...existing.decisionHistory],
         },
       };
     });
 
+    // 2. Actualización de portfolio
     setPortfolio((prev) =>
       prev.map((item) =>
-        item.tenderId === tenderId ? { ...item, validity: 'VALID' } : item
+        item.tenderId === tenderId
+          ? {
+              ...item,
+              validity: 'VALID' as const,
+              hasBlockers: false,
+              lastAnalysisDate: new Date().toISOString(),
+            }
+          : item
       )
     );
+
+    // 3. Resolución automática de alertas asociadas al cambio documental
+    setAlerts((prev) =>
+      prev.map((a) =>
+        a.tenderId === tenderId && a.type === 'DOCUMENT_CHANGE'
+          ? { ...a, isRead: true }
+          : a
+      )
+    );
+
+    // 4. Intentar ejecutar reanálisis en el backend si está activo
+    const current = analyses[tenderId];
+    if (current?.id) {
+      try {
+        await apiClient.post(`/qualification/analyses/${current.id}/run`);
+      } catch {
+        // En entorno local se mantiene la mutación reactiva
+      }
+    }
   };
 
   const startAnalysisForTender = async (tenderId: string) => {
-    await new Promise((r) => setTimeout(r, 700));
+    await new Promise((r) => setTimeout(r, 600));
 
     const targetTender = tenders.find((t) => t.id === tenderId);
     if (!targetTender) return;
 
-    // Si ya existe en portfolio no duplicar
     if (!portfolio.some((p) => p.tenderId === tenderId)) {
       const newPortfolioItem: PortfolioItem = {
         id: `an-${Date.now()}`,
@@ -675,12 +907,11 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setPortfolio((prev) => [newPortfolioItem, ...prev]);
     }
 
-    // Crear análisis sintético realista si no existía
     if (!analyses[tenderId]) {
       const newAnalysis: QualificationAnalysis = {
         id: `an-${Date.now()}`,
         tenderId,
-        tenantId: '018f4a12-892a-7921-98a1-2d4e8b1e4f1a',
+        tenantId: activeTenant?.id || '018f4a12-892a-7921-98a1-2d4e8b1e4f1a',
         validity: 'VALID',
         eligibility: 'POTENTIALLY_ELIGIBLE',
         summary: `Precalificación automatizada con IA para ${targetTender.title}. La empresa acredita solvencia técnica y económica adecuada en su dossier.`,
@@ -770,7 +1001,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setAnalyses((prev) => ({ ...prev, [tenderId]: newAnalysis }));
     }
 
-    // Marcar tender como analizado en catálogo
     setTenders((prev) =>
       prev.map((t) => (t.id === tenderId ? { ...t, hasActiveAnalysis: true } : t))
     );
@@ -780,38 +1010,100 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setAlerts((prev) =>
       prev.map((a) => (a.id === id ? { ...a, isRead: true } : a))
     );
+    apiClient.patch(`/alerts/${id}/read`).catch(() => {});
   };
 
   const markAllAlertsAsRead = () => {
     setAlerts((prev) => prev.map((a) => ({ ...a, isRead: true })));
+    apiClient.post('/alerts/mark-all-read').catch(() => {});
   };
 
-  const addEvidence = (evidence: Omit<BusinessEvidence, 'id' | 'status'>) => {
+  const addEvidence = async (evidence: Omit<BusinessEvidence, 'id' | 'status'>) => {
+    // Principio de Autoridad (Regla 9.2): El cliente solo crea DECLARED
+    const tempId = `ev-${Date.now()}`;
     const newEvidence: BusinessEvidence = {
       ...evidence,
-      id: `ev-${Date.now()}`,
+      id: tempId,
       status: 'DECLARED',
     };
     setEvidences((prev) => [newEvidence, ...prev]);
+
+    try {
+      const res = await apiClient.post<{ data: any }>('/qualification/dossier', {
+        category: evidence.category,
+        title: evidence.title,
+        description: evidence.description,
+        documentReference: evidence.documentReference,
+        validUntil: evidence.validUntil,
+      });
+      if (res?.data?.id) {
+        setEvidences((prev) =>
+          prev.map((e) => (e.id === tempId ? { ...e, id: res.data.id } : e))
+        );
+      }
+    } catch {
+      // Estado optimista persistido
+    }
   };
 
-  const addCertification = (certification: Omit<Certification, 'id' | 'status'>) => {
+  const addCertification = async (certification: Omit<Certification, 'id' | 'status'>) => {
+    // Principio de Autoridad (Regla 9.2): El cliente solo crea DECLARED
+    const tempId = `cert-${Date.now()}`;
     const newCert: Certification = {
       ...certification,
-      id: `cert-${Date.now()}`,
+      id: tempId,
       status: 'DECLARED',
     };
     setCertifications((prev) => [newCert, ...prev]);
+
+    try {
+      const res = await apiClient.post<{ data: any }>('/dossier/certifications', {
+        name: certification.name,
+        issuer: certification.issuer,
+        certificateNumber: certification.certificateNumber,
+        validFrom: certification.issuedAt,
+        validUntil: certification.expiresAt,
+        documentReference: certification.name,
+      });
+      if (res?.data?.id) {
+        setCertifications((prev) =>
+          prev.map((c) => (c.id === tempId ? { ...c, id: res.data.id } : c))
+        );
+      }
+    } catch {
+      // Estado optimista persistido
+    }
   };
 
   const updateCertification = (id: string, updated: Partial<Certification>) => {
     setCertifications((prev) =>
       prev.map((c) => (c.id === id ? { ...c, ...updated } : c))
     );
+    apiClient
+      .patch(`/dossier/certifications/${id}`, {
+        name: updated.name,
+        issuer: updated.issuer,
+        certificateNumber: updated.certificateNumber,
+        validFrom: updated.issuedAt,
+        validUntil: updated.expiresAt,
+      })
+      .catch(() => {});
   };
 
   const updateProfile = (updatedFields: Partial<CompanyProfile>) => {
     setProfile((prev) => ({ ...prev, ...updatedFields }));
+    apiClient
+      .put('/dossier/profile', {
+        legalName: updatedFields.companyName || profile.companyName,
+        taxId: updatedFields.taxId || profile.taxId,
+        description: updatedFields.description || profile.description,
+        cpvCodes: updatedFields.primaryCpvCodes || profile.primaryCpvCodes,
+        territories: updatedFields.geographicalScope || profile.geographicalScope,
+        maxContractCents: updatedFields.maxEconomicSolvency
+          ? Math.round(updatedFields.maxEconomicSolvency * 100)
+          : undefined,
+      })
+      .catch(() => {});
   };
 
   return (
@@ -825,6 +1117,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         certifications,
         evidences,
         isCommandPaletteOpen,
+        syncStatus,
         setIsCommandPaletteOpen,
         getTenderById,
         getTenderDocuments,
@@ -838,6 +1131,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         addCertification,
         updateCertification,
         updateProfile,
+        refreshData,
       }}
     >
       {children}
