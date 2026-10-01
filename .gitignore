@@ -25,6 +25,8 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .playwright-cli/
+test-results/
+playwright-report/
 
 # Sistema Operativo y Editores
 .DS_Store

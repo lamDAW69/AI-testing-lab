@@ -13,6 +13,7 @@ jobs:
   deploy-frontend:
     name: Desplegar Frontend (Cloudflare Pages)
     runs-on: ubuntu-latest
+    if: ${{ secrets.CLOUDFLARE_API_TOKEN != '' && secrets.CLOUDFLARE_ACCOUNT_ID != '' }}
 
     steps:
       - name: Clonar Repositorio
@@ -49,6 +50,7 @@ jobs:
     name: Desplegar API en VPS Propio (Docker & PostgreSQL)
     runs-on: ubuntu-latest
     needs: deploy-frontend
+    if: ${{ always() && (needs.deploy-frontend.result == 'success' || needs.deploy-frontend.result == 'skipped') && secrets.VPS_HOST != '' }}
 
     steps:
       - name: Ejecutar Despliegue Remoto vía SSH
