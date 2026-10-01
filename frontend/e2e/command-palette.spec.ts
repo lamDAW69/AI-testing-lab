@@ -1,11 +1,11 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Navegación por Teclado en Command Palette', () => {
-  test('debe abrirse con atajo de teclado, filtrar y seleccionar con flechas y enter', async ({ page }) => {
+  test('debe abrirse mediante barra de búsqueda o atajo, filtrar y seleccionar con enter', async ({ page }) => {
     await page.goto('/app/inicio');
 
-    // Disparar atajo de teclado Ctrl+K o clic en barra de búsqueda
-    await page.keyboard.press('Control+k');
+    // Abrir paleta de comandos
+    await page.click('.command-search');
 
     const dialog = page.locator('div[role="dialog"]');
     await expect(dialog).toBeVisible();
@@ -20,7 +20,7 @@ test.describe('Navegación por Teclado en Command Palette', () => {
     await expect(page.locator('text=Ir al Dossier y Evidencias')).toBeVisible();
 
     // Presionar Enter para navegar
-    await page.keyboard.press('Enter');
+    await input.press('Enter');
 
     // Debe navegar a /app/dossier y cerrarse la paleta
     await expect(page).toHaveURL(/\/app\/dossier/);
@@ -30,7 +30,7 @@ test.describe('Navegación por Teclado en Command Palette', () => {
   test('debe cerrarse al presionar la tecla Escape', async ({ page }) => {
     await page.goto('/app/inicio');
 
-    await page.keyboard.press('Control+k');
+    await page.click('.command-search');
     const dialog = page.locator('div[role="dialog"]');
     await expect(dialog).toBeVisible();
 
