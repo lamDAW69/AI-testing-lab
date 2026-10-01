@@ -17,7 +17,7 @@ test.describe('Navegación y Catálogo de Licitaciones', () => {
 
     // Verificar listado de expedientes en el catálogo
     await expect(
-      page.locator('text=Servicio de desarrollo y modernización de plataforma cloud para la DGT')
+      page.locator('text=Servicio de desarrollo y modernización de plataforma cloud para la DGT').first()
     ).toBeVisible();
   });
 
@@ -25,7 +25,7 @@ test.describe('Navegación y Catálogo de Licitaciones', () => {
     await page.goto('/app/catalogo');
 
     // Hacer clic en la licitación de la DGT
-    await page.click('text=Servicio de desarrollo y modernización de plataforma cloud para la DGT');
+    await page.locator('text=Servicio de desarrollo y modernización de plataforma cloud para la DGT').first().click();
     await expect(page).toHaveURL(/\/app\/oportunidades\/t-101/);
 
     // Verificar datos clave del detalle
