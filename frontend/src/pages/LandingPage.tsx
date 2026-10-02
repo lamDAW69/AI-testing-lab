@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useScroll, useSpring } from 'framer-motion';
 import { useAuth } from '../lib/auth-context';
 import { SilkBackground } from '../components/layout/SilkBackground';
 import {
@@ -41,6 +41,14 @@ export const LandingPage: React.FC = () => {
   const [activeStep, setActiveStep] = useState<number>(0);
   const [copiedHash, setCopiedHash] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+
+  // Barra de progreso de lectura / scroll suave con física de resorte
+  const { scrollYProgress } = useScroll();
+  const scaleX = useSpring(scrollYProgress, {
+    stiffness: 100,
+    damping: 30,
+    restDelta: 0.001,
+  });
 
   // Estado del Simulador Interactivo en Vivo del Hero
   const [selectedCriterion, setSelectedCriterion] = useState<number>(0);
@@ -245,7 +253,13 @@ Recomendación: Ejecutar reanálisis con Gemini 3.1 Flash v2.`
 
   return (
     <div className="relative min-h-screen text-[#171719] font-sans selection:bg-[#685cff]/20 selection:text-[#685cff] overflow-x-hidden">
-      {/* 1. FONDO AMBIENTAL DE CRISTAL LÍQUIDO (Compartido con el espacio autenticado) */}
+      {/* 0. BARRA SUPERIOR INDICADORA DE SCROLL CON FÍSICA DE RESORTE */}
+      <motion.div
+        style={{ scaleX }}
+        className="fixed top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-[#685cff] via-[#8d82ff] to-[#10b981] origin-left z-[60] pointer-events-none shadow-[0_0_12px_rgba(104,92,255,0.6)]"
+      />
+
+      {/* 1. FONDO AMBIENTAL DE CRISTAL LÍQUIDO */}
       <SilkBackground />
 
       {/* 2. NAVEGACIÓN SUPERIOR TRANSLÚCIDA CON DESENFOQUE GLOSSY */}
@@ -297,8 +311,8 @@ Recomendación: Ejecutar reanálisis con Gemini 3.1 Flash v2.`
         </div>
       </header>
 
-      {/* 3. HERO SPLIT-SCREEN (ANTI-CENTER BIAS) CON SIMULADOR AUDITABLE EN VIVO */}
-      <section className="relative pt-10 sm:pt-14 pb-16 lg:pb-20 z-10 max-w-7xl mx-auto px-4 sm:px-6">
+      {/* 3. HERO SPLIT-SCREEN CON SIMULADOR AUDITABLE EN VIVO */}
+      <section className="relative pt-10 sm:pt-14 pb-14 lg:pb-18 z-10 max-w-7xl mx-auto px-4 sm:px-6">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
           
           {/* Columna Izquierda (7 cols): Mensaje Editorial y Acciones */}
@@ -380,7 +394,7 @@ Recomendación: Ejecutar reanálisis con Gemini 3.1 Flash v2.`
             </div>
           </motion.div>
 
-          {/* Columna Derecha (5 cols): SIMULADOR AUDITABLE EN VIVO (VIVA Y FUNCIONAL) */}
+          {/* Columna Derecha (5 cols): SIMULADOR AUDITABLE EN VIVO */}
           <motion.div
             initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -429,7 +443,7 @@ Recomendación: Ejecutar reanálisis con Gemini 3.1 Flash v2.`
                 </h3>
               </div>
 
-              {/* SELECTOR INTERACTIVO DE REQUISITOS (Simula la auditoría con IA) */}
+              {/* SELECTOR INTERACTIVO DE REQUISITOS */}
               <div className="space-y-2 pt-1">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-mono uppercase tracking-wider text-[#929097] font-bold">
@@ -522,11 +536,16 @@ Recomendación: Ejecutar reanálisis con Gemini 3.1 Flash v2.`
         </div>
       </section>
 
-      {/* 4. CÓDIGO CROMÁTICO Y SEMÁNTICA OPERATIVA (SENTIDO RIGUROSO A LOS COLORES) */}
+      {/* 4. CÓDIGO CROMÁTICO (ANIMACIÓN DE ENTRADA AL SCROLLEAR) */}
       <section className="py-6 z-10 relative max-w-7xl mx-auto px-4 sm:px-6">
-        <div className="p-4 sm:p-5 rounded-[20px] bg-white/80 backdrop-blur-xl border border-white/90 shadow-2xs grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-          
-          <div className="p-3 rounded-[14px] bg-[#FAF8F5] border border-[rgba(30,24,38,0.05)] space-y-1">
+        <motion.div
+          initial={{ opacity: 0, y: 25 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-40px' }}
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          className="p-4 sm:p-5 rounded-[20px] bg-white/80 backdrop-blur-xl border border-white/90 shadow-2xs grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4"
+        >
+          <motion.div whileHover={{ y: -2 }} className="p-3 rounded-[14px] bg-[#FAF8F5] border border-[rgba(30,24,38,0.05)] space-y-1 transition-all">
             <div className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-[#685cff]" />
               <span className="text-[11px] font-bold text-[#171719]">Violeta (#685CFF)</span>
@@ -534,9 +553,9 @@ Recomendación: Ejecutar reanálisis con Gemini 3.1 Flash v2.`
             <p className="text-[11px] text-[#69666d] leading-tight">
               <strong>Inferencia y Motor IA:</strong> Gemini 3.1 Flash y GPT Terra/Sol, análisis CODICE XML y Structured Outputs.
             </p>
-          </div>
+          </motion.div>
 
-          <div className="p-3 rounded-[14px] bg-[#FAF8F5] border border-[rgba(30,24,38,0.05)] space-y-1">
+          <motion.div whileHover={{ y: -2 }} className="p-3 rounded-[14px] bg-[#FAF8F5] border border-[rgba(30,24,38,0.05)] space-y-1 transition-all">
             <div className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-[#218a58]" />
               <span className="text-[11px] font-bold text-[#171719]">Esmeralda (#218A58)</span>
@@ -544,9 +563,9 @@ Recomendación: Ejecutar reanálisis con Gemini 3.1 Flash v2.`
             <p className="text-[11px] text-[#69666d] leading-tight">
               <strong>Conformidad y Éxito:</strong> Requisito cumplido (<code className="text-[#218a58] font-mono">SUPPORTED</code>), oferta apta (<code className="text-[#218a58] font-mono">PURSUE</code>) y hash SHA-256 verificado.
             </p>
-          </div>
+          </motion.div>
 
-          <div className="p-3 rounded-[14px] bg-[#FAF8F5] border border-[rgba(30,24,38,0.05)] space-y-1">
+          <motion.div whileHover={{ y: -2 }} className="p-3 rounded-[14px] bg-[#FAF8F5] border border-[rgba(30,24,38,0.05)] space-y-1 transition-all">
             <div className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-[#ca8517]" />
               <span className="text-[11px] font-bold text-[#171719]">Ámbar (#CA8517)</span>
@@ -554,9 +573,9 @@ Recomendación: Ejecutar reanálisis con Gemini 3.1 Flash v2.`
             <p className="text-[11px] text-[#69666d] leading-tight">
               <strong>Centinela de Adendas:</strong> Modificación detectada en PLACSP, alerta activa y necesidad de reanálisis (<code className="text-[#ca8517] font-mono">REQUIRES_REANALYSIS</code>).
             </p>
-          </div>
+          </motion.div>
 
-          <div className="p-3 rounded-[14px] bg-[#FAF8F5] border border-[rgba(30,24,38,0.05)] space-y-1">
+          <motion.div whileHover={{ y: -2 }} className="p-3 rounded-[14px] bg-[#FAF8F5] border border-[rgba(30,24,38,0.05)] space-y-1 transition-all">
             <div className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-[#e44848]" />
               <span className="text-[11px] font-bold text-[#171719]">Rojo Coral (#E44848)</span>
@@ -564,28 +583,39 @@ Recomendación: Ejecutar reanálisis con Gemini 3.1 Flash v2.`
             <p className="text-[11px] text-[#69666d] leading-tight">
               <strong>Bloqueo Determinista:</strong> Presupuesto inviable, plazo vencido o requisito obligatorio no soportado (<code className="text-[#e44848] font-mono">DISCARD</code>).
             </p>
-          </div>
-
-        </div>
+          </motion.div>
+        </motion.div>
       </section>
 
-      {/* 5. PIPELINE ARQUITECTÓNICO INTERACTIVO (#como-funciona) CON SIMULADOR DE ADENDA */}
+      {/* 5. PIPELINE ARQUITECTÓNICO INTERACTIVO (#como-funciona) CON SCROLL-REVEAL */}
       <section id="como-funciona" className="py-16 sm:py-20 z-10 relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           
-          <div className="max-w-2xl mb-10">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-50px' }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            className="max-w-2xl mb-10"
+          >
             <h2 className="text-2xl sm:text-3xl font-extrabold text-[#171719] tracking-tight">
               Arquitectura determinista de 4 fases
             </h2>
             <p className="text-xs sm:text-sm text-[#69666d] mt-2">
               Haz clic en cada fase para ver el flujo real y prueba el simulador interactivo de adendas.
             </p>
-          </div>
+          </motion.div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             
-            {/* Lista interactiva de fases (5 cols) */}
-            <div className="lg:col-span-5 space-y-3">
+            {/* Lista interactiva de fases (5 cols) con scroll reveal */}
+            <motion.div
+              initial={{ opacity: 0, x: -25 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: '-50px' }}
+              transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+              className="lg:col-span-5 space-y-3"
+            >
               {pipelineSteps.map((step) => {
                 const isSelected = activeStep === step.id;
                 return (
@@ -624,10 +654,16 @@ Recomendación: Ejecutar reanálisis con Gemini 3.1 Flash v2.`
                   </button>
                 );
               })}
-            </div>
+            </motion.div>
 
-            {/* Visualizador de Telemetría Dinámico (7 cols) */}
-            <div className="lg:col-span-7">
+            {/* Visualizador de Telemetría Dinámico (7 cols) con scroll reveal */}
+            <motion.div
+              initial={{ opacity: 0, x: 25 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: '-50px' }}
+              transition={{ duration: 0.55, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+              className="lg:col-span-7"
+            >
               <AnimatePresence mode="wait">
                 <motion.div
                   key={activeStep}
@@ -755,30 +791,43 @@ Recomendación: Ejecutar reanálisis con Gemini 3.1 Flash v2.`
                   </div>
                 </motion.div>
               </AnimatePresence>
-            </div>
+            </motion.div>
 
           </div>
 
         </div>
       </section>
 
-      {/* 6. DOSSIER DE EMPRESA Y SEPARACIÓN DE IDENTIDADES (#dossier) */}
+      {/* 6. DOSSIER DE EMPRESA Y SEPARACIÓN DE IDENTIDADES (#dossier) CON SCROLL-REVEAL */}
       <section id="dossier" className="py-16 sm:py-20 z-10 relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           
-          <div className="max-w-2xl mb-10">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-50px' }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            className="max-w-2xl mb-10"
+          >
             <h2 className="text-2xl sm:text-3xl font-extrabold text-[#171719] tracking-tight">
               Dossier corporativo y separación de identidades
             </h2>
             <p className="text-xs sm:text-sm text-[#69666d] mt-2">
               Tus credenciales personales nunca se mezclan con la solvencia jurídica de tu empresa licitadora.
             </p>
-          </div>
+          </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             
-            {/* Tarjeta A: Identidad del Operador */}
-            <div className="p-6 sm:p-8 rounded-[24px] bg-white/75 backdrop-blur-xl border border-white/90 shadow-sm space-y-4">
+            {/* Tarjeta A: Identidad del Operador (con reveal) */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-50px' }}
+              transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+              whileHover={{ y: -3 }}
+              className="p-6 sm:p-8 rounded-[24px] bg-white/75 backdrop-blur-xl border border-white/90 shadow-sm space-y-4 transition-all"
+            >
               <div className="w-10 h-10 rounded-[12px] bg-[#eeeaff] text-[#685cff] flex items-center justify-center shadow-2xs">
                 <Building2 className="w-5 h-5" />
               </div>
@@ -804,10 +853,17 @@ Recomendación: Ejecutar reanálisis con Gemini 3.1 Flash v2.`
                   <span>Gestión de invitaciones a miembros del equipo</span>
                 </li>
               </ul>
-            </div>
+            </motion.div>
 
-            {/* Tarjeta B: Entidad Mercantil Licitadora */}
-            <div className="p-6 sm:p-8 rounded-[24px] bg-white/75 backdrop-blur-xl border border-white/90 shadow-sm space-y-4">
+            {/* Tarjeta B: Entidad Mercantil Licitadora (con reveal retrasado) */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-50px' }}
+              transition={{ duration: 0.5, delay: 0.12, ease: [0.22, 1, 0.36, 1] }}
+              whileHover={{ y: -3 }}
+              className="p-6 sm:p-8 rounded-[24px] bg-white/75 backdrop-blur-xl border border-white/90 shadow-sm space-y-4 transition-all"
+            >
               <div className="w-10 h-10 rounded-[12px] bg-[#e8f7ef] text-[#218a58] flex items-center justify-center shadow-2xs">
                 <FileCheck2 className="w-5 h-5" />
               </div>
@@ -833,18 +889,23 @@ Recomendación: Ejecutar reanálisis con Gemini 3.1 Flash v2.`
                   <span>Aislamiento estricto por fila (RLS en PostgreSQL)</span>
                 </li>
               </ul>
-            </div>
+            </motion.div>
 
           </div>
 
         </div>
       </section>
 
-      {/* 7. SECCIÓN DE SEGURIDAD Y CUMPLIMIENTO ENS / RGPD (#seguridad) */}
+      {/* 7. SECCIÓN DE SEGURIDAD Y CUMPLIMIENTO ENS / RGPD (#seguridad) CON SCROLL-REVEAL */}
       <section id="seguridad" className="py-16 sm:py-20 z-10 relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="p-8 sm:p-12 rounded-[28px] bg-gradient-to-br from-[#16141c]/95 via-[#1a1727]/90 to-[#121019]/95 text-white backdrop-blur-2xl border border-white/10 shadow-2xl space-y-10">
-            
+          <motion.div
+            initial={{ opacity: 0, y: 35, scale: 0.98 }}
+            whileInView={{ opacity: 1, y: 0, scale: 1 }}
+            viewport={{ once: true, margin: '-50px' }}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            className="p-8 sm:p-12 rounded-[28px] bg-gradient-to-br from-[#16141c]/95 via-[#1a1727]/90 to-[#121019]/95 text-white backdrop-blur-2xl border border-white/10 shadow-2xl space-y-10"
+          >
             <div className="max-w-2xl">
               <span className="text-xs font-mono uppercase tracking-widest text-[#10b981] font-bold">
                 Cumplimiento Normativo y Garantías
@@ -891,29 +952,39 @@ Recomendación: Ejecutar reanálisis con Gemini 3.1 Flash v2.`
 
             </div>
 
-          </div>
+          </motion.div>
         </div>
       </section>
 
-      {/* 8. PREGUNTAS FRECUENTES INTERACTIVAS (#faq) */}
+      {/* 8. PREGUNTAS FRECUENTES INTERACTIVAS (#faq) CON STAGGER AL SCROLLEAR */}
       <section id="faq" className="py-16 sm:py-20 z-10 relative">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 space-y-8">
           
-          <div className="text-center space-y-2">
+          <motion.div
+            initial={{ opacity: 0, y: 25 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-40px' }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            className="text-center space-y-2"
+          >
             <h2 className="text-2xl sm:text-3xl font-extrabold text-[#171719] tracking-tight">
               Preguntas Frecuentes
             </h2>
             <p className="text-xs sm:text-sm text-[#69666d]">
               Todo lo que necesitas saber antes de empezar a precalificar pliegos.
             </p>
-          </div>
+          </motion.div>
 
           <div className="space-y-3">
             {faqs.map((faq, index) => {
               const isOpen = openFaq === index;
               return (
-                <div
+                <motion.div
                   key={index}
+                  initial={{ opacity: 0, y: 15 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: '-20px' }}
+                  transition={{ duration: 0.35, delay: index * 0.06, ease: [0.22, 1, 0.36, 1] }}
                   className="rounded-[18px] bg-white/75 backdrop-blur-xl border border-white/90 shadow-2xs overflow-hidden transition-all"
                 >
                   <button
@@ -945,7 +1016,7 @@ Recomendación: Ejecutar reanálisis con Gemini 3.1 Flash v2.`
                       </motion.div>
                     )}
                   </AnimatePresence>
-                </div>
+                </motion.div>
               );
             })}
           </div>
@@ -953,10 +1024,16 @@ Recomendación: Ejecutar reanálisis con Gemini 3.1 Flash v2.`
         </div>
       </section>
 
-      {/* 9. CTA FINAL CONVERTIDOR */}
+      {/* 9. CTA FINAL CONVERTIDOR CON ENTRADA SUAVE */}
       <section className="py-16 sm:py-24 z-10 relative">
         <div className="max-w-5xl mx-auto px-4 sm:px-6">
-          <div className="p-8 sm:p-12 rounded-[28px] bg-white/80 backdrop-blur-xl border border-white/90 shadow-floating text-center space-y-6">
+          <motion.div
+            initial={{ opacity: 0, y: 30, scale: 0.98 }}
+            whileInView={{ opacity: 1, y: 0, scale: 1 }}
+            viewport={{ once: true, margin: '-40px' }}
+            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+            className="p-8 sm:p-12 rounded-[28px] bg-white/80 backdrop-blur-xl border border-white/90 shadow-floating text-center space-y-6"
+          >
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#eeeaff] text-[#685cff] text-[11px] font-semibold">
               <Sparkles className="w-3.5 h-3.5" />
               <span>Acceso Inmediato sin Compromiso</span>
@@ -987,7 +1064,7 @@ Recomendación: Ejecutar reanálisis con Gemini 3.1 Flash v2.`
                 <span>Probar Demo Guiada</span>
               </button>
             </div>
-          </div>
+          </motion.div>
         </div>
       </section>
 
