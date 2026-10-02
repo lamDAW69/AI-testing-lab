@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../lib/auth-context';
 import { Button } from '../components/ui/Button';
-import { ArrowRight, Building2, User, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, Building2, User, CheckCircle2 } from 'lucide-react';
 
 export const RegisterPage: React.FC = () => {
   const { signup, isLoading, error } = useAuth();
@@ -85,10 +85,6 @@ export const RegisterPage: React.FC = () => {
             <div className="flex items-start gap-2.5 text-xs text-white/80">
               <CheckCircle2 className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" />
               <span>Cero alucinaciones: citas auditables con offsets exactos en PDFs.</span>
-            </div>
-            <div className="flex items-start gap-2.5 text-xs text-white/80">
-              <ShieldCheck className="w-4 h-4 text-[#685CFF] shrink-0 mt-0.5" />
-              <span>Sesiones seguras en memoria volátil de JS (Regla 4.2 AGENTS.md).</span>
             </div>
           </div>
         </div>

@@ -439,7 +439,7 @@ export const LandingPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="text-center max-w-2xl mx-auto mb-16">
             <span className="text-xs font-mono uppercase tracking-widest text-[#10b981] font-bold">
-              Directivas AGENTS.md
+              Seguridad de Grado Militar
             </span>
             <h2 className="text-3xl font-extrabold text-white tracking-tight mt-2">
               Seguridad empresarial y defensa en profundidad
