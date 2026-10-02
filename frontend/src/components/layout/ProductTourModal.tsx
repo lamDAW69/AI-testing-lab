@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   X,
   ArrowRight,
@@ -10,9 +10,7 @@ import {
   FileText,
   Scale,
   BellRing,
-  ShieldCheck,
-  CheckCircle2,
-  ExternalLink
+  ExternalLink,
 } from 'lucide-react';
 
 interface ProductTourModalProps {
@@ -30,8 +28,8 @@ export const ProductTourModal: React.FC<ProductTourModalProps> = ({ isOpen, onCl
     {
       badge: 'Paso 1 de 4',
       title: 'Tu Dossier Corporativo: La base de tu solvencia',
-      icon: <Building2 className="w-5 h-5 text-[#218a58]" />,
-      iconBg: 'bg-[#e8f7ef]',
+      icon: <Building2 className="w-4.5 h-4.5" />,
+      iconColor: '#10b981',   // esmeralda — solvencia
       description:
         'En Pliego AI no hay preguntas genéricas. El sistema necesita conocer qué solvencia y certificaciones tiene tu empresa para evaluar si cumples con las condiciones del pliego.',
       detail:
@@ -43,8 +41,8 @@ export const ProductTourModal: React.FC<ProductTourModalProps> = ({ isOpen, onCl
     {
       badge: 'Paso 2 de 4',
       title: 'Catálogo Oficial: Licitaciones sincronizadas con PLACSP',
-      icon: <FileText className="w-5 h-5 text-[#685cff]" />,
-      iconBg: 'bg-[#eeeaff]',
+      icon: <FileText className="w-4.5 h-4.5" />,
+      iconColor: '#5e6ad2',   // lavanda — datos / documentos
       description:
         'Sondeamos en tiempo real el feed oficial del Ministerio de Hacienda (PLACSP). Cada expediente incluye presupuestos en céntimos y los enlaces a los pliegos oficiales (PCAP y PPT).',
       detail:
@@ -56,8 +54,8 @@ export const ProductTourModal: React.FC<ProductTourModalProps> = ({ isOpen, onCl
     {
       badge: 'Paso 3 de 4',
       title: 'Precalificación con IA en 7 Dimensiones y Citas Físicas',
-      icon: <Scale className="w-5 h-5 text-[#685cff]" />,
-      iconBg: 'bg-[#eeeaff]',
+      icon: <Scale className="w-4.5 h-4.5" />,
+      iconColor: '#5e6ad2',   // lavanda — análisis IA
       description:
         'Al seleccionar un expediente, el motor cruza los requisitos obligatorios contra tu dossier en 7 dimensiones (Elegibilidad, Solvencia, Riesgos, Plazos, etc.).',
       detail:
@@ -69,8 +67,8 @@ export const ProductTourModal: React.FC<ProductTourModalProps> = ({ isOpen, onCl
     {
       badge: 'Paso 4 de 4',
       title: 'Decisiones de Cartera y Detección de Adendas',
-      icon: <BellRing className="w-5 h-5 text-[#ca8517]" />,
-      iconBg: 'bg-[#fff3db]',
+      icon: <BellRing className="w-4.5 h-4.5" />,
+      iconColor: '#f59e0b',   // ámbar — alertas
       description:
         'Gestiona tu cartera marcando si presentas oferta (PURSUE) o la descartas (DISCARD). Todo tu equipo comparte el mismo contexto operativo.',
       detail:
@@ -92,9 +90,7 @@ export const ProductTourModal: React.FC<ProductTourModalProps> = ({ isOpen, onCl
   };
 
   const handlePrev = () => {
-    if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
-    }
+    if (currentStep > 0) setCurrentStep(currentStep - 1);
   };
 
   const handleAction = (route: string) => {
@@ -103,90 +99,127 @@ export const ProductTourModal: React.FC<ProductTourModalProps> = ({ isOpen, onCl
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs select-none">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 select-none" style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)' }}>
       <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+        initial={{ opacity: 0, scale: 0.96, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95 }}
-        className="w-full max-w-2xl bg-white rounded-[24px] border border-[rgba(20,20,20,0.1)] shadow-2xl overflow-hidden flex flex-col"
+        exit={{ opacity: 0, scale: 0.96 }}
+        transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+        className="w-full max-w-[640px] rounded-[16px] border border-[#23252a] overflow-hidden flex flex-col"
+        style={{ background: '#141516' }}
       >
-        {/* Cabecera del modal */}
-        <div className="px-6 py-4 bg-[#FAF8F5] border-b border-[rgba(30,24,38,0.06)] flex items-center justify-between">
+        {/* ── Cabecera ───────────────────────────────────────── */}
+        <div
+          className="px-5 py-4 border-b border-[#23252a] flex items-center justify-between"
+          style={{ background: '#18191a' }}
+        >
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-[8px] bg-[#685cff] text-white flex items-center justify-center text-xs font-bold shadow-2xs">
+            <div className="w-7 h-7 rounded-[8px] bg-[#5e6ad2] text-white flex items-center justify-center text-xs font-bold shrink-0">
               ✦
             </div>
             <div>
-              <h2 className="text-xs sm:text-sm font-bold text-[#171719] leading-tight">
+              <h2 className="text-sm font-semibold text-[#f7f8f8] leading-tight tracking-[-0.02em]">
                 Guía Rápida de la Demostración Interactiva
               </h2>
-              <p className="text-[11px] text-[#69666d]">
+              <p className="text-[11px] text-[#62666d] mt-0.5">
                 Empresa simulada: TechConsulting Soluciones S.L. (CIF B-88776655)
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full hover:bg-black/5 flex items-center justify-center text-[#929097] hover:text-[#171719] transition-colors cursor-pointer"
+            className="w-7 h-7 rounded-[6px] flex items-center justify-center text-[#62666d] hover:text-[#d0d6e0] hover:bg-[#23252a] transition-colors cursor-pointer shrink-0"
             title="Cerrar guía"
           >
-            <X className="w-4 h-4" />
+            <X className="w-3.5 h-3.5" />
           </button>
         </div>
 
-        {/* Indicador de pasos (Pills) */}
-        <div className="px-6 pt-4 flex gap-2">
+        {/* ── Progress pills ─────────────────────────────────── */}
+        <div className="px-5 pt-4 flex gap-1.5">
           {steps.map((_, index) => (
             <button
               key={index}
               onClick={() => setCurrentStep(index)}
-              className={`h-1.5 flex-1 rounded-full transition-all cursor-pointer ${
+              className={`h-[3px] flex-1 rounded-full transition-all duration-300 cursor-pointer ${
                 index === currentStep
-                  ? 'bg-[#685cff]'
+                  ? 'bg-[#5e6ad2]'
                   : index < currentStep
-                  ? 'bg-[#685cff]/40'
-                  : 'bg-[rgba(30,24,38,0.08)]'
+                  ? 'bg-[#5e6ad2]/35'
+                  : 'bg-[#23252a]'
               }`}
               title={`Ir al paso ${index + 1}`}
             />
           ))}
         </div>
 
-        {/* Cuerpo del paso actual */}
-        <div className="p-6 sm:p-8 space-y-4">
-          <div className="flex items-center gap-2.5">
-            <div className={`w-9 h-9 rounded-[10px] ${current.iconBg} flex items-center justify-center shrink-0 shadow-2xs`}>
+        {/* ── Cuerpo del paso ────────────────────────────────── */}
+        <div className="p-5 sm:p-6 space-y-4 flex-1">
+          {/* Icono + badge + título */}
+          <div className="flex items-start gap-3">
+            <div
+              className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0 mt-0.5"
+              style={{
+                background: `${current.iconColor}18`,
+                color: current.iconColor,
+                border: `1px solid ${current.iconColor}30`,
+              }}
+            >
               {current.icon}
             </div>
             <div>
-              <span className="text-[10px] font-mono uppercase tracking-wider text-[#685cff] font-bold block">
+              <span
+                className="text-[10px] font-mono uppercase tracking-widest font-medium block"
+                style={{ color: current.iconColor }}
+              >
                 {current.badge}
               </span>
-              <h3 className="text-base sm:text-lg font-bold text-[#171719] tracking-tight">
+              <h3 className="text-base font-semibold text-[#f7f8f8] tracking-[-0.03em] leading-snug mt-0.5">
                 {current.title}
               </h3>
             </div>
           </div>
 
-          <p className="text-xs sm:text-sm text-[#423d4c] leading-relaxed">
+          {/* Descripción principal */}
+          <p className="text-sm text-[#8a8f98] leading-relaxed">
             {current.description}
           </p>
 
-          <div className="p-3.5 rounded-[14px] bg-[#FAF8F5] border border-[rgba(30,24,38,0.06)] space-y-2">
-            <p className="text-xs text-[#69666d] leading-relaxed">
+          {/* Bloque de detalle */}
+          <div
+            className="p-4 rounded-[10px] border border-[#23252a] space-y-2.5"
+            style={{ background: '#1a1b1c' }}
+          >
+            <p className="text-xs text-[#8a8f98] leading-relaxed">
               {current.detail}
             </p>
-            <div className="flex items-center gap-1.5 text-[11px] font-semibold text-[#685cff]">
-              <Sparkles className="w-3.5 h-3.5" />
+            <div
+              className="flex items-center gap-1.5 text-[11px] font-medium"
+              style={{ color: current.iconColor }}
+            >
+              <Sparkles className="w-3 h-3 shrink-0" />
               <span>{current.highlight}</span>
             </div>
           </div>
 
-          {/* Enlace directo interactivo a la sección relevante */}
-          <div className="pt-2">
+          {/* Botón de acción contextual */}
+          <div className="pt-1">
             <button
               onClick={() => handleAction(current.actionRoute)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-[12px] bg-white border border-[#685cff]/30 hover:border-[#685cff] text-[#685cff] text-xs font-semibold hover:bg-[#eeeaff]/30 transition-all cursor-pointer shadow-2xs"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-[8px] text-xs font-medium transition-all duration-150 cursor-pointer border"
+              style={{
+                background: `${current.iconColor}10`,
+                borderColor: `${current.iconColor}30`,
+                color: current.iconColor,
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.background = `${current.iconColor}1c`;
+                (e.currentTarget as HTMLButtonElement).style.borderColor = `${current.iconColor}50`;
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.background = `${current.iconColor}10`;
+                (e.currentTarget as HTMLButtonElement).style.borderColor = `${current.iconColor}30`;
+              }}
             >
               <span>{current.actionText}</span>
               <ExternalLink className="w-3.5 h-3.5" />
@@ -194,15 +227,18 @@ export const ProductTourModal: React.FC<ProductTourModalProps> = ({ isOpen, onCl
           </div>
         </div>
 
-        {/* Pie de controles */}
-        <div className="px-6 py-4 bg-[#FAF8F5] border-t border-[rgba(30,24,38,0.06)] flex items-center justify-between">
+        {/* ── Pie de controles ───────────────────────────────── */}
+        <div
+          className="px-5 py-3.5 border-t border-[#23252a] flex items-center justify-between"
+          style={{ background: '#18191a' }}
+        >
           <button
             onClick={handlePrev}
             disabled={currentStep === 0}
-            className={`px-3 py-1.5 rounded-[10px] text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer ${
+            className={`px-3 py-1.5 rounded-[8px] text-xs font-medium flex items-center gap-1 transition-colors cursor-pointer ${
               currentStep === 0
-                ? 'text-[#929097] cursor-not-allowed opacity-40'
-                : 'text-[#171719] hover:bg-black/5'
+                ? 'text-[#3e3e44] cursor-not-allowed'
+                : 'text-[#8a8f98] hover:text-[#d0d6e0] hover:bg-[#23252a]'
             }`}
           >
             <ArrowLeft className="w-3.5 h-3.5" />
@@ -212,13 +248,13 @@ export const ProductTourModal: React.FC<ProductTourModalProps> = ({ isOpen, onCl
           <div className="flex items-center gap-2">
             <button
               onClick={onClose}
-              className="px-3 py-1.5 rounded-[10px] text-xs font-medium text-[#69666d] hover:text-[#171719] transition-colors cursor-pointer"
+              className="px-3 py-1.5 rounded-[8px] text-xs font-medium text-[#62666d] hover:text-[#8a8f98] hover:bg-[#23252a] transition-colors cursor-pointer"
             >
               Saltar tutorial
             </button>
             <button
               onClick={handleNext}
-              className="px-4 py-2 rounded-[12px] bg-[#171719] hover:bg-[#2b2b2e] text-white text-xs font-semibold flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
+              className="px-4 py-2 rounded-[8px] bg-[#5e6ad2] hover:bg-[#828fff] text-white text-xs font-medium flex items-center gap-1.5 transition-all duration-150 cursor-pointer active:scale-[0.98]"
             >
               <span>{currentStep === steps.length - 1 ? '¡Comenzar a explorar!' : 'Siguiente paso'}</span>
               <ArrowRight className="w-3.5 h-3.5" />
