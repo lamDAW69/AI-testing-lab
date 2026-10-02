@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../lib/auth-context';
 import { Button } from '../components/ui/Button';
 import { ArrowRight, ShieldCheck } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
-  const { login, isLoading, error } = useAuth();
+  const { login, loginAsDemo, isLoading, error } = useAuth();
   const [email, setEmail] = useState('luis@techconsulting.es');
   const [password, setPassword] = useState('••••••••••••');
   const navigate = useNavigate();
@@ -134,8 +134,43 @@ export const LoginPage: React.FC = () => {
               isLoading={isLoading}
               icon={<ArrowRight className="w-4 h-4" />}
             >
-              Continuar
+              Iniciar sesión
             </Button>
+
+            <div className="relative my-4 flex items-center justify-center">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-[rgba(20,20,20,0.08)]"></div>
+              </div>
+              <span className="relative bg-white px-2 text-[11px] uppercase tracking-wider text-[#8F8B92] font-mono">
+                O explorar plataforma
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                loginAsDemo();
+                navigate('/app/inicio');
+              }}
+              className="w-full py-2.5 px-3 rounded-[12px] bg-[#eeeaff]/70 hover:bg-[#eeeaff] text-[#695CFF] text-xs font-semibold border border-[#d5ccfe] transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              <span>Acceder con Empresa Demo (TechConsulting S.L.)</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+
+            <div className="text-center pt-3 space-y-2">
+              <p className="text-xs text-[#68656A]">
+                ¿Aún no tienes cuenta?{' '}
+                <Link to="/registro" className="font-semibold text-[#695CFF] hover:underline">
+                  Registra tu empresa gratis
+                </Link>
+              </p>
+              <p>
+                <Link to="/" className="text-[11px] text-[#8F8B92] hover:text-[#161616] transition-colors">
+                  ← Volver a la página principal
+                </Link>
+              </p>
+            </div>
           </form>
         </div>
       </div>

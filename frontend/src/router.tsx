@@ -1,6 +1,8 @@
 import React from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { AppShell } from './components/layout/AppShell';
+import { LandingPage } from './pages/LandingPage';
+import { RegisterPage } from './pages/RegisterPage';
 import { LoginPage } from './pages/LoginPage';
 import { HomePage } from './pages/HomePage';
 import { CatalogPage } from './pages/CatalogPage';
@@ -23,12 +25,20 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
 export const router = createBrowserRouter([
   {
-    path: '/login',
-    element: <LoginPage />,
+    path: '/',
+    element: <LandingPage />,
   },
   {
-    path: '/',
-    element: <Navigate to="/app/inicio" replace />,
+    path: '/registro',
+    element: <RegisterPage />,
+  },
+  {
+    path: '/signup',
+    element: <Navigate to="/registro" replace />,
+  },
+  {
+    path: '/login',
+    element: <LoginPage />,
   },
   {
     path: '/app',

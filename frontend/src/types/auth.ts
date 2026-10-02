@@ -21,3 +21,12 @@ export interface AuthState {
   isLoading: boolean;
   error: string | null;
 }
+
+export interface SignupData {
+  fullName: string;
+  email: string;
+  password?: string;
+  companyName: string;
+  taxId: string;
+  cpvSector?: string;
+}
