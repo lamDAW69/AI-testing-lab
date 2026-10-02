@@ -3,7 +3,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../lib/auth-context';
 import { Button } from '../components/ui/Button';
-import { ArrowRight, Building2, User, CheckCircle2 } from 'lucide-react';
+import { SilkBackground } from '../components/layout/SilkBackground';
+import { ArrowRight, Building2, User, CheckCircle2, ShieldCheck, Sparkles } from 'lucide-react';
 
 export const RegisterPage: React.FC = () => {
   const { signup, isLoading, error } = useAuth();
@@ -37,10 +38,19 @@ export const RegisterPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F6F3EF] flex items-center justify-center p-4 sm:p-8 select-none">
-      <div className="w-full max-w-5xl bg-white rounded-[24px] border border-[rgba(20,20,20,0.08)] shadow-[0_20px_50px_rgba(20,20,30,0.08)] overflow-hidden grid grid-cols-1 lg:grid-cols-[1.1fr_1.4fr]">
+    <div className="relative min-h-screen flex items-center justify-center p-4 sm:p-8 select-none overflow-x-hidden">
+      {/* 1. Fondo de cristal líquido orgánico y ondas de seda (Consistencia con AppShell) */}
+      <SilkBackground />
+
+      {/* 2. Tarjeta Flotante Ultra-Glossy con desenfoque de fondo y bordes especulares */}
+      <motion.div
+        initial={{ opacity: 0, y: 14, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+        className="relative z-10 w-full max-w-5xl bg-white/80 backdrop-blur-2xl rounded-[28px] border border-white/90 shadow-[0_20px_60px_rgba(21,17,30,0.08)] overflow-hidden grid grid-cols-1 lg:grid-cols-[1.1fr_1.4fr]"
+      >
         {/* Columna Izquierda: Editorial y Propuesta de Valor */}
-        <div className="relative bg-gradient-to-br from-[#161616] via-[#1E1B2E] to-[#12111A] p-8 sm:p-10 flex flex-col justify-between overflow-hidden text-white">
+        <div className="relative bg-gradient-to-br from-[#16141c]/95 via-[#1a1727]/90 to-[#121019]/95 p-8 sm:p-10 flex flex-col justify-between overflow-hidden text-white backdrop-blur-2xl border-r border-white/10">
           <motion.div
             animate={{
               x: [0, 15, -10, 0],
@@ -56,19 +66,19 @@ export const RegisterPage: React.FC = () => {
 
           <div className="relative z-10 space-y-4">
             <Link to="/" className="inline-flex items-center gap-2 hover:opacity-80 transition-opacity">
-              <div className="w-7 h-7 rounded-lg bg-[#695CFF] flex items-center justify-center text-white text-xs font-bold">
+              <div className="w-7 h-7 rounded-[8px] bg-gradient-to-tr from-[#695CFF] to-[#8d82ff] flex items-center justify-center text-white text-xs font-bold shadow-2xs">
                 ✦
               </div>
               <span className="font-semibold text-sm tracking-tight">Pliego AI</span>
             </Link>
 
             <div className="pt-6">
-              <span className="text-[11px] font-mono tracking-widest text-[#EEEAFE]/70 uppercase">
+              <span className="text-[11px] font-mono tracking-widest text-[#EEEAFE]/70 uppercase font-semibold">
                 Alta de Nueva Entidad Licitadora
               </span>
-              <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight leading-tight mt-2">
+              <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight leading-tight mt-2 text-white">
                 Tu dossier empresarial y la contratación pública,<br />
-                <span className="text-[#A599FF]">conectados por IA.</span>
+                <span className="text-[#A599FF] font-editorial italic font-normal">conectados por IA.</span>
               </h2>
             </div>
 
@@ -90,7 +100,7 @@ export const RegisterPage: React.FC = () => {
         </div>
 
         {/* Columna Derecha: Formulario Guiado de Separación de Identidades */}
-        <div className="p-8 sm:p-10 flex flex-col justify-center">
+        <div className="p-8 sm:p-10 flex flex-col justify-center bg-white/70 backdrop-blur-md">
           <div className="space-y-1 mb-6">
             <h1 className="text-2xl font-extrabold text-[#161616] tracking-tight">
               Crear cuenta corporativa
@@ -102,9 +112,9 @@ export const RegisterPage: React.FC = () => {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Sección 1: Datos del Operador */}
-            <div className="p-4 rounded-[16px] bg-[#F9F8F6] border border-[rgba(20,20,20,0.06)] space-y-3">
+            <div className="p-4 rounded-[16px] bg-[#FAF8F5] border border-[rgba(20,20,20,0.06)] space-y-3 shadow-2xs">
               <div className="flex items-center gap-2 text-xs font-bold text-[#161616]">
-                <User className="w-3.5 h-3.5 text-[#695CFF]" />
+                <User className="w-3.5 h-3.5 text-[#685cff]" />
                 <span>1. Identidad del Operador (Cuenta Personal)</span>
               </div>
 
@@ -119,7 +129,7 @@ export const RegisterPage: React.FC = () => {
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     placeholder="Carlos Gómez"
-                    className="w-full px-3 py-2 bg-white border border-[rgba(20,20,20,0.1)] rounded-[10px] text-xs text-[#161616] placeholder-[#8F8B92] focus:border-[#695CFF] focus:outline-none transition-all"
+                    className="w-full px-3 py-2 bg-white border border-[rgba(20,20,20,0.1)] rounded-[10px] text-xs text-[#161616] placeholder-[#8F8B92] focus:border-[#685cff] focus:ring-1 focus:ring-[#685cff] focus:outline-none transition-all"
                   />
                 </div>
 
@@ -133,7 +143,7 @@ export const RegisterPage: React.FC = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="carlos@empresa.es"
-                    className="w-full px-3 py-2 bg-white border border-[rgba(20,20,20,0.1)] rounded-[10px] text-xs text-[#161616] placeholder-[#8F8B92] focus:border-[#695CFF] focus:outline-none transition-all"
+                    className="w-full px-3 py-2 bg-white border border-[rgba(20,20,20,0.1)] rounded-[10px] text-xs text-[#161616] placeholder-[#8F8B92] focus:border-[#685cff] focus:ring-1 focus:ring-[#685cff] focus:outline-none transition-all"
                   />
                 </div>
               </div>
@@ -148,13 +158,13 @@ export const RegisterPage: React.FC = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Mínimo 8 caracteres"
-                  className="w-full px-3 py-2 bg-white border border-[rgba(20,20,20,0.1)] rounded-[10px] text-xs text-[#161616] placeholder-[#8F8B92] focus:border-[#695CFF] focus:outline-none transition-all"
+                  className="w-full px-3 py-2 bg-white border border-[rgba(20,20,20,0.1)] rounded-[10px] text-xs text-[#161616] placeholder-[#8F8B92] focus:border-[#685cff] focus:ring-1 focus:ring-[#685cff] focus:outline-none transition-all"
                 />
               </div>
             </div>
 
             {/* Sección 2: Datos de la Entidad Mercantil */}
-            <div className="p-4 rounded-[16px] bg-[#F9F8F6] border border-[rgba(20,20,20,0.06)] space-y-3">
+            <div className="p-4 rounded-[16px] bg-[#FAF8F5] border border-[rgba(20,20,20,0.06)] space-y-3 shadow-2xs">
               <div className="flex items-center gap-2 text-xs font-bold text-[#161616]">
                 <Building2 className="w-3.5 h-3.5 text-[#218a58]" />
                 <span>2. Entidad Mercantil Licitadora (Dossier y Tenant)</span>
@@ -171,7 +181,7 @@ export const RegisterPage: React.FC = () => {
                     value={companyName}
                     onChange={(e) => setCompanyName(e.target.value)}
                     placeholder="InnovaTech Consultoría S.L."
-                    className="w-full px-3 py-2 bg-white border border-[rgba(20,20,20,0.1)] rounded-[10px] text-xs text-[#161616] placeholder-[#8F8B92] focus:border-[#695CFF] focus:outline-none transition-all"
+                    className="w-full px-3 py-2 bg-white border border-[rgba(20,20,20,0.1)] rounded-[10px] text-xs text-[#161616] placeholder-[#8F8B92] focus:border-[#685cff] focus:ring-1 focus:ring-[#685cff] focus:outline-none transition-all"
                   />
                 </div>
 
@@ -185,7 +195,7 @@ export const RegisterPage: React.FC = () => {
                     value={taxId}
                     onChange={(e) => setTaxId(e.target.value)}
                     placeholder="B-12345678"
-                    className="w-full px-3 py-2 bg-white border border-[rgba(20,20,20,0.1)] rounded-[10px] text-xs text-[#161616] placeholder-[#8F8B92] uppercase focus:border-[#695CFF] focus:outline-none transition-all"
+                    className="w-full px-3 py-2 bg-white border border-[rgba(20,20,20,0.1)] rounded-[10px] text-xs text-[#161616] placeholder-[#8F8B92] uppercase focus:border-[#685cff] focus:ring-1 focus:ring-[#685cff] focus:outline-none transition-all"
                   />
                 </div>
               </div>
@@ -197,7 +207,7 @@ export const RegisterPage: React.FC = () => {
                 <select
                   value={cpvSector}
                   onChange={(e) => setCpvSector(e.target.value)}
-                  className="w-full px-3 py-2 bg-white border border-[rgba(20,20,20,0.1)] rounded-[10px] text-xs text-[#161616] focus:border-[#695CFF] focus:outline-none transition-all"
+                  className="w-full px-3 py-2 bg-white border border-[rgba(20,20,20,0.1)] rounded-[10px] text-xs text-[#161616] focus:border-[#685cff] focus:outline-none transition-all"
                 >
                   <option value="72000000">72000000 - Servicios de Tecnologías de la Información y Software</option>
                   <option value="48000000">48000000 - Paquetes de software y sistemas de información</option>
@@ -218,7 +228,7 @@ export const RegisterPage: React.FC = () => {
               type="submit"
               variant="primary"
               size="lg"
-              className="w-full mt-2"
+              className="w-full mt-2 shadow-[0_4px_14px_rgba(104,92,255,0.25)] active:scale-98"
               isLoading={isLoading}
               icon={<ArrowRight className="w-4 h-4" />}
             >
@@ -227,13 +237,13 @@ export const RegisterPage: React.FC = () => {
 
             <div className="text-center pt-2">
               <span className="text-xs text-[#69666d]">¿Ya tienes una cuenta registrada? </span>
-              <Link to="/login" className="text-xs font-semibold text-[#695CFF] hover:underline">
+              <Link to="/login" className="text-xs font-semibold text-[#685cff] hover:underline">
                 Inicia sesión aquí
               </Link>
             </div>
           </form>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };

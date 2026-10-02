@@ -3,11 +3,12 @@ import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../lib/auth-context';
 import { Button } from '../components/ui/Button';
-import { ArrowRight, ShieldCheck } from 'lucide-react';
+import { SilkBackground } from '../components/layout/SilkBackground';
+import { ArrowRight, ShieldCheck, Sparkles } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
   const { login, loginAsDemo, isLoading, error } = useAuth();
-  const [email, setEmail] = useState('luis@techconsulting.es');
+  const [email, setEmail] = useState('demo@techconsulting.es');
   const [password, setPassword] = useState('••••••••••••');
   const navigate = useNavigate();
 
@@ -22,10 +23,19 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F6F3EF] flex items-center justify-center p-4 sm:p-6 select-none">
-      <div className="w-full max-w-4xl min-h-[540px] bg-white rounded-[24px] border border-[rgba(20,20,20,0.08)] shadow-[0_20px_50px_rgba(20,20,30,0.08)] overflow-hidden grid grid-cols-1 md:grid-cols-2">
-        {/* Lado izquierdo: Arte abstracto generativo y branding sutil según Sección 8 */}
-        <div className="relative bg-gradient-to-br from-[#161616] via-[#1F1D2B] to-[#12111A] p-8 sm:p-10 flex flex-col justify-between overflow-hidden text-white">
+    <div className="relative min-h-screen flex items-center justify-center p-4 sm:p-6 select-none overflow-x-hidden">
+      {/* 1. Fondo de cristal líquido orgánico y ondas de seda (Consistencia con AppShell) */}
+      <SilkBackground />
+
+      {/* 2. Tarjeta Flotante Ultra-Glossy con desenfoque de fondo y bordes especulares */}
+      <motion.div
+        initial={{ opacity: 0, y: 14, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+        className="relative z-10 w-full max-w-4xl min-h-[540px] bg-white/80 backdrop-blur-2xl rounded-[28px] border border-white/90 shadow-[0_20px_60px_rgba(21,17,30,0.08)] overflow-hidden grid grid-cols-1 md:grid-cols-2"
+      >
+        {/* Lado izquierdo: Arte abstracto generativo y branding editorial */}
+        <div className="relative bg-gradient-to-br from-[#16141c]/95 via-[#1a1727]/90 to-[#121019]/95 p-8 sm:p-10 flex flex-col justify-between overflow-hidden text-white backdrop-blur-2xl border-r border-white/10">
           {/* Formas abstractas con deriva extremadamente lenta (15-25s) */}
           <motion.div
             animate={{
@@ -55,32 +65,33 @@ export const LoginPage: React.FC = () => {
           />
 
           <div className="relative z-10 space-y-3">
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-[#695CFF] flex items-center justify-center text-white text-xs font-bold">
+            <Link to="/" className="inline-flex items-center gap-2 hover:opacity-80 transition-opacity">
+              <div className="w-7 h-7 rounded-[8px] bg-gradient-to-tr from-[#685cff] to-[#8d82ff] flex items-center justify-center text-white text-xs font-bold shadow-2xs">
                 ✦
               </div>
-              <span className="font-semibold text-sm tracking-tight">Pliego AI</span>
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight leading-tight pt-6">
+              <span className="font-semibold text-sm tracking-tight text-white">Pliego AI</span>
+            </Link>
+
+            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight leading-tight pt-6 text-white">
               La IA analiza.<br />
               La evidencia sustenta.<br />
-              <span className="text-[#EEEAFE] font-medium">La persona decide.</span>
+              <span className="text-[#A599FF] font-editorial italic font-normal">La persona decide.</span>
             </h2>
           </div>
 
-          <div className="relative z-10 pt-8 border-t border-white/10 text-xs text-white/60 space-y-1">
+          <div className="relative z-10 pt-8 border-t border-white/10 text-xs text-white/60 space-y-1.5">
             <div className="flex items-center gap-2 text-white/80">
               <ShieldCheck className="w-4 h-4 text-[#10B981]" />
               <span>Aislamiento multi-tenant por fila garantizado</span>
             </div>
             <p className="text-[11px] text-white/50 font-mono">
-              Tokens criptográficos en memoria activa. Sin persistencia en localStorage.
+              Tokens criptográficos en memoria activa. Cero persistencia en localStorage.
             </p>
           </div>
         </div>
 
-        {/* Lado derecho: Formulario editorial limpio según Sección 8 */}
-        <div className="p-8 sm:p-12 flex flex-col justify-center">
+        {/* Lado derecho: Formulario editorial limpio */}
+        <div className="p-8 sm:p-12 flex flex-col justify-center bg-white/70 backdrop-blur-md">
           <div className="space-y-1 mb-6">
             <h1 className="text-2xl font-extrabold text-[#161616] tracking-tight">
               Iniciar sesión
@@ -102,7 +113,7 @@ export const LoginPage: React.FC = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="ejemplo@empresa.es"
-                className="w-full px-3.5 py-2.5 bg-[#F6F3EF]/70 border border-[rgba(20,20,20,0.08)] rounded-[12px] text-xs text-[#161616] placeholder-[#8F8B92] focus:bg-white focus:border-[#695CFF] focus:outline-none transition-all"
+                className="w-full px-3.5 py-2.5 bg-white border border-[rgba(20,20,20,0.1)] rounded-[12px] text-xs text-[#161616] placeholder-[#8F8B92] focus:bg-white focus:border-[#685cff] focus:ring-1 focus:ring-[#685cff] focus:outline-none transition-all shadow-2xs"
               />
             </div>
 
@@ -116,7 +127,7 @@ export const LoginPage: React.FC = () => {
                 autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-[#F6F3EF]/70 border border-[rgba(20,20,20,0.08)] rounded-[12px] text-xs text-[#161616] placeholder-[#8F8B92] focus:bg-white focus:border-[#695CFF] focus:outline-none transition-all"
+                className="w-full px-3.5 py-2.5 bg-white border border-[rgba(20,20,20,0.1)] rounded-[12px] text-xs text-[#161616] placeholder-[#8F8B92] focus:bg-white focus:border-[#685cff] focus:ring-1 focus:ring-[#685cff] focus:outline-none transition-all shadow-2xs"
               />
             </div>
 
@@ -130,7 +141,7 @@ export const LoginPage: React.FC = () => {
               type="submit"
               variant="primary"
               size="lg"
-              className="w-full mt-2"
+              className="w-full mt-2 shadow-[0_4px_14px_rgba(104,92,255,0.25)] active:scale-98"
               isLoading={isLoading}
               icon={<ArrowRight className="w-4 h-4" />}
             >
@@ -141,7 +152,7 @@ export const LoginPage: React.FC = () => {
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-[rgba(20,20,20,0.08)]"></div>
               </div>
-              <span className="relative bg-white px-2 text-[11px] uppercase tracking-wider text-[#8F8B92] font-mono">
+              <span className="relative bg-white/90 px-2 text-[11px] uppercase tracking-wider text-[#8F8B92] font-mono">
                 O explorar plataforma
               </span>
             </div>
@@ -152,8 +163,9 @@ export const LoginPage: React.FC = () => {
                 loginAsDemo();
                 navigate('/app/inicio');
               }}
-              className="w-full py-2.5 px-3 rounded-[12px] bg-[#eeeaff]/70 hover:bg-[#eeeaff] text-[#695CFF] text-xs font-semibold border border-[#d5ccfe] transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+              className="w-full py-2.5 px-3 rounded-[12px] bg-[#eeeaff] hover:bg-[#d5ccfe]/60 text-[#685cff] text-xs font-semibold border border-[#d5ccfe] transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-98 shadow-2xs"
             >
+              <Sparkles className="w-3.5 h-3.5" />
               <span>Acceder con Empresa Demo (TechConsulting S.L.)</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
@@ -161,7 +173,7 @@ export const LoginPage: React.FC = () => {
             <div className="text-center pt-3 space-y-2">
               <p className="text-xs text-[#68656A]">
                 ¿Aún no tienes cuenta?{' '}
-                <Link to="/registro" className="font-semibold text-[#695CFF] hover:underline">
+                <Link to="/registro" className="font-semibold text-[#685cff] hover:underline">
                   Registra tu empresa gratis
                 </Link>
               </p>
@@ -173,7 +185,7 @@ export const LoginPage: React.FC = () => {
             </div>
           </form>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };
