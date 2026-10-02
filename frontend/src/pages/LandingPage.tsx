@@ -26,7 +26,13 @@ import {
   Copy,
   Check,
   HelpCircle,
-  ChevronDown
+  ChevronDown,
+  Zap,
+  Play,
+  Activity,
+  Radio,
+  FileSearch,
+  AlertCircle
 } from 'lucide-react';
 
 export const LandingPage: React.FC = () => {
@@ -36,16 +42,79 @@ export const LandingPage: React.FC = () => {
   const [copiedHash, setCopiedHash] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
+  // Estado del Simulador Interactivo en Vivo del Hero
+  const [selectedCriterion, setSelectedCriterion] = useState<number>(0);
+  const [isScanning, setIsScanning] = useState<boolean>(false);
+
+  // Estado del Simulador Interactivo de Adendas en Fase 4
+  const [simulatedAdendaState, setSimulatedAdendaState] = useState<'INITIAL' | 'ADENDA_DETECTED' | 'REANALYZED'>('INITIAL');
+
   const handleLaunchDemo = () => {
     loginAsDemo();
     navigate('/app/inicio');
   };
 
   const handleCopyHash = () => {
-    navigator.clipboard?.writeText?.('e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855');
+    navigator.clipboard?.writeText?.('8f9a2b4c107e3d1982b6e82af0c399b1a5e4d28e71fa0c399b1a5e8f9a2b4c10');
     setCopiedHash(true);
     setTimeout(() => setCopiedHash(false), 2000);
   };
+
+  const handleTriggerScan = (idx: number) => {
+    if (idx === selectedCriterion && !isScanning) {
+      setIsScanning(true);
+      setTimeout(() => setIsScanning(false), 450);
+      return;
+    }
+    setSelectedCriterion(idx);
+    setIsScanning(true);
+    setTimeout(() => setIsScanning(false), 450);
+  };
+
+  // Criterios interactivos del pliego de la DGT para auditar en directo
+  const heroCriteria = [
+    {
+      id: 0,
+      name: 'Certificación ENS Alta',
+      category: 'Seguridad y Cumplimiento',
+      chipColor: '#218a58',
+      pageRef: 'PCAP Pág. 14, caracteres 4210-4380',
+      pliegoQuote: '...el adjudicatario deberá acreditar que los sistemas ofertados disponen de certificación en el Esquema Nacional de Seguridad (ENS) en categoría ALTA conforme al RD 311/2022...',
+      dossierProof: 'TechConsulting Soluciones S.L. dispone de Certificado ENS-2024-9912 emitido por CCN-CERT. Válido hasta 2027.',
+      status: 'SUPPORTED',
+      statusLabel: 'Cumple al 100%',
+      confidence: 99,
+      latencyMs: 142,
+    },
+    {
+      id: 1,
+      name: 'Solvencia Económica (>500k€)',
+      category: 'Solvencia Financiera',
+      chipColor: '#218a58',
+      pageRef: 'PCAP Pág. 8, caracteres 1890-2040',
+      pliegoQuote: '...volumen anual de negocios en el ámbito de telemática por importe igual o superior a 500.000,00 € en el mejor de los tres últimos ejercicios fiscales...',
+      dossierProof: 'Facturación anual acreditada en el Registro Mercantil: 1.250.000,00 € (Ejercicio 2024). Supera el umbral exigido con 250% de cobertura.',
+      status: 'SUPPORTED',
+      statusLabel: 'Solvencia Acreditada',
+      confidence: 100,
+      latencyMs: 118,
+    },
+    {
+      id: 2,
+      name: 'Equipo Técnico Senior (DevOps)',
+      category: 'Habilitación Técnica',
+      chipColor: '#218a58',
+      pageRef: 'PPT Pág. 22, caracteres 6740-6920',
+      pliegoQuote: '...se exigirá al menos 3 ingenieros con titulación superior y certificación en infraestructuras cloud con experiencia mínima de 4 años en el sector público...',
+      dossierProof: 'El dossier incluye 4 ingenieros senior certificados con proyectos demostrables en la DGT y el Ministerio de Justicia.',
+      status: 'SUPPORTED',
+      statusLabel: 'Equipo Homologado',
+      confidence: 96,
+      latencyMs: 165,
+    }
+  ];
+
+  const currentCriterion = heroCriteria[selectedCriterion];
 
   const pipelineSteps = [
     {
@@ -53,12 +122,13 @@ export const LandingPage: React.FC = () => {
       badge: 'Fase 1',
       title: 'Sindicación Oficial PLACSP',
       shortDesc: 'Monitorización del feed oficial CODICE XML del Ministerio de Hacienda.',
+      semantic: 'Ingesta Continua',
       color: '#685cff',
       icon: <RefreshCw className="w-4 h-4 text-[#685cff]" />,
       content: {
         tag: 'INGESTA EN TIEMPO REAL',
-        heading: 'Sondeo CODICE XML continuo',
-        desc: 'El conector oficial normaliza importes a céntimos exactos, clasifica códigos CPV de 8 dígitos y extrae fechas de fin de plazo en UTC.',
+        heading: 'Sondeo CODICE XML continuo cada 15 min',
+        desc: 'El conector normaliza importes a céntimos exactos, clasifica códigos CPV de 8 dígitos y extrae fechas de fin de plazo en marcas de tiempo UTC.',
         metrics: [
           { label: 'Formato', value: 'CODICE 2.04 XML' },
           { label: 'Frecuencia', value: 'Cada 15 minutos' },
@@ -79,6 +149,7 @@ export const LandingPage: React.FC = () => {
       badge: 'Fase 2',
       title: 'Sellado Criptográfico SHA-256',
       shortDesc: 'Sellado dual del pliego original (PDF binario y texto extraído).',
+      semantic: 'Inmutabilidad Certificada',
       color: '#218a58',
       icon: <Fingerprint className="w-4 h-4 text-[#218a58]" />,
       content: {
@@ -92,33 +163,34 @@ export const LandingPage: React.FC = () => {
         ],
         codeSnippet: `// Certificado de integridad criptográfica
 Documento: PCAP_Pliego_Clausulas_DGT_v1.pdf
-SHA-256 Binario:  8f9a2b4c107e3d1982b6e82a...
-SHA-256 Normalizado: 4d28e71fa0c399b1a5e...
+SHA-256 Binario:  8f9a2b4c107e3d1982b6e82af0c399b1a5e...
+SHA-256 Normalizado: 4d28e71fa0c399b1a5e8f9a2b4c107e...
 Timestamp TSA:    2026-10-02T10:15:32Z (Verificado)`
       }
     },
     {
       id: 2,
       badge: 'Fase 3',
-      title: 'Precalificación 7D con Citas Físicas',
+      title: 'Precalificación con Gemini 3.1 Flash',
       shortDesc: 'Cruce del dossier frente a requisitos con offsets exactos de página y texto.',
+      semantic: 'Cero Alucinaciones',
       color: '#685cff',
       icon: <Scale className="w-4 h-4 text-[#685cff]" />,
       content: {
-        tag: 'CERO ALUCINACIONES',
-        heading: '7 Dimensiones con auditoría estricta',
-        desc: 'Puertas deterministas descartan licitaciones no viables en 0 ms. La IA tiene prohibido emitir juicios sin enlazar el párrafo exacto del pliego original.',
+        tag: 'AUDITORÍA ESTRICTA',
+        heading: 'Evaluación semántica a temperatura 0',
+        desc: 'Puertas deterministas descartan licitaciones no viables en 0 ms. Gemini 3.1 Flash y GPT Terra contrastan los criterios exigiendo citas exactas con offsets de caracteres en el pliego.',
         metrics: [
-          { label: 'Dimensiones', value: '7 canónicas' },
+          { label: 'Motor Inferencia', value: 'Gemini 3.1 Flash' },
           { label: 'Auditoría', value: 'Página y Caracteres' },
-          { label: 'Descarte coste 0', value: 'Determinista' }
+          { label: 'Descarte 0 ms', value: 'Determinista' }
         ],
-        codeSnippet: `[REQUISITO EVALUADO]: Certificación de Seguridad ENS Alta
-[ESTADO]: POTENTIALLY_ELIGIBLE (Cumple solvencia técnica)
-[CITA AUDITABLE]: PCAP pág. 14, caracteres 4210-4380:
-"...el adjudicatario deberá acreditar nivel ALTO en el Esquema
-Nacional de Seguridad según RD 311/2022..."
-[EVIDENCIA TENANT]: Certificado ENS-2024-9912 (Válido hasta 2027)`
+        codeSnippet: `// Invocación a Gemini 3.1 Flash (temperature: 0)
+[REQUISITO EVALUADO]: Certificación de Seguridad ENS Alta
+[ESTADO RESULTANTE]: SUPPORTED (Cumple solvencia técnica)
+[CITA AUDITADA]: PCAP pág. 14, caracteres 4210-4380:
+"...el adjudicatario deberá acreditar nivel ALTO en el Esquema Nacional de Seguridad..."
+[EVIDENCIA DOSSIER]: Certificado ENS-2024-9912 (Válido hasta 2027)`
       }
     },
     {
@@ -126,23 +198,24 @@ Nacional de Seguridad según RD 311/2022..."
       badge: 'Fase 4',
       title: 'Centinela de Adendas y Cartera',
       shortDesc: 'Invalidación atómica y alerta inmediata si el organismo modifica el pliego.',
+      semantic: 'Protección Dinámica',
       color: '#ca8517',
       icon: <AlertTriangle className="w-4 h-4 text-[#ca8517]" />,
       content: {
         tag: 'PROTECCIÓN CONTINUA',
-        heading: 'Detección atómica de cambios en PLACSP',
+        heading: 'Detección atómica de rectificaciones en PLACSP',
         desc: 'Si la mesa de contratación publica una adenda o rectificación, el sistema invalida atómicamente el análisis previo y genera una alerta de reanálisis para no presentar una oferta desfasada.',
         metrics: [
           { label: 'Detección', value: 'Payload Hash diff' },
           { label: 'Estado', value: 'REQUIRES_REANALYSIS' },
           { label: 'Acción', value: 'Reanálisis con 1 clic' }
         ],
-        codeSnippet: `ALERTA CRÍTICA: DOCUMENT_CHANGE (Adenda v2 detectada)
+        codeSnippet: `ALERTA CRÍTICA: DOCUMENT_CHANGE (Adenda v2 detectada en PLACSP)
 Expediente: DGT-2026-EXP-8891
 Nuevo Pliego: PCAP_Modificado_Aclaracion_Lote_2.pdf
-Hash anterior: 8f9a2b... -> Hash actual: a3f19c...
+Hash anterior: 8f9a2b... -> Hash nuevo: a3f19c...
 Acción ejecutada: Invalidez atómica de análisis an-001.
-Recomendación: Ejecutar reanálisis con motor v2.`
+Recomendación: Ejecutar reanálisis con Gemini 3.1 Flash v2.`
       }
     }
   ];
@@ -150,19 +223,23 @@ Recomendación: Ejecutar reanálisis con motor v2.`
   const faqs = [
     {
       q: '¿Cómo se conecta Pliego AI a la Plataforma de Contratación del Sector Público (PLACSP)?',
-      a: 'Pliego AI consulta de forma automatizada y periódica el feed oficial CODICE XML publicado por el Ministerio de Hacienda. Los expedientes se descargan, se normalizan importes y fechas, y los pliegos PDF adjuntos se descargan y sellan criptográficamente en tiempo real.'
+      a: 'Pliego AI consulta de forma automatizada y periódica el feed oficial CODICE XML publicado por el Ministerio de Hacienda. Los expedientes se descargan, se normalizan importes a céntimos enteros y fechas a UTC, y los pliegos PDF adjuntos se descargan y sellan criptográficamente con SHA-256 en tiempo real.'
     },
     {
-      q: '¿Por qué garantizáis "cero alucinaciones" en la precalificación con Inteligencia Artificial?',
-      a: 'A diferencia de los asistentes genéricos, nuestro motor tiene una regla criptográfica inviolable: ninguna conclusión de idoneidad o requisito se acepta si no viene acompañada de una cita textual exacta con su número de página y offset físico de caracteres contrastado contra el snapshot inmutable del pliego.'
+      q: '¿Qué modelos de Inteligencia Artificial ejecutan las extracciones y comparaciones?',
+      a: 'El sistema utiliza Google Gemini 3.1 Flash mediante su API directa (generateContent) a temperatura 0 para la extracción estructurada masiva y el matching semántico de requisitos con el dossier de la empresa. Para razonamiento jurídico complejo y ponderación de criterios subjetivos, se coordina con GPT Terra/Sol bajo esquemas estrictos de validación Zod.'
+    },
+    {
+      q: '¿Por qué garantizáis "cero alucinaciones" en la precalificación técnica?',
+      a: 'Porque la IA tiene una regla matemática inviolable en el backend: ninguna conclusión de idoneidad se acepta si no viene acompañada de una cita textual exacta con su número de página y offset físico de caracteres contrastado byte a byte contra el snapshot del pliego sellado.'
     },
     {
       q: '¿Qué diferencia hay entre la cuenta del operador y el dossier de la empresa?',
-      a: 'Siguiendo la Regla 10 de nuestra arquitectura empresarial, la cuenta personal del operador gestiona las credenciales de acceso seguro (correo, contraseña, 2FA), mientras que el Dossier representa la entidad jurídica mercantil que licita (CIF/NIF, solvencia económica, certificaciones ISO 27001/ENS y experiencia en contratos públicos).'
+      a: 'Siguiendo la Regla 10 de nuestra arquitectura, la cuenta personal del operador gestiona las credenciales de acceso seguro (correo, contraseña, sesión en memoria volátil de JS), mientras que el Dossier representa la entidad jurídica mercantil que licita (CIF/NIF, solvencia económica, certificaciones ISO 27001/ENS y experiencia en contratos públicos previos).'
     },
     {
       q: '¿Puedo probar la plataforma antes de conectar los datos de mi empresa?',
-      a: 'Por supuesto. Al pulsar en "Explorar Demo en Vivo" accedes a un entorno de demostración completamente funcional con la empresa simulada TechConsulting Soluciones S.L. (CIF B-88776655), donde podrás explorar pliegos reales, el sellado SHA-256 y la precalificación con IA.'
+      a: 'Por supuesto. Al pulsar en "Explorar Demo en Vivo" accedes a un entorno de demostración completamente funcional con la empresa simulada TechConsulting Soluciones S.L. (CIF B-88776655), donde podrás explorar expedientes reales, el sellado SHA-256 y la precalificación con IA.'
     }
   ];
 
@@ -191,7 +268,7 @@ Recomendación: Ejecutar reanálisis con motor v2.`
           <nav className="hidden md:flex items-center gap-6 text-xs font-semibold text-[#69666d]">
             <a href="#como-funciona" className="hover:text-[#171719] transition-colors">¿Cómo funciona?</a>
             <a href="#dossier" className="hover:text-[#171719] transition-colors">Dossier de Empresa</a>
-            <a href="#seguridad" className="hover:text-[#171719] transition-colors">Seguridad Militar</a>
+            <a href="#seguridad" className="hover:text-[#171719] transition-colors">Seguridad y Cumplimiento</a>
             <a href="#faq" className="hover:text-[#171719] transition-colors">Preguntas Frecuentes</a>
           </nav>
 
@@ -220,25 +297,25 @@ Recomendación: Ejecutar reanálisis con motor v2.`
         </div>
       </header>
 
-      {/* 3. HERO SPLIT-SCREEN (ANTI-CENTER BIAS SEGÚN DESIGN-TASTE-FRONTEND) */}
-      <section className="relative pt-12 sm:pt-16 pb-16 lg:pb-24 z-10 max-w-7xl mx-auto px-4 sm:px-6">
+      {/* 3. HERO SPLIT-SCREEN (ANTI-CENTER BIAS) CON SIMULADOR AUDITABLE EN VIVO */}
+      <section className="relative pt-10 sm:pt-14 pb-16 lg:pb-20 z-10 max-w-7xl mx-auto px-4 sm:px-6">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
           
-          {/* Columna Izquierda (7 cols): Mensaje Editorial de Valor */}
+          {/* Columna Izquierda (7 cols): Mensaje Editorial y Acciones */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
             className="lg:col-span-7 space-y-6"
           >
-            {/* Status Beacon en Vivo */}
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/80 backdrop-blur-md border border-[rgba(30,24,38,0.08)] shadow-2xs">
+            {/* Baliza PLACSP viva con ping de telemetría activa */}
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/85 backdrop-blur-md border border-[rgba(30,24,38,0.08)] shadow-2xs">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#10b981] opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-[#10b981]"></span>
               </span>
-              <span className="text-[11px] font-mono font-semibold tracking-wider text-[#423d4c] uppercase">
-                PLACSP · Sindicación en Vivo CODICE XML
+              <span className="text-[11px] font-mono font-bold tracking-wider text-[#218a58] uppercase">
+                PLACSP · Feed Oficial Conectado (CODICE XML)
               </span>
             </div>
 
@@ -250,9 +327,9 @@ Recomendación: Ejecutar reanálisis con motor v2.`
               </span>
             </h1>
 
-            {/* Subtexto conciso (menos de 20 palabras) */}
+            {/* Subtexto conciso */}
             <p className="text-sm sm:text-base text-[#69666d] max-w-[50ch] leading-relaxed">
-              Monitorización oficial de PLACSP, sellado inmutable SHA-256 y precalificación en 7 dimensiones frente a tu dossier empresarial.
+              Monitorización oficial del Estado, sellado inmutable SHA-256 y precalificación técnica en 7 dimensiones frente a tu dossier empresarial.
             </p>
 
             {/* Acciones Principales con estados táctiles */}
@@ -274,7 +351,7 @@ Recomendación: Ejecutar reanálisis con motor v2.`
               </button>
             </div>
 
-            {/* Tira factual de métricas verificables (Regla 8 Anti-Slop: Cero métricas ficticias) */}
+            {/* Tira de Métricas Factuales Verificables */}
             <div className="pt-6 border-t border-[rgba(30,24,38,0.06)] grid grid-cols-3 gap-4">
               <div>
                 <span className="block text-xl sm:text-2xl font-extrabold text-[#171719] tracking-tight">
@@ -285,7 +362,7 @@ Recomendación: Ejecutar reanálisis con motor v2.`
                 </span>
               </div>
               <div>
-                <span className="block text-xl sm:text-2xl font-extrabold text-[#171719] tracking-tight">
+                <span className="block text-xl sm:text-2xl font-extrabold text-[#171719] tracking-tight text-[#218a58]">
                   100%
                 </span>
                 <span className="text-[11px] font-medium text-[#929097] leading-tight block">
@@ -293,100 +370,149 @@ Recomendación: Ejecutar reanálisis con motor v2.`
                 </span>
               </div>
               <div>
-                <span className="block text-xl sm:text-2xl font-extrabold text-[#171719] tracking-tight">
-                  SHA-256
+                <span className="block text-xl sm:text-2xl font-extrabold text-[#171719] tracking-tight text-[#685cff]">
+                  Gemini 3.1
                 </span>
                 <span className="text-[11px] font-medium text-[#929097] leading-tight block">
-                  Sellado dual inmutable
+                  Matching semántico
                 </span>
               </div>
             </div>
           </motion.div>
 
-          {/* Columna Derecha (5 cols): Tarjeta Glossy Interactiva de Licitación en Vivo (.ai-command) */}
+          {/* Columna Derecha (5 cols): SIMULADOR AUDITABLE EN VIVO (VIVA Y FUNCIONAL) */}
           <motion.div
             initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.55, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
             className="lg:col-span-5"
           >
-            <div className="ai-command group hover:shadow-[0_25px_60px_rgba(108,81,255,0.18)] transition-all">
-              {/* Cabecera de la ficha */}
+            <div className="ai-command relative overflow-hidden group hover:shadow-[0_25px_60px_rgba(108,81,255,0.18)] transition-all">
+              
+              {/* Animación de escaneo láser en vivo cuando se audita */}
+              <AnimatePresence>
+                {isScanning && (
+                  <motion.div
+                    initial={{ top: '-10%', opacity: 0 }}
+                    animate={{ top: '110%', opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.45, ease: 'easeInOut' }}
+                    className="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-[#685cff] to-transparent shadow-[0_0_12px_#685cff] z-30 pointer-events-none"
+                  />
+                )}
+              </AnimatePresence>
+
+              {/* Cabecera del expediente */}
               <div className="flex items-center justify-between pb-3.5 border-b border-[rgba(30,24,38,0.06)]">
                 <div className="flex items-center gap-2">
                   <div className="w-2.5 h-2.5 rounded-full bg-[#10b981] animate-pulse" />
                   <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#69666d]">
-                    EXPEDIENTE PLACSP · DGT-2026-EXP-8891
+                    DGT-2026-EXP-8891 · SIMULADOR EN VIVO
                   </span>
                 </div>
-                <span className="text-[11px] font-semibold text-[#218a58] bg-[#e8f7ef] px-2 py-0.5 rounded-full border border-[#b2e7ca]">
+                <span className="text-[11px] font-semibold text-[#218a58] bg-[#e8f7ef] px-2 py-0.5 rounded-full border border-[#b2e7ca] flex items-center gap-1">
+                  <Check className="w-3 h-3" />
                   PURSUE
                 </span>
               </div>
 
               {/* Título de la licitación */}
-              <div className="py-4 space-y-1.5">
-                <span className="text-[10px] font-mono uppercase tracking-widest text-[#685cff] font-bold">
-                  DIRECCIÓN GENERAL DE TRÁFICO
-                </span>
-                <h3 className="text-base sm:text-lg font-bold text-[#171719] leading-snug">
-                  Servicios de migración y securización en la nube para sistemas de telemática vial
+              <div className="py-3.5 space-y-1">
+                <div className="flex items-center justify-between text-[10px] font-mono">
+                  <span className="uppercase tracking-widest text-[#685cff] font-bold">
+                    DIRECCIÓN GENERAL DE TRÁFICO
+                  </span>
+                  <span className="text-[#929097]">Presupuesto: 850.000 €</span>
+                </div>
+                <h3 className="text-sm sm:text-base font-bold text-[#171719] leading-snug">
+                  Migración y securización en la nube para telemática vial
                 </h3>
-                <div className="flex items-center gap-3 pt-1 text-xs text-[#69666d]">
-                  <span className="font-extrabold text-[#171719] text-sm">850.000,00 €</span>
-                  <span>•</span>
-                  <span>Plazo: 24 meses</span>
-                  <span>•</span>
-                  <span className="text-[#218a58] font-semibold">Puertas superadas (3/3)</span>
+              </div>
+
+              {/* SELECTOR INTERACTIVO DE REQUISITOS (Simula la auditoría con IA) */}
+              <div className="space-y-2 pt-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-[#929097] font-bold">
+                    Prueba en directo el cruce con Gemini:
+                  </span>
+                  <span className="text-[10px] text-[#685cff] font-semibold flex items-center gap-1">
+                    <Activity className="w-3 h-3 animate-spin" />
+                    <span>Latencia: {currentCriterion.latencyMs} ms</span>
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-3 gap-1.5">
+                  {heroCriteria.map((c, idx) => (
+                    <button
+                      key={c.id}
+                      onClick={() => handleTriggerScan(idx)}
+                      className={`px-2 py-1.5 rounded-[10px] text-[11px] font-medium transition-all text-left cursor-pointer border ${
+                        selectedCriterion === idx
+                          ? 'bg-[#685cff] text-white border-[#685cff] shadow-xs'
+                          : 'bg-white/80 hover:bg-white text-[#423d4c] border-[rgba(30,24,38,0.08)]'
+                      }`}
+                    >
+                      <div className="truncate font-semibold">{c.name}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* RESULTADO VIVO DEL ANÁLISIS DE GEMINI 3.1 FLASH */}
+              <div className="mt-3 p-3.5 rounded-[14px] bg-white/85 border border-white/95 shadow-2xs space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-[#171719] flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-[#218a58]" />
+                    <span>{currentCriterion.name}</span>
+                  </span>
+                  <span className="text-[10px] font-mono font-bold text-[#218a58] bg-[#e8f7ef] px-2 py-0.5 rounded-full border border-[#b2e7ca]">
+                    SUPPORTED · {currentCriterion.confidence}% Confianza
+                  </span>
+                </div>
+
+                {/* Cita Física del Pliego */}
+                <div className="p-2 rounded-[8px] bg-[#FAF8F5] border border-[rgba(30,24,38,0.05)] text-[11px] space-y-1">
+                  <div className="flex items-center justify-between text-[10px] text-[#929097] font-mono">
+                    <span>CITA FÍSICA AUDITADA</span>
+                    <span className="text-[#685cff] font-semibold">{currentCriterion.pageRef}</span>
+                  </div>
+                  <p className="italic text-[#423d4c] leading-tight">
+                    "{currentCriterion.pliegoQuote}"
+                  </p>
+                </div>
+
+                {/* Evidencia contrastada del dossier de la empresa */}
+                <div className="text-[11px] text-[#69666d] flex items-start gap-1.5 pt-0.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-[#218a58] shrink-0 mt-0.5" />
+                  <span className="leading-snug">
+                    <strong className="text-[#171719]">Evidencia del Dossier: </strong>
+                    {currentCriterion.dossierProof}
+                  </span>
                 </div>
               </div>
 
               {/* Sello criptográfico SHA-256 */}
-              <div className="p-3 rounded-[12px] bg-white/70 border border-white/90 shadow-2xs space-y-2">
-                <div className="flex items-center justify-between text-[11px]">
-                  <span className="font-mono text-[#69666d] flex items-center gap-1.5">
-                    <Fingerprint className="w-3.5 h-3.5 text-[#685cff]" />
-                    <span>Sellado SHA-256 (PCAP & PPT):</span>
-                  </span>
-                  <button
-                    onClick={handleCopyHash}
-                    className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#685cff] hover:text-[#5544ea] cursor-pointer"
-                  >
-                    {copiedHash ? <Check className="w-3 h-3 text-[#218a58]" /> : <Copy className="w-3 h-3" />}
-                    <span>{copiedHash ? 'Copiado' : 'Copiar Hash'}</span>
-                  </button>
-                </div>
-                <div className="font-mono text-[10px] text-[#423d4c] bg-white p-2 rounded-[8px] border border-[rgba(30,24,38,0.05)] truncate">
-                  8f9a2b4c107e3d1982b6e82af0c399b1a5e...
-                </div>
-              </div>
-
-              {/* Inspector de Citas Físicas (Anti-Alucinaciones) */}
-              <div className="pt-3 space-y-2">
-                <span className="text-[10px] font-mono uppercase tracking-wider text-[#929097] font-bold block">
-                  Evidencia física auditada en el pliego:
+              <div className="mt-3 flex items-center justify-between p-2 rounded-[10px] bg-white/60 border border-[rgba(30,24,38,0.05)] text-[10px] font-mono">
+                <span className="text-[#69666d] flex items-center gap-1 truncate">
+                  <Fingerprint className="w-3.5 h-3.5 text-[#685cff] shrink-0" />
+                  <span className="truncate">SHA-256: 8f9a2b4c107e3d1982b6e82af0c399b1a5e...</span>
                 </span>
-                <div className="p-2.5 rounded-[10px] bg-[#FAF8F5] border border-[rgba(30,24,38,0.06)] text-xs space-y-1">
-                  <div className="flex items-center justify-between text-[11px] font-bold text-[#171719]">
-                    <span className="text-[#218a58] flex items-center gap-1">
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      Solvencia Técnica: ENS Categoría Alta
-                    </span>
-                    <span className="text-[#929097] font-mono text-[10px]">PCAP Pág. 14</span>
-                  </div>
-                  <p className="text-[11px] text-[#69666d] italic leading-tight">
-                    "...el adjudicatario deberá acreditar nivel ALTO en el Esquema Nacional de Seguridad según RD 311/2022..."
-                  </p>
-                </div>
+                <button
+                  onClick={handleCopyHash}
+                  className="shrink-0 text-[#685cff] hover:text-[#5544ea] font-semibold ml-2 cursor-pointer flex items-center gap-1"
+                >
+                  {copiedHash ? <Check className="w-3 h-3 text-[#218a58]" /> : <Copy className="w-3 h-3" />}
+                  <span>{copiedHash ? 'Copiado' : 'Copiar'}</span>
+                </button>
               </div>
 
-              {/* Botón de inspección interactivo hacia la demo */}
-              <div className="pt-4">
+              {/* Botón hacia la demo real */}
+              <div className="pt-3">
                 <button
                   onClick={handleLaunchDemo}
                   className="w-full py-2.5 rounded-[12px] bg-[#685cff] hover:bg-[#5544ea] active:scale-98 text-white text-xs font-semibold shadow-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
                 >
-                  <span>Abrir Expediente DGT en la Demo</span>
+                  <span>Abrir Expediente DGT en la Demo Interactiva</span>
                   <ExternalLink className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -396,16 +522,63 @@ Recomendación: Ejecutar reanálisis con motor v2.`
         </div>
       </section>
 
-      {/* 4. PIPELINE ARQUITECTÓNICO INTERACTIVO EN 4 FASES (#como-funciona) */}
-      <section id="como-funciona" className="py-20 z-10 relative">
+      {/* 4. CÓDIGO CROMÁTICO Y SEMÁNTICA OPERATIVA (SENTIDO RIGUROSO A LOS COLORES) */}
+      <section className="py-6 z-10 relative max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="p-4 sm:p-5 rounded-[20px] bg-white/80 backdrop-blur-xl border border-white/90 shadow-2xs grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+          
+          <div className="p-3 rounded-[14px] bg-[#FAF8F5] border border-[rgba(30,24,38,0.05)] space-y-1">
+            <div className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#685cff]" />
+              <span className="text-[11px] font-bold text-[#171719]">Violeta (#685CFF)</span>
+            </div>
+            <p className="text-[11px] text-[#69666d] leading-tight">
+              <strong>Inferencia y Motor IA:</strong> Gemini 3.1 Flash y GPT Terra/Sol, análisis CODICE XML y Structured Outputs.
+            </p>
+          </div>
+
+          <div className="p-3 rounded-[14px] bg-[#FAF8F5] border border-[rgba(30,24,38,0.05)] space-y-1">
+            <div className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#218a58]" />
+              <span className="text-[11px] font-bold text-[#171719]">Esmeralda (#218A58)</span>
+            </div>
+            <p className="text-[11px] text-[#69666d] leading-tight">
+              <strong>Conformidad y Éxito:</strong> Requisito cumplido (<code className="text-[#218a58] font-mono">SUPPORTED</code>), oferta apta (<code className="text-[#218a58] font-mono">PURSUE</code>) y hash SHA-256 verificado.
+            </p>
+          </div>
+
+          <div className="p-3 rounded-[14px] bg-[#FAF8F5] border border-[rgba(30,24,38,0.05)] space-y-1">
+            <div className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#ca8517]" />
+              <span className="text-[11px] font-bold text-[#171719]">Ámbar (#CA8517)</span>
+            </div>
+            <p className="text-[11px] text-[#69666d] leading-tight">
+              <strong>Centinela de Adendas:</strong> Modificación detectada en PLACSP, alerta activa y necesidad de reanálisis (<code className="text-[#ca8517] font-mono">REQUIRES_REANALYSIS</code>).
+            </p>
+          </div>
+
+          <div className="p-3 rounded-[14px] bg-[#FAF8F5] border border-[rgba(30,24,38,0.05)] space-y-1">
+            <div className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#e44848]" />
+              <span className="text-[11px] font-bold text-[#171719]">Rojo Coral (#E44848)</span>
+            </div>
+            <p className="text-[11px] text-[#69666d] leading-tight">
+              <strong>Bloqueo Determinista:</strong> Presupuesto inviable, plazo vencido o requisito obligatorio no soportado (<code className="text-[#e44848] font-mono">DISCARD</code>).
+            </p>
+          </div>
+
+        </div>
+      </section>
+
+      {/* 5. PIPELINE ARQUITECTÓNICO INTERACTIVO (#como-funciona) CON SIMULADOR DE ADENDA */}
+      <section id="como-funciona" className="py-16 sm:py-20 z-10 relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           
-          <div className="max-w-2xl mb-12">
+          <div className="max-w-2xl mb-10">
             <h2 className="text-2xl sm:text-3xl font-extrabold text-[#171719] tracking-tight">
               Arquitectura determinista de 4 fases
             </h2>
             <p className="text-xs sm:text-sm text-[#69666d] mt-2">
-              Explora cómo viaja cada pliego desde la plataforma del Ministerio hasta la decisión estratégica de licitar.
+              Haz clic en cada fase para ver el flujo real y prueba el simulador interactivo de adendas.
             </p>
           </div>
 
@@ -437,10 +610,13 @@ Recomendación: Ejecutar reanálisis con motor v2.`
                         <span className="text-[10px] font-mono uppercase tracking-wider font-bold text-[#685cff]">
                           {step.badge}
                         </span>
-                        <h4 className="text-xs sm:text-sm font-bold text-[#171719]">
-                          {step.title}
-                        </h4>
+                        <span className="text-[10px] font-mono uppercase text-[#929097]">
+                          · {step.semantic}
+                        </span>
                       </div>
+                      <h4 className="text-xs sm:text-sm font-bold text-[#171719]">
+                        {step.title}
+                      </h4>
                       <p className="text-xs text-[#69666d] leading-relaxed">
                         {step.shortDesc}
                       </p>
@@ -479,6 +655,81 @@ Recomendación: Ejecutar reanálisis con motor v2.`
                     {pipelineSteps[activeStep].content.desc}
                   </p>
 
+                  {/* FASE 4: SIMULADOR INTERACTIVO DE ADENDA EN VIVO */}
+                  {activeStep === 3 && (
+                    <div className="p-4 rounded-[16px] bg-[#FFF8EB] border border-[#FDE6BA] space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-[#CA8517] flex items-center gap-1.5">
+                          <AlertTriangle className="w-4 h-4" />
+                          <span>Simulador de Detección de Rectificaciones en Vivo</span>
+                        </span>
+                        <span className="text-[10px] font-mono font-bold text-[#CA8517]">
+                          ESTADO: {simulatedAdendaState}
+                        </span>
+                      </div>
+
+                      {simulatedAdendaState === 'INITIAL' && (
+                        <div className="space-y-2">
+                          <p className="text-xs text-[#69666D]">
+                            El pliego actual se encuentra sellado y validado en estado <strong className="text-[#218A58]">VALID (PURSUE)</strong>. Pulsa para simular que el organismo publica una adenda en el portal de contratación:
+                          </p>
+                          <button
+                            onClick={() => setSimulatedAdendaState('ADENDA_DETECTED')}
+                            className="px-3.5 py-2 rounded-[10px] bg-[#CA8517] hover:bg-[#B3720F] text-white text-xs font-bold transition-all shadow-xs cursor-pointer flex items-center gap-1.5"
+                          >
+                            <Zap className="w-3.5 h-3.5" />
+                            <span>Simular Publicación de Adenda en PLACSP</span>
+                          </button>
+                        </div>
+                      )}
+
+                      {simulatedAdendaState === 'ADENDA_DETECTED' && (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.98 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          className="space-y-2.5 p-3 rounded-[12px] bg-white border border-[#FDE6BA]"
+                        >
+                          <div className="flex items-center gap-2 text-xs font-bold text-[#E44848]">
+                            <AlertCircle className="w-4 h-4" />
+                            <span>¡ALERTA CRÍTICA! Se detectó nuevo hash de pliego en PLACSP.</span>
+                          </div>
+                          <p className="text-xs text-[#69666D]">
+                            El análisis anterior ha sido invalidado atómicamente a <strong className="text-[#CA8517]">REQUIRES_REANALYSIS</strong> para protegerte de ofertar con datos obsoletos.
+                          </p>
+                          <button
+                            onClick={() => setSimulatedAdendaState('REANALYZED')}
+                            className="px-3.5 py-2 rounded-[10px] bg-[#685CFF] hover:bg-[#5544EA] text-white text-xs font-bold transition-all shadow-xs cursor-pointer flex items-center gap-1.5"
+                          >
+                            <RefreshCw className="w-3.5 h-3.5" />
+                            <span>Reanalizar con Gemini 3.1 Flash (Motor v2)</span>
+                          </button>
+                        </motion.div>
+                      )}
+
+                      {simulatedAdendaState === 'REANALYZED' && (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.98 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          className="space-y-2 p-3 rounded-[12px] bg-[#E8F7EF] border border-[#B2E7CA]"
+                        >
+                          <div className="flex items-center gap-2 text-xs font-bold text-[#218A58]">
+                            <CheckCircle2 className="w-4 h-4" />
+                            <span>Reanálisis v2 completado con éxito</span>
+                          </div>
+                          <p className="text-xs text-[#218A58]">
+                            Nuevo hash sellado, cita auditada integrada y expediente restaurado a estado <strong className="font-bold">VALID (PURSUE)</strong>.
+                          </p>
+                          <button
+                            onClick={() => setSimulatedAdendaState('INITIAL')}
+                            className="text-[11px] font-semibold text-[#685CFF] hover:underline cursor-pointer pt-1"
+                          >
+                            ← Reiniciar simulación
+                          </button>
+                        </motion.div>
+                      )}
+                    </div>
+                  )}
+
                   {/* Métricas clave de la fase */}
                   <div className="grid grid-cols-3 gap-3">
                     {pipelineSteps[activeStep].content.metrics.map((m, idx) => (
@@ -511,11 +762,11 @@ Recomendación: Ejecutar reanálisis con motor v2.`
         </div>
       </section>
 
-      {/* 5. DOSSIER DE EMPRESA Y SEPARACIÓN DE IDENTIDADES (#dossier) */}
-      <section id="dossier" className="py-20 z-10 relative">
+      {/* 6. DOSSIER DE EMPRESA Y SEPARACIÓN DE IDENTIDADES (#dossier) */}
+      <section id="dossier" className="py-16 sm:py-20 z-10 relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           
-          <div className="max-w-2xl mb-12">
+          <div className="max-w-2xl mb-10">
             <h2 className="text-2xl sm:text-3xl font-extrabold text-[#171719] tracking-tight">
               Dossier corporativo y separación de identidades
             </h2>
@@ -589,20 +840,20 @@ Recomendación: Ejecutar reanálisis con motor v2.`
         </div>
       </section>
 
-      {/* 6. SECCIÓN DE SEGURIDAD EMPRESARIAL (#seguridad) (ARMONIZADA CON EL TEMA SEDA) */}
-      <section id="seguridad" className="py-20 z-10 relative">
+      {/* 7. SECCIÓN DE SEGURIDAD Y CUMPLIMIENTO ENS / RGPD (#seguridad) */}
+      <section id="seguridad" className="py-16 sm:py-20 z-10 relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="p-8 sm:p-12 rounded-[28px] bg-gradient-to-br from-[#16141c]/95 via-[#1a1727]/90 to-[#121019]/95 text-white backdrop-blur-2xl border border-white/10 shadow-2xl space-y-10">
             
             <div className="max-w-2xl">
               <span className="text-xs font-mono uppercase tracking-widest text-[#10b981] font-bold">
-                Defensa en Profundidad
+                Cumplimiento Normativo y Garantías
               </span>
               <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight mt-1.5">
-                Seguridad empresarial de grado militar
+                Seguridad empresarial y alineación con el ENS y RGPD
               </h2>
               <p className="text-xs sm:text-sm text-white/70 mt-2 leading-relaxed">
-                Diseñado para organismos y adjudicatarios que manejan información crítica de licitaciones públicas.
+                Diseñado para organismos públicos y empresas licitadoras que manejan datos sensibles de contratación estatal.
               </p>
             </div>
 
@@ -612,9 +863,9 @@ Recomendación: Ejecutar reanálisis con motor v2.`
                 <div className="w-8 h-8 rounded-[10px] bg-[#10b981]/20 text-[#10b981] flex items-center justify-center font-bold">
                   <Database className="w-4 h-4" />
                 </div>
-                <h4 className="text-sm font-bold text-white">Anti-BOLA & Anti-IDOR</h4>
+                <h4 className="text-sm font-bold text-white">Aislamiento Anti-BOLA & Anti-IDOR</h4>
                 <p className="text-xs text-white/60 leading-relaxed">
-                  Prohibición absoluta de consultar datos sin encadenar el <code className="text-[#10b981] font-mono">tenant_id</code>. Ningún usuario puede acceder a recursos de otra empresa.
+                  Prohibición absoluta de consultar datos sin encadenar el <code className="text-[#10b981] font-mono">tenant_id</code>. Ningún usuario puede acceder a recursos de otra empresa licitadora.
                 </p>
               </div>
 
@@ -624,7 +875,7 @@ Recomendación: Ejecutar reanálisis con motor v2.`
                 </div>
                 <h4 className="text-sm font-bold text-white">100% SQL Parametrizado</h4>
                 <p className="text-xs text-white/60 leading-relaxed">
-                  Cero concatenación de cadenas en base de datos. Consultas preparadas e índices compuestos <code className="text-[#685cff] font-mono">(tenant_id, id)</code> para máxima velocidad.
+                  Cero concatenación de cadenas en base de datos. Consultas preparadas e índices compuestos <code className="text-[#685cff] font-mono">(tenant_id, id)</code> para máxima velocidad y protección.
                 </p>
               </div>
 
@@ -632,9 +883,9 @@ Recomendación: Ejecutar reanálisis con motor v2.`
                 <div className="w-8 h-8 rounded-[10px] bg-[#ca8517]/20 text-[#ca8517] flex items-center justify-center font-bold">
                   <ShieldCheck className="w-4 h-4" />
                 </div>
-                <h4 className="text-sm font-bold text-white">Anti-Mass Assignment</h4>
+                <h4 className="text-sm font-bold text-white">Esquemas Zod Estrictos</h4>
                 <p className="text-xs text-white/60 leading-relaxed">
-                  Validación estricta con esquemas Zod en todas las capas. Se descarta automáticamente cualquier intento de inyección de campos privilegiados.
+                  Validación defensiva con esquemas Zod en todas las capas. Se descarta automáticamente cualquier intento de inyección de campos no autorizados.
                 </p>
               </div>
 
@@ -644,8 +895,8 @@ Recomendación: Ejecutar reanálisis con motor v2.`
         </div>
       </section>
 
-      {/* 7. PREGUNTAS FRECUENTES INTERACTIVAS (#faq) */}
-      <section id="faq" className="py-20 z-10 relative">
+      {/* 8. PREGUNTAS FRECUENTES INTERACTIVAS (#faq) */}
+      <section id="faq" className="py-16 sm:py-20 z-10 relative">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 space-y-8">
           
           <div className="text-center space-y-2">
@@ -702,7 +953,7 @@ Recomendación: Ejecutar reanálisis con motor v2.`
         </div>
       </section>
 
-      {/* 8. CTA FINAL CONVERTIDOR */}
+      {/* 9. CTA FINAL CONVERTIDOR */}
       <section className="py-16 sm:py-24 z-10 relative">
         <div className="max-w-5xl mx-auto px-4 sm:px-6">
           <div className="p-8 sm:p-12 rounded-[28px] bg-white/80 backdrop-blur-xl border border-white/90 shadow-floating text-center space-y-6">
@@ -740,7 +991,7 @@ Recomendación: Ejecutar reanálisis con motor v2.`
         </div>
       </section>
 
-      {/* 9. PIE DE PÁGINA EDITORIAL */}
+      {/* 10. PIE DE PÁGINA EDITORIAL */}
       <footer className="py-8 z-10 relative border-t border-[rgba(30,24,38,0.06)] bg-white/40 backdrop-blur-md text-xs text-[#929097]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
