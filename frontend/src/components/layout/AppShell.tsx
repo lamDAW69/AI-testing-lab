@@ -14,7 +14,7 @@ export const AppShell: React.FC = () => {
   const { isDemoMode } = useAuth();
 
   // Si entra en modo demo y no ha visto el tour en esta sesión, abrirlo automáticamente.
-  // En entornos de testing automatizados (Playwright/navigator.webdriver) se previene el auto-open para no interceptar clics.
+  // En entornos de testing automatizados (Playwright/navigator.webdriver) se previene el auto-open.
   useEffect(() => {
     if (isDemoMode) {
       const isAutomated = typeof window !== 'undefined' && Boolean(window.navigator && window.navigator.webdriver);
@@ -31,8 +31,11 @@ export const AppShell: React.FC = () => {
   };
 
   return (
-    <div className="app-background relative min-h-screen text-[#171719] font-ui antialiased overflow-x-hidden isolate flex flex-col">
-      {/* Fondo ambiental orgánico con ondas de cristal translúcido (z-0) */}
+    <div
+      className="relative min-h-screen text-[#f7f8f8] antialiased overflow-x-hidden isolate flex flex-col"
+      style={{ background: '#010102' }}
+    >
+      {/* Fondo ambiental Linear: canvas #010102 + orbes CSS */}
       <SilkBackground />
 
       {/* Modal global de atajo ⌘K */}
@@ -44,9 +47,9 @@ export const AppShell: React.FC = () => {
       {/* Banner superior en Modo Demostración */}
       <DemoBanner onOpenTour={() => setIsTourOpen(true)} />
 
-      {/* Grid del Shell de la aplicación (Sección 7) */}
-      <div className="app-shell relative z-10 flex-1">
-        {/* Barra lateral flotante ultra-glossy */}
+      {/* Shell: sidebar izquierdo + contenido derecho */}
+      <div className="relative z-10 flex flex-1 min-h-0">
+        {/* Barra lateral */}
         <Sidebar
           isOpenMobile={isMobileMenuOpen}
           onCloseMobile={() => setIsMobileMenuOpen(false)}
@@ -56,7 +59,7 @@ export const AppShell: React.FC = () => {
         <div className="flex-1 flex flex-col min-w-0">
           <Header onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)} />
 
-          <main id="main-content" className="flex-1 pt-2 pb-16 px-1 sm:px-4 page-enter">
+          <main id="main-content" className="flex-1 pt-2 pb-16 px-3 sm:px-6 overflow-y-auto">
             <Outlet />
           </main>
         </div>

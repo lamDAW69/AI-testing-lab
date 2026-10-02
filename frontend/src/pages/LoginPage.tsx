@@ -9,7 +9,7 @@ import { ArrowRight, ShieldCheck, Sparkles } from 'lucide-react';
 export const LoginPage: React.FC = () => {
   const { login, loginAsDemo, isLoading, error } = useAuth();
   const [email, setEmail] = useState('demo@techconsulting.es');
-  const [password, setPassword] = useState('••••••••••••');
+  const [password, setPassword] = useState('');
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -24,86 +24,68 @@ export const LoginPage: React.FC = () => {
 
   return (
     <div className="relative min-h-screen flex items-center justify-center p-4 sm:p-6 select-none overflow-x-hidden">
-      {/* 1. Fondo de cristal líquido orgánico y ondas de seda (Consistencia con AppShell) */}
+      {/* Fondo Linear puro: #010102 + orbes radiales CSS */}
       <SilkBackground />
 
-      {/* 2. Tarjeta Flotante Ultra-Glossy con desenfoque de fondo y bordes especulares */}
+      {/* Tarjeta doble-bisel completamente oscura */}
       <motion.div
         initial={{ opacity: 0, y: 14, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-        className="relative z-10 w-full max-w-4xl min-h-[540px] bg-white/80 backdrop-blur-2xl rounded-[28px] border border-white/90 shadow-[0_20px_60px_rgba(21,17,30,0.08)] overflow-hidden grid grid-cols-1 md:grid-cols-2"
+        className="relative z-10 w-full max-w-4xl min-h-[520px] rounded-[20px] border border-[#23252a] overflow-hidden grid grid-cols-1 md:grid-cols-2"
+        style={{ background: '#0f1011' }}
       >
-        {/* Lado izquierdo: Arte abstracto generativo y branding editorial */}
-        <div className="relative bg-gradient-to-br from-[#16141c]/95 via-[#1a1727]/90 to-[#121019]/95 p-8 sm:p-10 flex flex-col justify-between overflow-hidden text-white backdrop-blur-2xl border-r border-white/10">
-          {/* Formas abstractas con deriva extremadamente lenta (15-25s) */}
-          <motion.div
-            animate={{
-              x: [0, 15, -10, 0],
-              y: [0, -20, 10, 0],
-              rotate: [0, 4, -3, 0],
-            }}
-            transition={{
-              duration: 20,
-              repeat: Infinity,
-              ease: 'easeInOut',
-            }}
-            className="absolute -top-12 -left-12 w-64 h-64 rounded-full bg-gradient-to-tr from-[#695CFF]/30 to-indigo-400/10 blur-3xl pointer-events-none"
-          />
-
-          <motion.div
-            animate={{
-              x: [0, -18, 12, 0],
-              y: [0, 16, -14, 0],
-            }}
-            transition={{
-              duration: 24,
-              repeat: Infinity,
-              ease: 'easeInOut',
-            }}
-            className="absolute -bottom-16 -right-16 w-72 h-72 rounded-full bg-gradient-to-br from-[#695CFF]/20 to-purple-600/10 blur-3xl pointer-events-none"
-          />
+        {/* Panel izquierdo — editorial oscuro */}
+        <div
+          className="relative p-8 sm:p-10 flex flex-col justify-between overflow-hidden border-r border-[#23252a]"
+          style={{ background: '#141516' }}
+        >
+          {/* Orbe decorativo tenue lavanda */}
+          <div className="absolute -top-20 -left-20 w-64 h-64 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(94,106,210,0.12),transparent_70%)] pointer-events-none" />
 
           <div className="relative z-10 space-y-3">
-            <Link to="/" className="inline-flex items-center gap-2 hover:opacity-80 transition-opacity">
-              <div className="w-7 h-7 rounded-[8px] bg-gradient-to-tr from-[#685cff] to-[#8d82ff] flex items-center justify-center text-white text-xs font-bold shadow-2xs">
+            <Link to="/" className="inline-flex items-center gap-2 hover:opacity-70 transition-opacity duration-200">
+              <div className="w-7 h-7 rounded-[8px] bg-[#5e6ad2] flex items-center justify-center text-white text-xs font-bold">
                 ✦
               </div>
-              <span className="font-semibold text-sm tracking-tight text-white">Pliego AI</span>
+              <span className="font-semibold text-sm tracking-tight text-[#f7f8f8]">Pliego AI</span>
             </Link>
 
-            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight leading-tight pt-6 text-white">
+            <h2 className="text-2xl sm:text-[1.85rem] font-semibold tracking-[-0.04em] leading-[1.15] pt-6 text-[#f7f8f8]">
               La IA analiza.<br />
               La evidencia sustenta.<br />
-              <span className="text-[#A599FF] font-editorial italic font-normal">La persona decide.</span>
+              <span className="text-[#5e6ad2] font-normal italic">La persona decide.</span>
             </h2>
           </div>
 
-          <div className="relative z-10 pt-8 border-t border-white/10 text-xs text-white/60 space-y-1.5">
-            <div className="flex items-center gap-2 text-white/80">
-              <ShieldCheck className="w-4 h-4 text-[#10B981]" />
+          <div className="relative z-10 pt-6 border-t border-[#23252a] space-y-1.5">
+            <div className="flex items-center gap-2 text-[#d0d6e0] text-xs">
+              <ShieldCheck className="w-3.5 h-3.5 text-[#10b981]" />
               <span>Aislamiento multi-tenant por fila garantizado</span>
             </div>
-            <p className="text-[11px] text-white/50 font-mono">
+            <p className="text-[11px] text-[#62666d] font-mono">
               Tokens criptográficos en memoria activa. Cero persistencia en localStorage.
             </p>
           </div>
         </div>
 
-        {/* Lado derecho: Formulario editorial limpio */}
-        <div className="p-8 sm:p-12 flex flex-col justify-center bg-white/70 backdrop-blur-md">
-          <div className="space-y-1 mb-6">
-            <h1 className="text-2xl font-extrabold text-[#161616] tracking-tight">
+        {/* Panel derecho — formulario oscuro */}
+        <div
+          className="p-8 sm:p-10 flex flex-col justify-center"
+          style={{ background: '#141516' }}
+        >
+          <div className="space-y-1 mb-7">
+            <h1 className="text-xl font-semibold text-[#f7f8f8] tracking-[-0.03em]">
               Iniciar sesión
             </h1>
-            <p className="text-xs text-[#68656A]">
+            <p className="text-xs text-[#8a8f98]">
               Introduce tu correo corporativo para acceder a tu espacio
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-medium text-[#161616] mb-1">
+              <label className="block text-[11px] font-medium text-[#d0d6e0] mb-1.5 tracking-[0.02em] uppercase">
                 Correo electrónico
               </label>
               <input
@@ -113,12 +95,12 @@ export const LoginPage: React.FC = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="ejemplo@empresa.es"
-                className="w-full px-3.5 py-2.5 bg-white border border-[rgba(20,20,20,0.1)] rounded-[12px] text-xs text-[#161616] placeholder-[#8F8B92] focus:bg-white focus:border-[#685cff] focus:ring-1 focus:ring-[#685cff] focus:outline-none transition-all shadow-2xs"
+                className="w-full px-3 py-2.5 bg-[#1a1b1c] border border-[#23252a] rounded-[8px] text-sm text-[#f7f8f8] placeholder-[#62666d] focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2]/50 focus:outline-none transition-all duration-200"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-[#161616] mb-1">
+              <label className="block text-[11px] font-medium text-[#d0d6e0] mb-1.5 tracking-[0.02em] uppercase">
                 Contraseña
               </label>
               <input
@@ -127,12 +109,13 @@ export const LoginPage: React.FC = () => {
                 autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-white border border-[rgba(20,20,20,0.1)] rounded-[12px] text-xs text-[#161616] placeholder-[#8F8B92] focus:bg-white focus:border-[#685cff] focus:ring-1 focus:ring-[#685cff] focus:outline-none transition-all shadow-2xs"
+                placeholder="••••••••"
+                className="w-full px-3 py-2.5 bg-[#1a1b1c] border border-[#23252a] rounded-[8px] text-sm text-[#f7f8f8] placeholder-[#62666d] focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2]/50 focus:outline-none transition-all duration-200"
               />
             </div>
 
             {error && (
-              <div className="p-3 rounded-[10px] bg-[#FEF0F0] text-[#D93838] border border-[#FCD2D2] text-xs">
+              <div className="p-3 rounded-[8px] bg-[#D93838]/10 text-[#ff6b6b] border border-[#D93838]/30 text-xs">
                 {error}
               </div>
             )}
@@ -141,18 +124,18 @@ export const LoginPage: React.FC = () => {
               type="submit"
               variant="primary"
               size="lg"
-              className="w-full mt-2 shadow-[0_4px_14px_rgba(104,92,255,0.25)] active:scale-98"
+              className="w-full mt-1"
               isLoading={isLoading}
               icon={<ArrowRight className="w-4 h-4" />}
             >
               Iniciar sesión
             </Button>
 
-            <div className="relative my-4 flex items-center justify-center">
+            <div className="relative my-3 flex items-center justify-center">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-[rgba(20,20,20,0.08)]"></div>
+                <div className="w-full border-t border-[#23252a]" />
               </div>
-              <span className="relative bg-white/90 px-2 text-[11px] uppercase tracking-wider text-[#8F8B92] font-mono">
+              <span className="relative px-3 text-[10px] uppercase tracking-widest text-[#62666d] font-mono" style={{ background: '#141516' }}>
                 O explorar plataforma
               </span>
             </div>
@@ -163,22 +146,22 @@ export const LoginPage: React.FC = () => {
                 loginAsDemo();
                 navigate('/app/inicio');
               }}
-              className="w-full py-2.5 px-3 rounded-[12px] bg-[#eeeaff] hover:bg-[#d5ccfe]/60 text-[#685cff] text-xs font-semibold border border-[#d5ccfe] transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-98 shadow-2xs"
+              className="w-full py-2.5 px-3 rounded-[8px] bg-[#5e6ad2]/10 hover:bg-[#5e6ad2]/20 text-[#828fff] text-xs font-medium border border-[#5e6ad2]/25 transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer active:scale-[0.98]"
             >
               <Sparkles className="w-3.5 h-3.5" />
               <span>Acceder con Empresa Demo (TechConsulting S.L.)</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
 
-            <div className="text-center pt-3 space-y-2">
-              <p className="text-xs text-[#68656A]">
+            <div className="text-center pt-2 space-y-2">
+              <p className="text-xs text-[#62666d]">
                 ¿Aún no tienes cuenta?{' '}
-                <Link to="/registro" className="font-semibold text-[#685cff] hover:underline">
+                <Link to="/registro" className="font-medium text-[#5e6ad2] hover:text-[#828fff] transition-colors">
                   Registra tu empresa gratis
                 </Link>
               </p>
               <p>
-                <Link to="/" className="text-[11px] text-[#8F8B92] hover:text-[#161616] transition-colors">
+                <Link to="/" className="text-[11px] text-[#62666d] hover:text-[#8a8f98] transition-colors">
                   ← Volver a la página principal
                 </Link>
               </p>
