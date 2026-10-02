@@ -32,8 +32,8 @@ const DEMO_MEMBERSHIPS: TenantMembership[] = [
 
 const DEMO_USER: UserProfile = {
   id: '018f4a12-892a-7921-98a1-2d4e8b1e4fff',
-  email: 'usuario@techconsulting.es',
-  fullName: 'Luis Méndez',
+  email: 'demo@techconsulting.es',
+  fullName: 'Operador Demo',
   memberships: DEMO_MEMBERSHIPS,
 };
 
@@ -58,6 +58,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
   const [activeTenant, setActiveTenant] = useState<TenantMembership | null>(() => {
     return isAutomatedOrDemoExplicit() ? DEMO_MEMBERSHIPS[0] : null;
+  });
+  const [isDemoMode, setIsDemoMode] = useState<boolean>(() => {
+    return isAutomatedOrDemoExplicit();
   });
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -111,6 +114,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
         if (authError) throw authError;
         if (data.session) {
+          setIsDemoMode(false);
           setToken(data.session.access_token);
           const mappedUser: UserProfile = {
             id: data.user.id,
@@ -122,8 +126,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setActiveTenant(DEMO_MEMBERSHIPS[0]);
         }
       } else {
-        // Simulación de autenticación segura (en producción con credenciales se llama a Supabase Auth)
+        // Simulación de autenticación segura
         await new Promise((resolve) => setTimeout(resolve, 300));
+        setIsDemoMode(false);
         setUser(DEMO_USER);
         setActiveTenant(DEMO_MEMBERSHIPS[0]);
         setToken('jwt-session-token-' + Math.random().toString(36).substring(7));
@@ -137,6 +142,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const loginAsDemo = () => {
+    setIsDemoMode(true);
     setToken('demo-in-memory-jwt-token-active');
     setUser(DEMO_USER);
     setActiveTenant(DEMO_MEMBERSHIPS[0]);
@@ -147,6 +153,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     setError(null);
     try {
+      setIsDemoMode(false);
       if (isSupabaseConfigured() && supabase) {
         const { data: authData, error: authError } = await supabase.auth.signUp({
           email: data.email,
@@ -218,6 +225,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     }
     // Limpieza completa del estado en memoria
+    setIsDemoMode(false);
     setToken(null);
     setUser(null);
     setActiveTenant(null);
@@ -245,6 +253,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         user,
         activeTenant,
         token,
+        isDemoMode,
         isLoading,
         error,
         login,

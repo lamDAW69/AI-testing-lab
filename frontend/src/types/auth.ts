@@ -18,6 +18,7 @@ export interface AuthState {
   user: UserProfile | null;
   activeTenant: TenantMembership | null;
   token: string | null; // JWT almacenado estrictamente en memoria JavaScript
+  isDemoMode: boolean;
   isLoading: boolean;
   error: string | null;
 }

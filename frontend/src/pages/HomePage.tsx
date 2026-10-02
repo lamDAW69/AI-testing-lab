@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   ArrowRight,
@@ -17,18 +17,26 @@ import {
   ChevronRight,
   User,
   BellRing,
+  Sparkles,
+  HelpCircle,
 } from 'lucide-react';
 import { useAuth } from '../lib/auth-context';
 import { useData } from '../lib/data-context';
 import { StatusBadge } from '../components/ui/StatusBadge';
 import { formatCurrency, formatDeadlineDays } from '../lib/formatters';
+import { ProductTourModal } from '../components/layout/ProductTourModal';
 
 export const HomePage: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isDemoMode } = useAuth();
   const { portfolio, tenders, alerts, certifications, evidences } = useData();
+  const [isTourModalOpen, setIsTourModalOpen] = useState(false);
 
-  const firstName = user?.fullName ? user.fullName.split(' ')[0] : 'Marta';
+  const firstName = user?.fullName === 'Operador Demo'
+    ? 'Operador Demo (TechConsulting)'
+    : user?.fullName
+    ? user.fullName.split(' ')[0]
+    : 'Marta';
 
   // Fecha en formato editorial español: "Miércoles, 24 de septiembre"
   const formattedDate = new Intl.DateTimeFormat('es-ES', {
@@ -67,6 +75,53 @@ export const HomePage: React.FC = () => {
 
   return (
     <div className="space-y-6 select-none">
+      {/* Modal interactivo de Tour bajo demanda */}
+      <ProductTourModal
+        isOpen={isTourModalOpen}
+        onClose={() => setIsTourModalOpen(false)}
+      />
+
+      {/* BANNER GUÍA DE DEMOSTRACIÓN (Solo visible en Modo Demo) */}
+      {isDemoMode && (
+        <section className="p-4 sm:p-5 rounded-[20px] bg-gradient-to-r from-[#eeeaff] via-white to-[#f6f4fb] border border-[#d5ccfe] shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="w-9 h-9 rounded-[12px] bg-[#685cff] text-white flex items-center justify-center shrink-0 shadow-2xs mt-0.5">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-mono uppercase tracking-wider font-bold text-[#685cff] bg-white px-2 py-0.5 rounded-full border border-[#d5ccfe]">
+                  Demostración Interactiva
+                </span>
+                <span className="text-xs font-bold text-[#171719]">
+                  ¿Cómo funciona Pliego AI?
+                </span>
+              </div>
+              <p className="text-xs text-[#69666d] mt-1 leading-relaxed max-w-2xl">
+                Has entrado con la empresa de prueba <strong>TechConsulting Soluciones S.L.</strong>. La IA monitoriza el feed de PLACSP, sella pliegos con hash SHA-256 y precalifica solvencia técnica y económica frente a tu dossier.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <button
+              onClick={() => setIsTourModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[12px] bg-white hover:bg-white/80 border border-[#685cff]/30 text-[#685cff] text-xs font-semibold shadow-2xs transition-all cursor-pointer"
+            >
+              <HelpCircle className="w-3.5 h-3.5" />
+              <span>Ver Guía Paso a Paso</span>
+            </button>
+            <button
+              onClick={() => navigate('/app/catalogo')}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[12px] bg-[#685cff] hover:bg-[#5544ea] text-white text-xs font-semibold shadow-2xs transition-all cursor-pointer"
+            >
+              <span>1. Explorar Catálogo</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </section>
+      )}
+
       {/* 1. HERO DE INICIO: EDITORIAL + DOT-MATRIX + ACCESO OPERATIVO */}
       <section className="home-hero grid grid-cols-1 lg:grid-cols-[minmax(400px,0.95fr)_minmax(480px,1.05fr)] gap-8 lg:gap-10 items-center">
         {/* Lado Izquierdo: Saludo editorial + oportunidades en Dot-Matrix */}
