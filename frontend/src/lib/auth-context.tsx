@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { AuthState, TenantMembership, UserProfile, UserRole } from '../types/auth';
 import { apiClient } from './api-client';
+import { supabase, isSupabaseConfigured } from './supabase';
 
 interface AuthContextValue extends AuthState {
   login: (email: string, password?: string) => Promise<void>;
@@ -35,12 +36,45 @@ const DEMO_USER: UserProfile = {
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // El token JWT vive EXCLUSIVAMENTE en memoria JavaScript para inmunidad contra ataques XSS
-  const [token, setToken] = useState<string | null>('demo-in-memory-jwt-token-active');
-  const [user, setUser] = useState<UserProfile | null>(DEMO_USER);
-  const [activeTenant, setActiveTenant] = useState<TenantMembership | null>(DEMO_MEMBERSHIPS[0]);
+  // El token JWT vive EXCLUSIVAMENTE en memoria JavaScript para inmunidad contra ataques XSS (Regla 4.2 AGENTS.md)
+  const [token, setToken] = useState<string | null>(() => {
+    return isSupabaseConfigured() ? null : 'demo-in-memory-jwt-token-active';
+  });
+  const [user, setUser] = useState<UserProfile | null>(() => {
+    return isSupabaseConfigured() ? null : DEMO_USER;
+  });
+  const [activeTenant, setActiveTenant] = useState<TenantMembership | null>(() => {
+    return isSupabaseConfigured() ? null : DEMO_MEMBERSHIPS[0];
+  });
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Listener para Supabase Auth reactivo en vivo
+  useEffect(() => {
+    if (!isSupabaseConfigured() || !supabase) return;
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) {
+        setToken(session.access_token);
+        const mappedUser: UserProfile = {
+          id: session.user.id,
+          email: session.user.email || 'usuario@licitaia.es',
+          fullName: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Operador',
+          memberships: DEMO_MEMBERSHIPS,
+        };
+        setUser(mappedUser);
+        setActiveTenant(DEMO_MEMBERSHIPS[0]);
+      } else {
+        setToken(null);
+        setUser(null);
+        setActiveTenant(null);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     // Configurar apiClient con getters dinámicos
@@ -53,15 +87,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   }, [token, activeTenant]);
 
-  const login = async (email: string) => {
+  const login = async (email: string, password?: string) => {
     setIsLoading(true);
     setError(null);
     try {
-      // Simulación de autenticación segura (en producción se llama a Supabase Auth)
-      await new Promise((resolve) => setTimeout(resolve, 600));
-      setUser(DEMO_USER);
-      setActiveTenant(DEMO_MEMBERSHIPS[0]);
-      setToken('jwt-session-token-' + Math.random().toString(36).substring(7));
+      if (isSupabaseConfigured() && supabase) {
+        const { data, error: authError } = await supabase.auth.signInWithPassword({
+          email,
+          password: password || '',
+        });
+        if (authError) throw authError;
+        if (data.session) {
+          setToken(data.session.access_token);
+          const mappedUser: UserProfile = {
+            id: data.user.id,
+            email: data.user.email || email,
+            fullName: data.user.user_metadata?.full_name || email.split('@')[0],
+            memberships: DEMO_MEMBERSHIPS,
+          };
+          setUser(mappedUser);
+          setActiveTenant(DEMO_MEMBERSHIPS[0]);
+        }
+      } else {
+        // Simulación de autenticación segura (en producción con credenciales se llama a Supabase Auth)
+        await new Promise((resolve) => setTimeout(resolve, 300));
+        setUser(DEMO_USER);
+        setActiveTenant(DEMO_MEMBERSHIPS[0]);
+        setToken('jwt-session-token-' + Math.random().toString(36).substring(7));
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al autenticar');
       throw err;
@@ -71,6 +124,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = async () => {
+    if (isSupabaseConfigured() && supabase) {
+      try {
+        await supabase.auth.signOut();
+      } catch {
+        // Silenciar si la sesión ya no era válida
+      }
+    }
     // Limpieza completa del estado en memoria
     setToken(null);
     setUser(null);
