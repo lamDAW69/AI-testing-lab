@@ -8,9 +8,12 @@ import {
   tenderDocuments,
   tenderDocumentVersions,
   tenderEvents,
+  ingestionSyncStates,
   Tender,
   ContractingAuthority,
   ProcurementSource,
+  IngestionSyncState,
+  NewIngestionSyncState,
 } from '../../db/schema.js';
 import { PlacspTenderInput, TenderQueryFilter } from './procurement.schema.js';
 
@@ -19,6 +22,16 @@ export interface IngestResult {
   readonly tenderId: string;
   readonly sourceTenderId: string;
 }
+
+export interface TenderListItem extends Tender {
+  readonly contractingAuthority?: string;
+  readonly authorityName?: string;
+  readonly fileReference?: string;
+  readonly cpvCode?: string;
+  readonly budgetAmount?: number;
+  readonly documentsCount?: number;
+}
+
 
 export class ProcurementRepository {
   /**
@@ -110,6 +123,55 @@ export class ProcurementRepository {
   }
 
   /**
+   * Obtiene el estado y cursor de sincronización de una fuente y tipo de job.
+   */
+  async getSyncState(sourceCode: string, jobType: string): Promise<IngestionSyncState | null> {
+    const rows = await db
+      .select()
+      .from(ingestionSyncStates)
+      .where(
+        and(
+          eq(ingestionSyncStates.sourceCode, sourceCode),
+          eq(ingestionSyncStates.jobType, jobType),
+        ),
+      )
+      .limit(1);
+
+    return rows[0] ?? null;
+  }
+
+  /**
+   * Actualiza o crea el estado/cursor de sincronización de forma persistente.
+   */
+  async upsertSyncState(
+    data: Omit<NewIngestionSyncState, 'id' | 'createdAt' | 'updatedAt'>,
+  ): Promise<IngestionSyncState> {
+    const existing = await this.getSyncState(data.sourceCode, data.jobType);
+    if (existing) {
+      const updated = await db
+        .update(ingestionSyncStates)
+        .set({
+          ...data,
+          updatedAt: new Date(),
+        })
+        .where(eq(ingestionSyncStates.id, existing.id))
+        .returning();
+
+      return updated[0]!;
+    }
+
+    const inserted = await db
+      .insert(ingestionSyncStates)
+      .values({
+        ...data,
+      })
+      .returning();
+
+    return inserted[0]!;
+  }
+
+
+  /**
    * Ingesta de forma 100% idempotente un expediente de licitación.
    * Si ya existe con el mismo hash de contenido: no hace nada (SKIPPED).
    * Si es nuevo: inserta expediente, lotes, documentos y versiones iniciales (INSERTED).
@@ -162,6 +224,8 @@ export class ProcurementRepository {
             additionalCpvCodes: input.additionalCpvCodes,
             submissionDeadline: input.submissionDeadline ? new Date(input.submissionDeadline) : null,
             awardDate: input.awardDate ? new Date(input.awardDate) : null,
+            publicationDate: input.publicationDate ? new Date(input.publicationDate) : existing.publicationDate,
+            sourceUpdatedAt: input.sourceUpdatedAt ? new Date(input.sourceUpdatedAt) : existing.sourceUpdatedAt,
             rawPayloadHash: payloadHash,
             updatedAt: new Date(),
           })
@@ -301,6 +365,8 @@ export class ProcurementRepository {
           additionalCpvCodes: input.additionalCpvCodes,
           submissionDeadline: input.submissionDeadline ? new Date(input.submissionDeadline) : null,
           awardDate: input.awardDate ? new Date(input.awardDate) : null,
+          publicationDate: input.publicationDate ? new Date(input.publicationDate) : null,
+          sourceUpdatedAt: input.sourceUpdatedAt ? new Date(input.sourceUpdatedAt) : null,
           rawPayloadHash: payloadHash,
         })
         .returning();
@@ -368,7 +434,8 @@ export class ProcurementRepository {
    * Catálogo con filtros deterministas, paginación e índices seguros.
    */
   async listTenders(filters: TenderQueryFilter): Promise<{
-    readonly data: readonly Tender[];
+    readonly data: readonly TenderListItem[];
+    readonly tenders: readonly TenderListItem[];
     readonly pagination: {
       readonly total: number;
       readonly page: number;
@@ -416,10 +483,40 @@ export class ProcurementRepository {
         .from(tenders)
         .where(whereClause),
       db
-        .select()
+        .select({
+          id: tenders.id,
+          sourceId: tenders.sourceId,
+          authorityId: tenders.authorityId,
+          sourceTenderId: tenders.sourceTenderId,
+          fileReference: tenders.sourceTenderId,
+          title: tenders.title,
+          description: tenders.description,
+          status: tenders.status,
+          procedureType: tenders.procedureType,
+          contractType: tenders.contractType,
+          estimatedValueCents: tenders.estimatedValueCents,
+          budgetAmountCents: tenders.budgetAmountCents,
+          budgetAmount: sql<number>`ROUND(${tenders.budgetAmountCents} / 100.0, 2)::float`,
+          taxInclusiveAmountCents: tenders.taxInclusiveAmountCents,
+          currency: tenders.currency,
+          mainCpvCode: tenders.mainCpvCode,
+          cpvCode: tenders.mainCpvCode,
+          additionalCpvCodes: tenders.additionalCpvCodes,
+          submissionDeadline: tenders.submissionDeadline,
+          awardDate: tenders.awardDate,
+          publicationDate: tenders.publicationDate,
+          sourceUpdatedAt: tenders.sourceUpdatedAt,
+          rawPayloadHash: tenders.rawPayloadHash,
+          contractingAuthority: contractingAuthorities.name,
+          authorityName: contractingAuthorities.name,
+          documentsCount: sql<number>`(SELECT count(*)::int FROM tender_documents WHERE tender_id = ${tenders.id})`,
+          createdAt: tenders.createdAt,
+          updatedAt: tenders.updatedAt,
+        })
         .from(tenders)
+        .leftJoin(contractingAuthorities, eq(tenders.authorityId, contractingAuthorities.id))
         .where(whereClause)
-        .orderBy(desc(tenders.submissionDeadline), desc(tenders.createdAt))
+        .orderBy(desc(tenders.publicationDate), desc(tenders.submissionDeadline), desc(tenders.createdAt))
         .limit(filters.limit)
         .offset(offset),
     ]);
@@ -428,7 +525,8 @@ export class ProcurementRepository {
     const totalPages = Math.ceil(total / filters.limit);
 
     return {
-      data: rows,
+      data: rows as any,
+      tenders: rows as any,
       pagination: {
         total,
         page: filters.page,

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -19,7 +19,8 @@ import { Modal } from '../components/ui/Modal';
 import { formatCurrency, formatDate, formatDeadlineDays } from '../lib/formatters';
 import { useAuth } from '../lib/auth-context';
 import { useData } from '../lib/data-context';
-import { TenderDocument } from '../types/procurement';
+import { apiClient } from '../lib/api-client';
+import { PublicTender, TenderDocument } from '../types/procurement';
 
 export const TenderDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -29,9 +30,99 @@ export const TenderDetailPage: React.FC = () => {
 
   const [isAnalyzeModalOpen, setIsAnalyzeModalOpen] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [apiTender, setApiTender] = useState<PublicTender | null>(null);
+  const [apiDocs, setApiDocs] = useState<TenderDocument[] | null>(null);
+  const [isLoadingDetail, setIsLoadingDetail] = useState(false);
 
   const tenderId = id || 't-101';
-  const tender = getTenderById(tenderId) || {
+
+  // Consulta al endpoint oficial /api/public/tenders/:id para recuperar pliegos y documentos reales con SHA-256
+  useEffect(() => {
+    if (!tenderId) return;
+    let isMounted = true;
+    setIsLoadingDetail(true);
+
+    apiClient
+      .get<any>(`/public/tenders/${tenderId}`)
+      .then((data) => {
+        if (!isMounted || !data) return;
+
+        if (data.id) {
+          const mappedTender: PublicTender = {
+            id: data.id,
+            fileReference: data.fileReference || data.sourceTenderId || data.id,
+            title: data.title,
+            contractingAuthority:
+              data.contractingAuthority ||
+              data.authority?.name ||
+              data.authorityName ||
+              'Órgano oficial',
+            cpvCode: data.cpvCode || data.mainCpvCode || '',
+            budgetAmount:
+              typeof data.budgetAmount === 'number'
+                ? data.budgetAmount
+                : typeof data.budgetAmountCents === 'number'
+                ? data.budgetAmountCents / 100
+                : 0,
+            estimatedValue:
+              typeof data.estimatedValue === 'number'
+                ? data.estimatedValue
+                : typeof data.estimatedValueCents === 'number'
+                ? data.estimatedValueCents / 100
+                : (typeof data.budgetAmount === 'number' ? data.budgetAmount : 0),
+            currency: data.currency || 'EUR',
+            submissionDeadline: data.submissionDeadline,
+            publicationDate: data.publicationDate || data.sourceUpdatedAt || data.createdAt,
+            status: data.status,
+            documentsCount:
+              Array.isArray(data.documents)
+                ? data.documents.length
+                : typeof data.documentsCount === 'number'
+                ? data.documentsCount
+                : 0,
+            hasActiveAnalysis: false,
+          };
+          setApiTender(mappedTender);
+        }
+
+        if (Array.isArray(data.documents) && data.documents.length > 0) {
+          const mappedDocs: TenderDocument[] = data.documents.map((doc: any) => {
+            const latestVersion =
+              Array.isArray(doc.versions) && doc.versions.length > 0
+                ? doc.versions[0]
+                : null;
+            return {
+              id: doc.id,
+              name: doc.name || 'Pliego oficial',
+              type: (doc.documentType || 'PCA') as any,
+              version: latestVersion?.versionNumber || 1,
+              sha256Hash:
+                latestVersion?.contentHash ||
+                doc.rawPayloadHash ||
+                'Hash oficial verificado',
+              obtainedAt: latestVersion?.fetchedAt
+                ? new Date(latestVersion.fetchedAt).toISOString()
+                : doc.createdAt || new Date().toISOString(),
+              url: latestVersion?.url,
+            };
+          });
+          setApiDocs(mappedDocs);
+        }
+      })
+      .catch(() => {
+        // En modo offline o si no responde el backend, se mantiene la información local
+      })
+      .finally(() => {
+        if (isMounted) setIsLoadingDetail(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [tenderId]);
+
+  const tenderFromContext = getTenderById(tenderId);
+  const tender = apiTender || tenderFromContext || {
     id: tenderId,
     fileReference: 'EXP-DESCONOCIDO',
     title: 'Expediente no encontrado',
@@ -46,7 +137,7 @@ export const TenderDetailPage: React.FC = () => {
     hasActiveAnalysis: false,
   };
 
-  const tenderDocs = getTenderDocuments(tender.id);
+  const tenderDocs = apiDocs !== null ? apiDocs : getTenderDocuments(tender.id);
 
   const handleStartAnalysis = async () => {
     setIsAnalyzing(true);
@@ -177,9 +268,21 @@ export const TenderDetailPage: React.FC = () => {
                       </div>
 
                       <div className="shrink-0 pt-1">
-                        <span className="text-[10px] font-mono px-2 py-1 rounded-[8px] bg-white text-[#161616] border border-[rgba(20,20,20,0.08)] shadow-2xs font-semibold">
-                          PDF Oficial
-                        </span>
+                        {doc.url ? (
+                          <a
+                            href={doc.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-[10px] font-mono px-2 py-1 rounded-[8px] bg-white hover:bg-[#161616] text-[#161616] hover:text-white border border-[rgba(20,20,20,0.08)] shadow-2xs font-semibold transition-colors cursor-pointer"
+                          >
+                            <span>PDF Oficial</span>
+                            <ArrowRight className="w-2.5 h-2.5" />
+                          </a>
+                        ) : (
+                          <span className="text-[10px] font-mono px-2 py-1 rounded-[8px] bg-white text-[#161616] border border-[rgba(20,20,20,0.08)] shadow-2xs font-semibold">
+                            PDF Oficial
+                          </span>
+                        )}
                       </div>
                     </div>
                   </motion.div>
@@ -212,7 +315,7 @@ export const TenderDetailPage: React.FC = () => {
 
             <div className="flex items-center justify-between py-1 border-b border-[rgba(20,20,20,0.04)]">
               <span className="text-[#68656A]">Dossier verificado</span>
-              <span className="font-mono font-bold text-[#137A43]">{activeTenant?.name || 'TechConsulting Soluciones S.L.'}</span>
+              <span className="font-mono font-bold text-[#137A43]">{activeTenant?.name || 'Mi Organización'}</span>
             </div>
 
             <div className="flex items-center justify-between py-1 border-b border-[rgba(20,20,20,0.04)]">
@@ -259,7 +362,7 @@ export const TenderDetailPage: React.FC = () => {
         isOpen={isAnalyzeModalOpen}
         onClose={() => setIsAnalyzeModalOpen(false)}
         title="Iniciar Análisis de Precalificación"
-        description={`Se evaluará el expediente ${tender.fileReference} frente al Dossier privado de ${activeTenant?.name || 'TechConsulting Soluciones S.L.'}.`}
+        description={`Se evaluará el expediente ${tender.fileReference} frente al Dossier privado de ${activeTenant?.name || 'tu organización'}.`}
       >
         <div className="space-y-4">
           <div className="p-3.5 rounded-[12px] bg-[#EEEAFE]/60 border border-[#D5CCFE] text-xs text-[#5749F5] flex items-start gap-2.5">

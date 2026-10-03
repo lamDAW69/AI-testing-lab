@@ -26,6 +26,8 @@ export interface RawPlacspEntry {
   readonly cpvCode: string;
   readonly additionalCpvCodes?: readonly string[];
   readonly submissionDeadline?: string;
+  readonly publicationDate?: string;
+  readonly sourceUpdatedAt?: string;
   readonly authority: {
     readonly name: string;
     readonly taxId?: string;
@@ -42,6 +44,74 @@ export interface RawPlacspEntry {
     readonly cpvCode?: string;
   }[];
   readonly documents?: readonly RawPlacspDocument[];
+}
+
+export interface ParsePageOptions {
+  cutoffDate?: Date; // default: 2026-09-01T00:00:00Z
+  filterTicOnly?: boolean; // default: true
+  maxItems?: number;
+}
+
+export interface PageResult {
+  pageUrl: string;
+  nextUrl: string | null;
+  rawCount: number;
+  qualifiedCount: number;
+  tenders: PlacspTenderInput[];
+  oldestDate: Date | null;
+  newestDate: Date | null;
+  hitCutoff: boolean;
+}
+
+export interface CrawlOptions {
+  startUrl?: string;
+  cutoffDate?: Date; // default: 2026-09-01T00:00:00Z
+  maxPages?: number;
+  delayBetweenPagesMs?: number; // default: 600ms
+  filterTicOnly?: boolean; // default: true
+  onPageProcessed?: (pageResult: PageResult) => Promise<void>;
+}
+
+export interface CrawlSummary {
+  pagesProcessed: number;
+  totalScanned: number;
+  totalQualified: number;
+  oldestProcessedDate: Date | null;
+  newestProcessedDate: Date | null;
+  lastPageUrl: string;
+  nextPageUrl: string | null;
+  hitCutoff: boolean;
+  abortedReason?: string;
+}
+
+export function extractCpvList(classificationNode: unknown): string[] {
+  if (!classificationNode) return [];
+  const nodes = Array.isArray(classificationNode) ? classificationNode : [classificationNode];
+  const cpvs: string[] = [];
+  for (const node of nodes) {
+    const rawCode = (node as any)?.['cbc:ItemClassificationCode'];
+    const text = extractXmlText(rawCode);
+    if (text) {
+      const clean = text.replace(/\D/g, '');
+      if (clean.length >= 2) {
+        cpvs.push(clean.padEnd(8, '0').slice(0, 8));
+      }
+    }
+  }
+  return cpvs;
+}
+
+export function isTicCpv(cpv?: string): boolean {
+  if (!cpv || cpv === '00000000') return false;
+  const clean = cpv.replace(/\D/g, '');
+  return clean.startsWith('72') || clean.startsWith('48');
+}
+
+export function isTicTender(tender: PlacspTenderInput): boolean {
+  if (isTicCpv(tender.mainCpvCode)) return true;
+  if (tender.additionalCpvCodes?.some((c) => isTicCpv(c))) return true;
+  if (tender.lots?.some((l) => isTicCpv(l.mainCpvCode))) return true;
+  return false;
 }
 
 function extractXmlText(node: unknown): string {
@@ -144,6 +214,18 @@ export class PlacspConnector {
    * enteros y aplicando las reglas estrictas de validación.
    */
   normalizeEntry(raw: RawPlacspEntry): PlacspTenderInput {
+    let publicationDate: string | undefined;
+    if (raw.publicationDate) {
+      const d = new Date(raw.publicationDate);
+      publicationDate = !isNaN(d.getTime()) ? d.toISOString() : undefined;
+    }
+
+    let sourceUpdatedAt: string | undefined;
+    if (raw.sourceUpdatedAt) {
+      const d = new Date(raw.sourceUpdatedAt);
+      sourceUpdatedAt = !isNaN(d.getTime()) ? d.toISOString() : undefined;
+    }
+
     const normalized: PlacspTenderInput = {
       sourceCode: this.sourceCode,
       sourceTenderId: raw.id,
@@ -163,6 +245,8 @@ export class PlacspConnector {
       mainCpvCode: this.normalizeCpv(raw.cpvCode),
       additionalCpvCodes: (raw.additionalCpvCodes ?? []).map((cpv) => this.normalizeCpv(cpv)),
       submissionDeadline: raw.submissionDeadline,
+      publicationDate,
+      sourceUpdatedAt,
       authority: {
         name: raw.authority.name,
         taxId: raw.authority.taxId,
@@ -188,7 +272,7 @@ export class PlacspConnector {
       events: [
         {
           eventType: 'PUBLICATION',
-          eventDate: new Date().toISOString(),
+          eventDate: publicationDate ?? new Date().toISOString(),
           title: `Publicación oficial de licitación ${raw.id} en PLACSP`,
           rawPayload: {},
         },
@@ -231,10 +315,186 @@ export class PlacspConnector {
   }
 
   /**
-   * Parsea el XML de un feed ATOM oficial de la PLACSP, extrayendo las licitaciones
-   * y mapeando los nodos CODICE a estructuras normalizadas y validadas.
+   * Extrae y normaliza un nodo individual `<entry>` de XML CODICE.
    */
-  parseFeedXml(xmlContent: string, maxItems = 50): PlacspTenderInput[] {
+  extractEntryFromXmlNode(entry: any, updatedStr?: string, publishedStr?: string): PlacspTenderInput | null {
+    const folder = entry['cac-place-ext:ContractFolderStatus'];
+    if (!folder) return null;
+
+    const folderId: string = extractXmlText(folder['cbc:ContractFolderID']) || extractXmlText(entry.id) || 'UNKNOWN';
+    const project = folder['cac:ProcurementProject'];
+    const title: string = extractXmlText(project?.['cbc:Name']) || extractXmlText(entry.title) || 'Licitación pública';
+    const summary: string = extractXmlText(entry.summary) || extractXmlText(project?.['cbc:Name']);
+
+    // Importes
+    const budgetNode = project?.['cac:BudgetAmount'];
+    const budgetStr = extractXmlText(budgetNode?.['cbc:TaxExclusiveAmount'] ?? budgetNode?.['cbc:TotalAmount'] ?? '0');
+    const totalStr = extractXmlText(budgetNode?.['cbc:TotalAmount']);
+    const estStr = extractXmlText(budgetNode?.['cbc:EstimatedOverallContractAmount']);
+
+    const budgetEur = parseFloat(budgetStr || '0');
+    const totalEur = totalStr ? parseFloat(totalStr) : undefined;
+    const estEur = estStr ? parseFloat(estStr) : undefined;
+
+    // CPV
+    const projectCpvCodes = extractCpvList(project?.['cac:RequiredCommodityClassification']);
+
+    // Autoridad
+    const locatedParty = folder['cac-place-ext:LocatedContractingParty'];
+    const party = locatedParty?.['cac:Party'];
+    const authorityName = extractXmlText(party?.['cac:PartyName']?.['cbc:Name']) ||
+      extractXmlText(locatedParty?.['cac:Party']?.['cac:Contact']?.['cbc:Name']) ||
+      'Órgano de Contratación';
+
+    let taxId: string | undefined;
+    let sourceAuthorityId: string | undefined;
+    const identifications = party?.['cac:PartyIdentification'];
+    if (identifications) {
+      const idList = Array.isArray(identifications) ? identifications : [identifications];
+      for (const ident of idList) {
+        const idNode = ident?.['cbc:ID'];
+        const scheme = (typeof idNode === 'object' ? idNode?.['@_schemeName'] : ident?.['@_schemeName']) ?? '';
+        const rawId = typeof idNode === 'object' ? idNode?.['#text'] : idNode;
+        const idVal = extractXmlText(rawId);
+        if (idVal) {
+          if (scheme.toUpperCase() === 'NIF' || (!taxId && /^[A-Z0-9]{8,9}$/i.test(idVal))) {
+            taxId = idVal;
+          } else if (scheme.toUpperCase() === 'DIR3') {
+            sourceAuthorityId = idVal;
+          }
+        }
+      }
+    }
+
+    const postalCode = extractXmlText(party?.['cac:PostalAddress']?.['cbc:PostalZone']) || undefined;
+    const city = extractXmlText(party?.['cac:PostalAddress']?.['cbc:CityName']) || undefined;
+
+    // Plazo
+    const deadlinePeriod = folder['cac:TenderingProcess']?.['cac:TenderSubmissionDeadlinePeriod'];
+    let submissionDeadline: string | undefined;
+    const endDate = extractXmlText(deadlinePeriod?.['cbc:EndDate']);
+    if (endDate) {
+      const endTime = extractXmlText(deadlinePeriod?.['cbc:EndTime']) || '23:59:59';
+      submissionDeadline = parseMadridDateTime(endDate, endTime);
+    }
+
+    // Lotes del expediente (cac:ProcurementProjectLot)
+    const rawLotsNode = folder['cac:ProcurementProjectLot'] ?? project?.['cac:ProcurementProjectLot'];
+    const lots: Array<{
+      lotNumber: number;
+      title: string;
+      description?: string;
+      budgetAmountEur?: number;
+      cpvCode?: string;
+    }> = [];
+
+    if (rawLotsNode) {
+      const lotList = Array.isArray(rawLotsNode) ? rawLotsNode : [rawLotsNode];
+      for (let i = 0; i < lotList.length; i++) {
+        const lotNode = lotList[i];
+        const lotProj = lotNode?.['cac:ProcurementProject'] ?? lotNode;
+        const rawLotId = extractXmlText(lotNode?.['cbc:ID']);
+        const parsedLotNum = parseInt(rawLotId, 10);
+        const lotNumber = !isNaN(parsedLotNum) && parsedLotNum > 0 ? parsedLotNum : (i + 1);
+
+        const lotTitle = extractXmlText(lotProj?.['cbc:Name']) || extractXmlText(lotNode?.['cbc:Name']) || `Lote ${lotNumber}`;
+        const lotDesc = extractXmlText(lotProj?.['cbc:Description']) || extractXmlText(lotNode?.['cbc:Description']) || undefined;
+
+        const lotBudgetNode = lotProj?.['cac:BudgetAmount'] ?? lotNode?.['cac:BudgetAmount'];
+        const lotBudgetStr = extractXmlText(lotBudgetNode?.['cbc:TaxExclusiveAmount'] ?? lotBudgetNode?.['cbc:TotalAmount']);
+        const lotBudget = lotBudgetStr ? parseFloat(lotBudgetStr) : undefined;
+
+        const lotCpvNode =
+          lotProj?.['cac:RequiredCommodityClassification'] ??
+          lotNode?.['cac:RequiredCommodityClassification'];
+        const lotCpvs = extractCpvList(lotCpvNode);
+        const lotCpv = lotCpvs[0];
+
+        lots.push({
+          lotNumber,
+          title: lotTitle.slice(0, 500),
+          description: lotDesc ? lotDesc.slice(0, 1000) : undefined,
+          budgetAmountEur: lotBudget !== undefined && !isNaN(lotBudget) ? lotBudget : undefined,
+          cpvCode: lotCpv,
+        });
+      }
+    }
+
+    // Documentos rectores (PCAP, PPT, etc.)
+    const documents: RawPlacspDocument[] = [];
+
+    const extractDoc = (docRef: any, type: 'PCAP' | 'PPT' | 'OTHER') => {
+      if (!docRef) return;
+      const refs = Array.isArray(docRef) ? docRef : [docRef];
+      for (const ref of refs) {
+        const uri = extractXmlText(ref?.['cac:Attachment']?.['cac:ExternalReference']?.['cbc:URI']);
+        const name = extractXmlText(ref?.['cbc:ID']) || `${type} Document`;
+        const docHash = extractXmlText(ref?.['cac:Attachment']?.['cac:ExternalReference']?.['cbc:DocumentHash']);
+        if (uri) {
+          documents.push({
+            type,
+            name: name.slice(0, 250),
+            url: uri.replace(/&amp;/g, '&'),
+            contentHash: docHash ? crypto.createHash('sha256').update(docHash).digest('hex') : undefined,
+            mimeType: 'application/pdf',
+          });
+        }
+      }
+    };
+
+    extractDoc(folder['cac:LegalDocumentReference'], 'PCAP');
+    extractDoc(folder['cac:TechnicalDocumentReference'], 'PPT');
+    extractDoc(folder['cac:AdditionalDocumentReference'], 'OTHER');
+
+    const lotCpvCodes = lots.map((l) => l.cpvCode).filter((c): c is string => Boolean(c));
+    const allCpvCodes = Array.from(new Set([...projectCpvCodes, ...lotCpvCodes]));
+    const mainCpv = allCpvCodes[0] || '00000000';
+    const additionalCpvCodes = allCpvCodes.slice(1);
+
+    const rawEntry: RawPlacspEntry = {
+      id: folderId,
+      title: title.slice(0, 500),
+      summary: summary ? summary.slice(0, 1000) : undefined,
+      status: extractXmlText(folder['cbc-place-ext:ContractFolderStatusCode']),
+      procedureType: extractXmlText(folder['cac:TenderingProcess']?.['cbc:ProcedureCode']),
+      contractType: extractXmlText(project?.['cbc:TypeCode']),
+      budgetAmountEur: isNaN(budgetEur) ? 0 : budgetEur,
+      taxInclusiveAmountEur: totalEur && !isNaN(totalEur) ? totalEur : undefined,
+      estimatedValueEur: estEur && !isNaN(estEur) ? estEur : undefined,
+      cpvCode: mainCpv,
+      additionalCpvCodes: additionalCpvCodes.length > 0 ? additionalCpvCodes : undefined,
+      submissionDeadline,
+      publicationDate: publishedStr || updatedStr || undefined,
+      sourceUpdatedAt: updatedStr || undefined,
+      authority: {
+        name: authorityName.slice(0, 255),
+        taxId,
+        sourceAuthorityId,
+        postalCode,
+        city,
+      },
+      lots: lots.length > 0 ? lots : undefined,
+      documents,
+    };
+
+    return this.normalizeEntry(rawEntry);
+  }
+
+  /**
+   * Parsea una página completa del feed ATOM de la PLACSP.
+   * Extrae el enlace 'rel="next"', verifica la fecha límite (cutoff) y filtra
+   * opcionalmente por familias CPV del sector TIC (72* y 48*).
+   * La operación es rápida (<1s) y cuidadosa con la memoria (libera AST y buffer de inmediato).
+   */
+  parseFeedPage(
+    xmlContent: string,
+    options: ParsePageOptions & { pageUrl?: string } = {},
+  ): PageResult {
+    const cutoffDate = options.cutoffDate ?? new Date('2026-09-01T00:00:00.000Z');
+    const filterTicOnly = options.filterTicOnly ?? true;
+    const maxItems = options.maxItems;
+    const pageUrl = options.pageUrl ?? PLACSP_OFFICIAL_FEED_URL;
+
     const parser = new XMLParser({
       ignoreAttributes: false,
       attributeNamePrefix: '@_',
@@ -245,193 +505,229 @@ export class PlacspConnector {
     const parsed = parser.parse(xmlContent);
     const feed = parsed?.feed;
     if (!feed || !feed.entry) {
-      return [];
+      return {
+        pageUrl,
+        nextUrl: null,
+        rawCount: 0,
+        qualifiedCount: 0,
+        tenders: [],
+        oldestDate: null,
+        newestDate: null,
+        hitCutoff: false,
+      };
+    }
+
+    // Extracción de enlace rel="next"
+    let nextUrl: string | null = null;
+    const links = feed.link ? (Array.isArray(feed.link) ? feed.link : [feed.link]) : [];
+    for (const link of links) {
+      const rel = link?.['@_rel'] ?? link?.rel;
+      const href = link?.['@_href'] ?? link?.href;
+      if (rel === 'next' && href) {
+        nextUrl = String(href).trim();
+        break;
+      }
     }
 
     const rawEntries = Array.isArray(feed.entry) ? feed.entry : [feed.entry];
-    const results: PlacspTenderInput[] = [];
+    const qualifiedTenders: PlacspTenderInput[] = [];
+    let oldestDate: Date | null = null;
+    let newestDate: Date | null = null;
+    let hitCutoff = false;
+    let rawCount = 0;
 
-    for (const entry of rawEntries.slice(0, maxItems)) {
+    const entriesToProcess = maxItems ? rawEntries.slice(0, maxItems) : rawEntries;
+
+    for (const entry of entriesToProcess) {
+      rawCount++;
       try {
-        const folder = entry['cac-place-ext:ContractFolderStatus'];
-        if (!folder) continue;
-
-        const folderId: string = extractXmlText(folder['cbc:ContractFolderID']) || extractXmlText(entry.id) || 'UNKNOWN';
-        const project = folder['cac:ProcurementProject'];
-        const title: string = extractXmlText(project?.['cbc:Name']) || extractXmlText(entry.title) || 'Licitación pública';
-        const summary: string = extractXmlText(entry.summary) || extractXmlText(project?.['cbc:Name']);
-
-        // Importes
-        const budgetNode = project?.['cac:BudgetAmount'];
-        const budgetStr = extractXmlText(budgetNode?.['cbc:TaxExclusiveAmount'] ?? budgetNode?.['cbc:TotalAmount'] ?? '0');
-        const totalStr = extractXmlText(budgetNode?.['cbc:TotalAmount']);
-        const estStr = extractXmlText(budgetNode?.['cbc:EstimatedOverallContractAmount']);
-
-        const budgetEur = parseFloat(budgetStr || '0');
-        const totalEur = totalStr ? parseFloat(totalStr) : undefined;
-        const estEur = estStr ? parseFloat(estStr) : undefined;
-
-        // CPV
-        const cpvCode = extractXmlText(project?.['cac:RequiredCommodityClassification']?.['cbc:ItemClassificationCode']) || '72000000';
-
-        // Autoridad
-        const locatedParty = folder['cac-place-ext:LocatedContractingParty'];
-        const party = locatedParty?.['cac:Party'];
-        const authorityName = extractXmlText(party?.['cac:PartyName']?.['cbc:Name']) ||
-          extractXmlText(locatedParty?.['cac:Party']?.['cac:Contact']?.['cbc:Name']) ||
-          'Órgano de Contratación';
-
-        let taxId: string | undefined;
-        let sourceAuthorityId: string | undefined;
-        const identifications = party?.['cac:PartyIdentification'];
-        if (identifications) {
-          const idList = Array.isArray(identifications) ? identifications : [identifications];
-          for (const ident of idList) {
-            const idNode = ident?.['cbc:ID'];
-            const scheme = (typeof idNode === 'object' ? idNode?.['@_schemeName'] : ident?.['@_schemeName']) ?? '';
-            const rawId = typeof idNode === 'object' ? idNode?.['#text'] : idNode;
-            const idVal = extractXmlText(rawId);
-            if (idVal) {
-              if (scheme.toUpperCase() === 'NIF' || (!taxId && /^[A-Z0-9]{8,9}$/i.test(idVal))) {
-                taxId = idVal;
-              } else if (scheme.toUpperCase() === 'DIR3') {
-                sourceAuthorityId = idVal;
-              }
-            }
+        const updatedStr = extractXmlText(entry.updated);
+        const publishedStr = extractXmlText(entry.published);
+        const entryDateRaw = updatedStr || publishedStr;
+        let entryDate: Date | null = null;
+        if (entryDateRaw) {
+          const parsedD = new Date(entryDateRaw);
+          if (!isNaN(parsedD.getTime())) {
+            entryDate = parsedD;
           }
         }
 
-        const postalCode = extractXmlText(party?.['cac:PostalAddress']?.['cbc:PostalZone']) || undefined;
-        const city = extractXmlText(party?.['cac:PostalAddress']?.['cbc:CityName']) || undefined;
+        if (entryDate) {
+          if (!newestDate || entryDate > newestDate) newestDate = entryDate;
+          if (!oldestDate || entryDate < oldestDate) oldestDate = entryDate;
 
-        // Plazo
-        const deadlinePeriod = folder['cac:TenderingProcess']?.['cac:TenderSubmissionDeadlinePeriod'];
-        let submissionDeadline: string | undefined;
-        const endDate = extractXmlText(deadlinePeriod?.['cbc:EndDate']);
-        if (endDate) {
-          const endTime = extractXmlText(deadlinePeriod?.['cbc:EndTime']) || '23:59:59';
-          submissionDeadline = parseMadridDateTime(endDate, endTime);
-        }
-
-        // Lotes del expediente (cac:ProcurementProjectLot)
-        const rawLotsNode = folder['cac:ProcurementProjectLot'] ?? project?.['cac:ProcurementProjectLot'];
-        const lots: Array<{
-          lotNumber: number;
-          title: string;
-          description?: string;
-          budgetAmountEur?: number;
-          cpvCode?: string;
-        }> = [];
-
-        if (rawLotsNode) {
-          const lotList = Array.isArray(rawLotsNode) ? rawLotsNode : [rawLotsNode];
-          for (let i = 0; i < lotList.length; i++) {
-            const lotNode = lotList[i];
-            const lotProj = lotNode?.['cac:ProcurementProject'] ?? lotNode;
-            const rawLotId = extractXmlText(lotNode?.['cbc:ID']);
-            const parsedLotNum = parseInt(rawLotId, 10);
-            const lotNumber = !isNaN(parsedLotNum) && parsedLotNum > 0 ? parsedLotNum : (i + 1);
-
-            const lotTitle = extractXmlText(lotProj?.['cbc:Name']) || extractXmlText(lotNode?.['cbc:Name']) || `Lote ${lotNumber}`;
-            const lotDesc = extractXmlText(lotProj?.['cbc:Description']) || extractXmlText(lotNode?.['cbc:Description']) || undefined;
-
-            const lotBudgetNode = lotProj?.['cac:BudgetAmount'] ?? lotNode?.['cac:BudgetAmount'];
-            const lotBudgetStr = extractXmlText(lotBudgetNode?.['cbc:TaxExclusiveAmount'] ?? lotBudgetNode?.['cbc:TotalAmount']);
-            const lotBudget = lotBudgetStr ? parseFloat(lotBudgetStr) : undefined;
-
-            const lotCpv = extractXmlText(
-              lotProj?.['cac:RequiredCommodityClassification']?.['cbc:ItemClassificationCode'] ??
-              lotNode?.['cac:RequiredCommodityClassification']?.['cbc:ItemClassificationCode']
-            ) || undefined;
-
-            lots.push({
-              lotNumber,
-              title: lotTitle.slice(0, 500),
-              description: lotDesc ? lotDesc.slice(0, 1000) : undefined,
-              budgetAmountEur: lotBudget !== undefined && !isNaN(lotBudget) ? lotBudget : undefined,
-              cpvCode: lotCpv,
-            });
+          if (cutoffDate && entryDate < cutoffDate) {
+            hitCutoff = true;
+            continue;
           }
         }
 
-        // Documentos rectores (PCAP, PPT, etc.)
-        const documents: RawPlacspDocument[] = [];
+        const normalizedTender = this.extractEntryFromXmlNode(entry, updatedStr, publishedStr);
+        if (!normalizedTender) continue;
 
-        const extractDoc = (docRef: any, type: 'PCAP' | 'PPT' | 'OTHER') => {
-          if (!docRef) return;
-          const refs = Array.isArray(docRef) ? docRef : [docRef];
-          for (const ref of refs) {
-            const uri = extractXmlText(ref?.['cac:Attachment']?.['cac:ExternalReference']?.['cbc:URI']);
-            const name = extractXmlText(ref?.['cbc:ID']) || `${type} Document`;
-            const docHash = extractXmlText(ref?.['cac:Attachment']?.['cac:ExternalReference']?.['cbc:DocumentHash']);
-            if (uri) {
-              documents.push({
-                type,
-                name: name.slice(0, 250),
-                url: uri.replace(/&amp;/g, '&'),
-                contentHash: docHash ? crypto.createHash('sha256').update(docHash).digest('hex') : undefined,
-                mimeType: 'application/pdf',
-              });
-            }
-          }
-        };
+        // Filtrado en memoria por familias TIC (CPVs 72* y 48*)
+        if (filterTicOnly && !isTicTender(normalizedTender)) {
+          continue;
+        }
 
-        extractDoc(folder['cac:LegalDocumentReference'], 'PCAP');
-        extractDoc(folder['cac:TechnicalDocumentReference'], 'PPT');
-        extractDoc(folder['cac:AdditionalDocumentReference'], 'OTHER');
-
-        const rawEntry: RawPlacspEntry = {
-          id: folderId,
-          title: title.slice(0, 500),
-          summary: summary ? summary.slice(0, 1000) : undefined,
-          status: extractXmlText(folder['cbc-place-ext:ContractFolderStatusCode']),
-          procedureType: extractXmlText(folder['cac:TenderingProcess']?.['cbc:ProcedureCode']),
-          contractType: extractXmlText(project?.['cbc:TypeCode']),
-          budgetAmountEur: isNaN(budgetEur) ? 0 : budgetEur,
-          taxInclusiveAmountEur: totalEur && !isNaN(totalEur) ? totalEur : undefined,
-          estimatedValueEur: estEur && !isNaN(estEur) ? estEur : undefined,
-          cpvCode,
-          submissionDeadline,
-          authority: {
-            name: authorityName.slice(0, 255),
-            taxId,
-            sourceAuthorityId,
-            postalCode,
-            city,
-          },
-          lots: lots.length > 0 ? lots : undefined,
-          documents,
-        };
-
-        results.push(this.normalizeEntry(rawEntry));
+        qualifiedTenders.push(normalizedTender);
       } catch (entryError) {
         console.warn('Entrada de PLACSP omitida por error de normalización:', entryError);
       }
     }
 
-    return results;
+    return {
+      pageUrl,
+      nextUrl,
+      rawCount,
+      qualifiedCount: qualifiedTenders.length,
+      tenders: qualifiedTenders,
+      oldestDate,
+      newestDate,
+      hitCutoff,
+    };
+  }
+
+  /**
+   * Mantiene compatibilidad hacia atrás con pruebas existentes sin filtro sectorial.
+   */
+  parseFeedXml(xmlContent: string, maxItems = 50): PlacspTenderInput[] {
+    const pageResult = this.parseFeedPage(xmlContent, {
+      filterTicOnly: false,
+      maxItems,
+    });
+    return pageResult.tenders;
+  }
+
+  /**
+   * Descarga una página de feed con User-Agent oficial, timeout y reintentos
+   * con retroceso exponencial ante errores transitorios (429, 5xx, cortes de red).
+   */
+  async fetchFeedPage(url: string, retries = 4): Promise<string> {
+    let attempt = 0;
+    while (attempt <= retries) {
+      try {
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'User-Agent': 'LicitaIA-Official-Ingest/1.0 (+https://pliegoai.com)',
+            Accept: 'application/atom+xml, application/xml, text/xml',
+            'Accept-Encoding': 'gzip, deflate',
+          },
+          signal: AbortSignal.timeout(30_000),
+        });
+
+        if (response.ok) {
+          return await response.text();
+        }
+
+        if (response.status === 404) {
+          throw new Error(`Feed page no encontrada (404): ${url}`);
+        }
+
+        if (response.status === 429 || (response.status >= 500 && response.status <= 599)) {
+          if (attempt === retries) {
+            throw new Error(`HTTP ${response.status} ${response.statusText} tras ${retries + 1} intentos en ${url}`);
+          }
+          const backoffMs = Math.min(1500 * Math.pow(2, attempt) + Math.random() * 500, 30_000);
+          console.warn(`[PLACSP] HTTP ${response.status} en ${url}. Reintentando en ${Math.round(backoffMs)}ms (intento ${attempt + 1}/${retries})...`);
+          await new Promise((resolve) => setTimeout(resolve, backoffMs));
+          attempt++;
+          continue;
+        }
+
+        throw new Error(`PLACSP respondió con código HTTP ${response.status}: ${response.statusText}`);
+      } catch (err: unknown) {
+        if (attempt >= retries || (err instanceof Error && err.message.includes('404'))) {
+          throw err;
+        }
+        const backoffMs = Math.min(1500 * Math.pow(2, attempt) + Math.random() * 500, 30_000);
+        console.warn(`[PLACSP] Error en ${url}: ${(err as Error).message}. Reintentando en ${Math.round(backoffMs)}ms...`);
+        await new Promise((resolve) => setTimeout(resolve, backoffMs));
+        attempt++;
+      }
+    }
+    throw new Error(`Fallo definitivo al descargar ${url} tras ${retries} reintentos`);
+  }
+
+  /**
+   * Recorre la paginación histórica hacia atrás a través de enlaces `rel="next"`
+   * hasta alcanzar el límite temporal (cutoffDate, por defecto 2026-09-01).
+   */
+  async crawlFeedToCutoff(options: CrawlOptions = {}): Promise<CrawlSummary> {
+    const cutoffDate = options.cutoffDate ?? new Date('2026-09-01T00:00:00.000Z');
+    const maxPages = options.maxPages ?? Infinity;
+    const delayBetweenPagesMs = options.delayBetweenPagesMs ?? 600;
+    const filterTicOnly = options.filterTicOnly ?? true;
+
+    let currentUrl: string | null = options.startUrl ?? PLACSP_OFFICIAL_FEED_URL;
+    let pagesProcessed = 0;
+    let totalScanned = 0;
+    let totalQualified = 0;
+    let oldestProcessedDate: Date | null = null;
+    let newestProcessedDate: Date | null = null;
+    let hitCutoff = false;
+    let lastPageUrl = currentUrl;
+    let nextPageUrl: string | null = null;
+
+    while (currentUrl && pagesProcessed < maxPages && !hitCutoff) {
+      lastPageUrl = currentUrl;
+      let xmlContent: string | null = await this.fetchFeedPage(currentUrl);
+      const pageResult = this.parseFeedPage(xmlContent, {
+        cutoffDate,
+        filterTicOnly,
+        pageUrl: currentUrl,
+      });
+      xmlContent = null; // Higiene de memoria: descartar string de ~14 MB
+
+      pagesProcessed++;
+      totalScanned += pageResult.rawCount;
+      totalQualified += pageResult.qualifiedCount;
+
+      if (pageResult.newestDate && (!newestProcessedDate || pageResult.newestDate > newestProcessedDate)) {
+        newestProcessedDate = pageResult.newestDate;
+      }
+      if (pageResult.oldestDate && (!oldestProcessedDate || pageResult.oldestDate < oldestProcessedDate)) {
+        oldestProcessedDate = pageResult.oldestDate;
+      }
+
+      nextPageUrl = pageResult.nextUrl;
+      hitCutoff = pageResult.hitCutoff;
+
+      if (options.onPageProcessed) {
+        await options.onPageProcessed(pageResult);
+      }
+
+      if (hitCutoff || !pageResult.nextUrl || pagesProcessed >= maxPages) {
+        break;
+      }
+
+      if (delayBetweenPagesMs > 0) {
+        await new Promise((resolve) => setTimeout(resolve, delayBetweenPagesMs));
+      }
+
+      currentUrl = pageResult.nextUrl;
+    }
+
+    return {
+      pagesProcessed,
+      totalScanned,
+      totalQualified,
+      oldestProcessedDate,
+      newestProcessedDate,
+      lastPageUrl,
+      nextPageUrl,
+      hitCutoff,
+    };
   }
 
   /**
    * Descarga el feed oficial en vivo de la PLACSP y devuelve las licitaciones normalizadas.
    */
   async fetchRealFeed(maxItems = 20, feedUrl = PLACSP_OFFICIAL_FEED_URL): Promise<PlacspTenderInput[]> {
-    const response = await fetch(feedUrl, {
-      method: 'GET',
-      headers: {
-        'User-Agent': 'LicitaIA-Official-Ingest/1.0 (+https://pliegoai.com)',
-        Accept: 'application/atom+xml, application/xml, text/xml',
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`La PLACSP respondió con código HTTP ${response.status}: ${response.statusText}`);
-    }
-
-    const xml = await response.text();
+    const xml = await this.fetchFeedPage(feedUrl);
     return this.parseFeedXml(xml, maxItems);
   }
 }
 
 export const placspConnector = new PlacspConnector();
-

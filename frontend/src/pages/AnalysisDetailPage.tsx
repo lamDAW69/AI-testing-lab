@@ -278,7 +278,7 @@ export const AnalysisDetailPage: React.FC = () => {
         <motion.div
           initial={{ opacity: 0, y: -4 }}
           animate={{ opacity: 1, y: 0 }}
-          className="p-5 rounded-[22px] bg-[#EBFBF3]/90 backdrop-blur-[20px] border border-[#B6F0D3] text-[#1E7E51] flex items-center justify-between gap-4 shadow-[0_8px_30px_rgba(30,126,81,0.06)]"
+          className="p-5 rounded-[16px] bg-[#10b981]/10 border border-[#10b981]/30 text-[#6ee7b7] flex items-center justify-between gap-4"
         >
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-xl bg-white text-[#1E7E51] shadow-2xs border border-[#B6F0D3]">
@@ -307,7 +307,7 @@ export const AnalysisDetailPage: React.FC = () => {
         <motion.div
           initial={{ opacity: 0, y: -4 }}
           animate={{ opacity: 1, y: 0 }}
-          className="p-5 sm:p-6 rounded-[22px] bg-[#FEF0F0]/90 backdrop-blur-[20px] border border-[#FCD2D2] text-[#D93838] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 shadow-[0_8px_30px_rgba(242,90,90,0.08)]"
+          className="p-5 sm:p-6 rounded-[16px] bg-[#D93838]/12 border border-[#D93838]/35 text-[#ff8585] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5"
         >
           <div className="flex items-start gap-3.5">
             <div className="p-2.5 rounded-xl bg-white text-[#D93838] shrink-0 mt-0.5 shadow-2xs border border-[#FCD2D2]">
@@ -316,7 +316,7 @@ export const AnalysisDetailPage: React.FC = () => {
             <div className="space-y-1">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="font-bold text-sm text-[#161616]">
-                  ⚠ Este análisis necesita actualizarse
+                  Este análisis necesita actualizarse
                 </span>
                 <span className="px-2 py-0.5 rounded-full bg-white text-[10px] font-mono text-[#D93838] border border-[#FCD2D2] font-bold">
                   Versión analizada: v{analysis.documentVersionUsed} | Versión actual: v2

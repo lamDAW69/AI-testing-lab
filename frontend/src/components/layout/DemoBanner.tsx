@@ -24,29 +24,29 @@ export const DemoBanner: React.FC<DemoBannerProps> = ({ onOpenTour }) => {
   };
 
   return (
-    <div className="bg-gradient-to-r from-[#171719] via-[#211E2E] to-[#171719] text-white px-3 sm:px-6 py-2 border-b border-white/10 flex flex-wrap items-center justify-between gap-2.5 text-xs shadow-xs z-40 select-none">
+    <div className="bg-[var(--surface-1)] text-[var(--ink)] px-3 sm:px-6 py-2 border-b border-[var(--hairline)] flex flex-wrap items-center justify-between gap-2.5 text-xs shadow-xs z-40 select-none">
       <div className="flex items-center gap-2.5">
-        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#685cff] text-white text-[10px] font-mono font-bold tracking-wider uppercase shadow-2xs">
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[var(--primary)] text-white text-[10px] font-mono font-bold tracking-wider uppercase shadow-2xs">
           <Sparkles className="w-3 h-3" />
           Modo Demostración
         </span>
-        <span className="text-white/80 hidden sm:inline">
-          Empresa simulada: <strong className="text-white">TechConsulting Soluciones S.L.</strong> (CIF B-88776655)
+        <span className="text-[var(--ink-secondary)] hidden sm:inline">
+          Empresa simulada: <strong className="text-[var(--ink)]">TechConsulting Soluciones S.L.</strong> (CIF B-88776655)
         </span>
       </div>
 
       <div className="flex items-center gap-2">
         <button
           onClick={onOpenTour}
-          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-[10px] bg-white/15 hover:bg-white/25 text-white font-semibold text-[11px] transition-all cursor-pointer border border-white/10"
+          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-[10px] bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-[var(--ink)] font-semibold text-[11px] transition-all cursor-pointer border border-[var(--hairline)]"
         >
-          <HelpCircle className="w-3.5 h-3.5 text-[#A599FF]" />
+          <HelpCircle className="w-3.5 h-3.5 text-[var(--primary)]" />
           <span>Guía: ¿Cómo funciona Pliego AI?</span>
         </button>
 
         <button
           onClick={handleRegisterCompany}
-          className="inline-flex items-center gap-1 px-3 py-1 rounded-[10px] bg-[#685cff] hover:bg-[#5544ea] text-white font-semibold text-[11px] transition-all cursor-pointer shadow-2xs"
+          className="inline-flex items-center gap-1 px-3 py-1 rounded-[10px] bg-[var(--primary)] hover:opacity-90 text-white font-semibold text-[11px] transition-all cursor-pointer shadow-2xs"
         >
           <span>Dar de alta mi empresa</span>
           <ArrowRight className="w-3 h-3" />
@@ -54,7 +54,7 @@ export const DemoBanner: React.FC<DemoBannerProps> = ({ onOpenTour }) => {
 
         <button
           onClick={handleExitDemo}
-          className="p-1.5 rounded-[10px] text-white/60 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+          className="p-1.5 rounded-[10px] text-[var(--ink-tertiary)] hover:text-[var(--ink)] hover:bg-[var(--surface-2)] transition-colors cursor-pointer"
           title="Salir de la demostración"
         >
           <LogOut className="w-3.5 h-3.5" />

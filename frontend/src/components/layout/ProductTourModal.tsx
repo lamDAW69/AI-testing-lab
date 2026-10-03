@@ -12,6 +12,7 @@ import {
   BellRing,
   ExternalLink,
 } from 'lucide-react';
+import { useAuth } from '../../lib/auth-context';
 
 interface ProductTourModalProps {
   isOpen: boolean;
@@ -21,6 +22,7 @@ interface ProductTourModalProps {
 export const ProductTourModal: React.FC<ProductTourModalProps> = ({ isOpen, onClose }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const navigate = useNavigate();
+  const { isDemoMode, activeTenant } = useAuth();
 
   if (!isOpen) return null;
 
@@ -32,10 +34,13 @@ export const ProductTourModal: React.FC<ProductTourModalProps> = ({ isOpen, onCl
       iconColor: '#10b981',   // esmeralda — solvencia
       description:
         'En Pliego AI no hay preguntas genéricas. El sistema necesita conocer qué solvencia y certificaciones tiene tu empresa para evaluar si cumples con las condiciones del pliego.',
-      detail:
-        'Para esta demo hemos precargado TechConsulting Soluciones S.L., con acreditación ISO 27001, ENS de categoría Alta y proyectos cloud ejecutados para clientes públicos.',
+      detail: isDemoMode
+        ? 'Para esta demo hemos precargado TechConsulting Soluciones S.L., con acreditación ISO 27001, ENS de categoría Alta y proyectos cloud ejecutados para clientes públicos.'
+        : `Para tu entidad (${activeTenant?.name || 'tu empresa'}), debes registrar en el Dossier tus solvencias técnicas, certificaciones (ISO, ENS) y contratos previos para que la IA disponga de tu base de acreditaciones verificables.`,
       highlight: 'Dossier centralizado: Solvencia económica, técnica y certificaciones ENS / ISO.',
-      actionText: 'Ver Dossier de TechConsulting',
+      actionText: isDemoMode
+        ? 'Ver Dossier de TechConsulting'
+        : `Configurar Dossier de ${activeTenant?.name || 'mi empresa'}`,
       actionRoute: '/app/dossier',
     },
     {
@@ -99,36 +104,38 @@ export const ProductTourModal: React.FC<ProductTourModalProps> = ({ isOpen, onCl
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 select-none" style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)' }}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 select-none bg-black/50 backdrop-blur-xs">
       <motion.div
         initial={{ opacity: 0, scale: 0.96, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.96 }}
         transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-        className="w-full max-w-[640px] rounded-[16px] border border-[#23252a] overflow-hidden flex flex-col"
-        style={{ background: '#141516' }}
+        className="w-full max-w-[640px] rounded-[16px] border border-[var(--hairline)] overflow-hidden flex flex-col bg-[var(--surface-1)] shadow-2xl"
       >
         {/* ── Cabecera ───────────────────────────────────────── */}
         <div
-          className="px-5 py-4 border-b border-[#23252a] flex items-center justify-between"
-          style={{ background: '#18191a' }}
+          className="px-5 py-4 border-b border-[var(--hairline)] flex items-center justify-between bg-[var(--surface-2)]"
         >
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-[8px] bg-[#5e6ad2] text-white flex items-center justify-center text-xs font-bold shrink-0">
+            <div className="w-7 h-7 rounded-[8px] bg-[var(--primary)] text-white flex items-center justify-center text-xs font-bold shrink-0">
               ✦
             </div>
             <div>
-              <h2 className="text-sm font-semibold text-[#f7f8f8] leading-tight tracking-[-0.02em]">
-                Guía Rápida de la Demostración Interactiva
+              <h2 className="text-sm font-semibold text-[var(--ink)] leading-tight tracking-[-0.02em]">
+                {isDemoMode
+                  ? 'Guía Rápida de la Demostración Interactiva'
+                  : '¿Cómo funciona Pliego AI? · Guía de la Plataforma'}
               </h2>
-              <p className="text-[11px] text-[#62666d] mt-0.5">
-                Empresa simulada: TechConsulting Soluciones S.L. (CIF B-88776655)
+              <p className="text-[11px] text-[var(--ink-tertiary)] mt-0.5">
+                {isDemoMode
+                  ? 'Empresa simulada: TechConsulting Soluciones S.L. (CIF B-88776655)'
+                  : `Entidad activa: ${activeTenant?.name || 'Organización Licitadora'} (CIF: ${activeTenant?.taxId || 'No asignado'})`}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="w-7 h-7 rounded-[6px] flex items-center justify-center text-[#62666d] hover:text-[#d0d6e0] hover:bg-[#23252a] transition-colors cursor-pointer shrink-0"
+            className="w-7 h-7 rounded-[6px] flex items-center justify-center text-[var(--ink-tertiary)] hover:text-[var(--ink)] hover:bg-[var(--surface-1)] transition-colors cursor-pointer shrink-0"
             title="Cerrar guía"
           >
             <X className="w-3.5 h-3.5" />
@@ -143,10 +150,10 @@ export const ProductTourModal: React.FC<ProductTourModalProps> = ({ isOpen, onCl
               onClick={() => setCurrentStep(index)}
               className={`h-[3px] flex-1 rounded-full transition-all duration-300 cursor-pointer ${
                 index === currentStep
-                  ? 'bg-[#5e6ad2]'
+                  ? 'bg-[var(--primary)]'
                   : index < currentStep
-                  ? 'bg-[#5e6ad2]/35'
-                  : 'bg-[#23252a]'
+                  ? 'bg-[var(--primary)]/35'
+                  : 'bg-[var(--hairline)]'
               }`}
               title={`Ir al paso ${index + 1}`}
             />
@@ -174,23 +181,22 @@ export const ProductTourModal: React.FC<ProductTourModalProps> = ({ isOpen, onCl
               >
                 {current.badge}
               </span>
-              <h3 className="text-base font-semibold text-[#f7f8f8] tracking-[-0.03em] leading-snug mt-0.5">
+              <h3 className="text-base font-semibold text-[var(--ink)] tracking-[-0.03em] leading-snug mt-0.5">
                 {current.title}
               </h3>
             </div>
           </div>
 
           {/* Descripción principal */}
-          <p className="text-sm text-[#8a8f98] leading-relaxed">
+          <p className="text-sm text-[var(--ink-secondary)] leading-relaxed">
             {current.description}
           </p>
 
           {/* Bloque de detalle */}
           <div
-            className="p-4 rounded-[10px] border border-[#23252a] space-y-2.5"
-            style={{ background: '#1a1b1c' }}
+            className="p-4 rounded-[10px] border border-[var(--hairline)] space-y-2.5 bg-[var(--surface-2)]"
           >
-            <p className="text-xs text-[#8a8f98] leading-relaxed">
+            <p className="text-xs text-[var(--ink-secondary)] leading-relaxed">
               {current.detail}
             </p>
             <div
@@ -229,16 +235,15 @@ export const ProductTourModal: React.FC<ProductTourModalProps> = ({ isOpen, onCl
 
         {/* ── Pie de controles ───────────────────────────────── */}
         <div
-          className="px-5 py-3.5 border-t border-[#23252a] flex items-center justify-between"
-          style={{ background: '#18191a' }}
+          className="px-5 py-3.5 border-t border-[var(--hairline)] flex items-center justify-between bg-[var(--surface-2)]"
         >
           <button
             onClick={handlePrev}
             disabled={currentStep === 0}
             className={`px-3 py-1.5 rounded-[8px] text-xs font-medium flex items-center gap-1 transition-colors cursor-pointer ${
               currentStep === 0
-                ? 'text-[#3e3e44] cursor-not-allowed'
-                : 'text-[#8a8f98] hover:text-[#d0d6e0] hover:bg-[#23252a]'
+                ? 'opacity-40 cursor-not-allowed text-[var(--ink-tertiary)]'
+                : 'text-[var(--ink-secondary)] hover:text-[var(--ink)] hover:bg-[var(--surface-1)]'
             }`}
           >
             <ArrowLeft className="w-3.5 h-3.5" />
@@ -248,13 +253,13 @@ export const ProductTourModal: React.FC<ProductTourModalProps> = ({ isOpen, onCl
           <div className="flex items-center gap-2">
             <button
               onClick={onClose}
-              className="px-3 py-1.5 rounded-[8px] text-xs font-medium text-[#62666d] hover:text-[#8a8f98] hover:bg-[#23252a] transition-colors cursor-pointer"
+              className="px-3 py-1.5 rounded-[8px] text-xs font-medium text-[var(--ink-tertiary)] hover:text-[var(--ink)] hover:bg-[var(--surface-1)] transition-colors cursor-pointer"
             >
               Saltar tutorial
             </button>
             <button
               onClick={handleNext}
-              className="px-4 py-2 rounded-[8px] bg-[#5e6ad2] hover:bg-[#828fff] text-white text-xs font-medium flex items-center gap-1.5 transition-all duration-150 cursor-pointer active:scale-[0.98]"
+              className="px-4 py-2 rounded-[8px] bg-[var(--primary)] hover:opacity-90 text-white text-xs font-medium flex items-center gap-1.5 transition-all duration-150 cursor-pointer active:scale-[0.98]"
             >
               <span>{currentStep === steps.length - 1 ? '¡Comenzar a explorar!' : 'Siguiente paso'}</span>
               <ArrowRight className="w-3.5 h-3.5" />

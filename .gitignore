@@ -33,3 +33,7 @@ playwright-report/
 Thumbs.db
 .vscode/
 .idea/
+
+# Entorno de pruebas temporales y agentes
+scratch/
+.agents/teamwork/

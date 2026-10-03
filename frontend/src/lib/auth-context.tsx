@@ -4,7 +4,7 @@ import { apiClient } from './api-client';
 import { supabase, isSupabaseConfigured } from './supabase';
 
 interface AuthContextValue extends AuthState {
-  login: (email: string, password?: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
   signup: (data: SignupData) => Promise<void>;
   loginAsDemo: () => void;
   logout: () => Promise<void>;
@@ -38,29 +38,26 @@ const DEMO_USER: UserProfile = {
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Comprobación para runners de pruebas automatizadas (Playwright e2e)
-  const isAutomatedOrDemoExplicit = () => {
+  // La demo sólo puede activarse por una intención explícita. Un navegador de
+  // pruebas no es una identidad y no debe conceder acceso automáticamente.
+  const isDemoExplicit = () => {
     if (typeof window === 'undefined') return false;
-    return Boolean(
-      (window.navigator && window.navigator.webdriver) ||
-      window.location.search.includes('demo=true') ||
-      window.location.search.includes('e2e=true')
-    );
+    return new URLSearchParams(window.location.search).get('demo') === 'true';
   };
 
   // El token JWT vive EXCLUSIVAMENTE en memoria JavaScript para inmunidad contra ataques XSS (Regla 4.2 AGENTS.md)
   // Por defecto, un visitante comienza como null (sesión no iniciada).
   const [token, setToken] = useState<string | null>(() => {
-    return isAutomatedOrDemoExplicit() ? 'demo-in-memory-jwt-token-active' : null;
+    return isDemoExplicit() ? 'demo-in-memory-jwt-token-active' : null;
   });
   const [user, setUser] = useState<UserProfile | null>(() => {
-    return isAutomatedOrDemoExplicit() ? DEMO_USER : null;
+    return isDemoExplicit() ? DEMO_USER : null;
   });
   const [activeTenant, setActiveTenant] = useState<TenantMembership | null>(() => {
-    return isAutomatedOrDemoExplicit() ? DEMO_MEMBERSHIPS[0] : null;
+    return isDemoExplicit() ? DEMO_MEMBERSHIPS[0] : null;
   });
   const [isDemoMode, setIsDemoMode] = useState<boolean>(() => {
-    return isAutomatedOrDemoExplicit();
+    return isDemoExplicit();
   });
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -76,10 +73,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           id: session.user.id,
           email: session.user.email || 'usuario@licitaia.es',
           fullName: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Operador',
-          memberships: DEMO_MEMBERSHIPS,
+          // Las membresías nunca proceden del cliente ni de datos demo. El
+          // backend debe resolverlas desde tenant_memberships tras validar JWT.
+          memberships: [],
         };
         setUser(mappedUser);
-        setActiveTenant(DEMO_MEMBERSHIPS[0]);
+        setActiveTenant(null);
+        setIsDemoMode(false);
       } else {
         setToken(null);
         setUser(null);
@@ -103,14 +103,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   }, [token, activeTenant]);
 
-  const login = async (email: string, password?: string) => {
+  const login = async (email: string, password: string) => {
     setIsLoading(true);
     setError(null);
     try {
       if (isSupabaseConfigured() && supabase) {
         const { data, error: authError } = await supabase.auth.signInWithPassword({
           email,
-          password: password || '',
+          password,
         });
         if (authError) throw authError;
         if (data.session) {
@@ -120,18 +120,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             id: data.user.id,
             email: data.user.email || email,
             fullName: data.user.user_metadata?.full_name || email.split('@')[0],
-            memberships: DEMO_MEMBERSHIPS,
+            memberships: [],
           };
           setUser(mappedUser);
-          setActiveTenant(DEMO_MEMBERSHIPS[0]);
+          setActiveTenant(null);
         }
       } else {
-        // Simulación de autenticación segura
-        await new Promise((resolve) => setTimeout(resolve, 300));
-        setIsDemoMode(false);
-        setUser(DEMO_USER);
-        setActiveTenant(DEMO_MEMBERSHIPS[0]);
-        setToken('jwt-session-token-' + Math.random().toString(36).substring(7));
+        // Nunca convertir credenciales arbitrarias en una sesión demo.
+        throw new Error('El inicio de sesión no está disponible hasta configurar Supabase Auth. Puedes usar la demo explícita para explorar el producto.');
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al autenticar');
@@ -153,61 +149,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     setError(null);
     try {
-      setIsDemoMode(false);
-      if (isSupabaseConfigured() && supabase) {
-        const { data: authData, error: authError } = await supabase.auth.signUp({
-          email: data.email,
-          password: data.password || 'TemporaryPass123!',
-          options: {
-            data: {
-              full_name: data.fullName,
-              company_name: data.companyName,
-              tax_id: data.taxId,
-            },
-          },
-        });
-        if (authError) throw authError;
-
-        const tenantId = '018f' + Math.random().toString(16).substring(2, 10) + '-7921-98a1-2d4e8b1e4f99';
-        const newMembership: TenantMembership = {
-          id: tenantId,
-          name: data.companyName,
-          taxId: data.taxId,
-          role: 'owner',
-        };
-        const newUser: UserProfile = {
-          id: authData.user?.id || '018f' + Math.random().toString(16).substring(2, 10) + '-7921-98a1-2d4e8b1e4fa1',
-          email: data.email,
-          fullName: data.fullName,
-          memberships: [newMembership],
-        };
-        setUser(newUser);
-        setActiveTenant(newMembership);
-        if (authData.session) {
-          setToken(authData.session.access_token);
-        } else {
-          setToken('jwt-session-token-' + Math.random().toString(36).substring(7));
-        }
-      } else {
-        // Modo local/demo: creación inmediata en memoria
-        await new Promise((resolve) => setTimeout(resolve, 350));
-        const tenantId = '018f' + Math.random().toString(16).substring(2, 10) + '-7921-98a1-2d4e8b1e4f99';
-        const newMembership: TenantMembership = {
-          id: tenantId,
-          name: data.companyName,
-          taxId: data.taxId,
-          role: 'owner',
-        };
-        const newUser: UserProfile = {
-          id: '018f' + Math.random().toString(16).substring(2, 10) + '-7921-98a1-2d4e8b1e4fa1',
-          email: data.email,
-          fullName: data.fullName,
-          memberships: [newMembership],
-        };
-        setUser(newUser);
-        setActiveTenant(newMembership);
-        setToken('jwt-session-token-' + Math.random().toString(36).substring(7));
-      }
+      // El alta debe crear tenant, membresía owner y dossier en una transacción
+      // de backend tras validar JWT. Este contrato aún no existe: fallamos
+      // cerradamente antes de crear una cuenta de Auth sin tenant asociado.
+      void data;
+      throw new Error('El registro corporativo estará disponible cuando el backend de provisión segura esté configurado. No se ha creado ninguna cuenta.');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al registrar la empresa');
       throw err;

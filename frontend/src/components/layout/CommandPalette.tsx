@@ -164,11 +164,11 @@ export const CommandPalette: React.FC = () => {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.98, y: -6 }}
           transition={{ duration: 0.22 }}
-          className="relative w-full max-w-2xl bg-white/95 backdrop-blur-[24px] border border-white/80 rounded-[22px] shadow-[0_20px_60px_rgba(20,20,30,0.18)] overflow-hidden z-10"
+          className="relative w-full max-w-2xl bg-[var(--surface-1)] backdrop-blur-[24px] border border-[var(--hairline)] rounded-[22px] shadow-[0_20px_60px_rgba(0,0,0,0.18)] overflow-hidden z-10"
         >
           {/* Input de Búsqueda */}
-          <div className="flex items-center gap-3 px-5 py-3.5 border-b border-[rgba(20,20,20,0.06)]">
-            <Search className="w-4 h-4 text-[#695CFF] shrink-0" />
+          <div className="flex items-center gap-3 px-5 py-3.5 border-b border-[var(--hairline)]">
+            <Search className="w-4 h-4 text-[var(--primary)] shrink-0" />
             <input
               ref={inputRef}
               type="text"
@@ -183,9 +183,9 @@ export const CommandPalette: React.FC = () => {
                 setSelectedIndex(0);
               }}
               onKeyDown={handleKeyDown}
-              className="w-full bg-transparent text-sm text-[#161616] placeholder-[#8F8B92] focus:outline-none"
+              className="w-full bg-transparent text-sm text-[var(--ink)] placeholder-[var(--ink-tertiary)] focus:outline-none"
             />
-            <div className="flex items-center gap-1 text-[10px] font-mono text-[#8F8B92] bg-[#F6F3EF] px-2 py-0.5 rounded-[6px]">
+            <div className="flex items-center gap-1 text-[10px] font-mono text-[var(--ink-tertiary)] bg-[var(--surface-2)] px-2 py-0.5 rounded-[6px]">
               <span>ESC</span>
             </div>
           </div>
@@ -198,7 +198,7 @@ export const CommandPalette: React.FC = () => {
             className="max-h-[360px] overflow-y-auto p-2 space-y-1"
           >
             {filteredItems.length === 0 ? (
-              <div className="p-8 text-center text-xs text-[#8F8B92]">
+              <div className="p-8 text-center text-xs text-[var(--ink-secondary)]">
                 No se encontraron resultados para "{query}"
               </div>
             ) : (
@@ -214,17 +214,17 @@ export const CommandPalette: React.FC = () => {
                   onMouseEnter={() => setSelectedIndex(idx)}
                   className={`flex items-center justify-between p-3 rounded-[12px] text-xs transition-colors cursor-pointer ${
                     selectedIndex === idx
-                      ? 'bg-[#EEEAFE] text-[#161616]'
-                      : 'text-[#68656A] hover:bg-[#F6F3EF]'
+                      ? 'bg-[var(--surface-2)] text-[var(--ink)]'
+                      : 'text-[var(--ink-secondary)] hover:bg-[var(--surface-2)]/60'
                   }`}
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <span className="shrink-0">{item.icon}</span>
-                    <span className="truncate font-medium text-[#161616]">
+                    <span className="truncate font-medium text-[var(--ink)]">
                       {item.title}
                     </span>
                   </div>
-                  <span className="text-[10px] font-mono text-[#8F8B92] shrink-0 ml-2">
+                  <span className="text-[10px] font-mono text-[var(--ink-tertiary)] shrink-0 ml-2">
                     {item.category}
                   </span>
                 </div>
@@ -233,7 +233,7 @@ export const CommandPalette: React.FC = () => {
           </div>
 
           {/* Footer de atajos */}
-          <div className="px-5 py-2.5 bg-[#F6F3EF]/60 border-t border-[rgba(20,20,20,0.06)] flex items-center justify-between text-[11px] text-[#8F8B92]">
+          <div className="px-5 py-2.5 bg-[var(--surface-2)] border-t border-[var(--hairline)] flex items-center justify-between text-[11px] text-[var(--ink-secondary)]">
             <span>Usa <strong>↑</strong> <strong>↓</strong> para navegar</span>
             <span>Pulsa <strong>ENTER</strong> para seleccionar</span>
           </div>

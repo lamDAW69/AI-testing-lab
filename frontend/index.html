@@ -14,6 +14,16 @@
       rel="stylesheet"
     />
     <link rel="preload" as="image" href="/images/glass-background.jpg" fetchpriority="high" />
+    <script>
+      (function() {
+        try {
+          var t = localStorage.getItem('pliego_theme') || 'dark';
+          document.documentElement.classList.add(t);
+          document.documentElement.setAttribute('data-theme', t);
+          document.documentElement.style.colorScheme = t;
+        } catch(e) {}
+      })();
+    </script>
   </head>
   <body class="bg-[#f5f1ed] text-[#171719] antialiased selection:bg-[#eeeaff] selection:text-[#685cff] min-h-screen overflow-x-hidden font-ui">
     <div id="root"></div>

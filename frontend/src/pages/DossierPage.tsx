@@ -212,7 +212,7 @@ export const DossierPage: React.FC = () => {
             <span className="text-[#171719] font-medium">Dossier</span>
           </nav>
 
-          <h1 className="font-editorial text-4xl sm:text-5xl font-normal text-[#171719] tracking-tight">
+          <h1 className="app-page-title text-[#171719]">
             Dossier
           </h1>
           <p className="text-xs sm:text-sm text-[#69666d] mt-1 max-w-xl">
@@ -231,22 +231,21 @@ export const DossierPage: React.FC = () => {
         </div>
       </div>
 
-      {/* 43. RESUMEN DEL DOSSIER: DOS CARDS (Sección 43) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Card 1: Organización Activa */}
-        <div className="surface p-5 rounded-[20px] flex items-center justify-between shadow-xs">
+      {/* Resumen factual: una única superficie abierta, no un mosaico de tarjetas. */}
+      <section className="dossier-summary-strip" aria-label="Resumen del dossier">
+        <div className="dossier-summary-piece">
           <div className="space-y-1">
             <span className="text-[10px] font-mono uppercase tracking-wider text-[#929097]">
               Organización autorizada
             </span>
             <h2 className="text-lg font-bold text-[#171719] tracking-tight">
-              {activeTenant?.name || 'Ayuntamiento de Madrid'}
+              {activeTenant?.name || 'Mi Organización Licitadora'}
             </h2>
             <p className="text-xs text-[#69666d]">
-              {profile?.description || 'Administración pública y Servicios TIC'}
+              {profile?.description || 'Entidad licitadora en contratación pública'}
             </p>
             <p className="text-xs text-[#929097] mt-0.5">
-              Madrid, España · CIF: {activeTenant?.taxId || 'B-88776655'}
+              España · CIF: {activeTenant?.taxId || 'No asignado'}
             </p>
           </div>
           <div className="w-12 h-12 rounded-[14px] bg-[#eeeaff] text-[#685cff] flex items-center justify-center shrink-0">
@@ -254,8 +253,8 @@ export const DossierPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Card 2: Fondo Documental y Acreditaciones (Sin porcentajes ficticios) */}
-        <div className="surface p-5 rounded-[20px] flex items-center justify-between shadow-xs">
+        {/* Fondo documental y acreditaciones: recuentos factuales, sin porcentajes inventados. */}
+        <div className="dossier-summary-piece">
           <div className="space-y-1">
             <span className="text-[10px] font-mono uppercase tracking-wider text-[#929097]">
               Fondo Documental
@@ -277,7 +276,7 @@ export const DossierPage: React.FC = () => {
             <ShieldCheck className="w-6 h-6" />
           </div>
         </div>
-      </div>
+      </section>
 
       {/* 44 & 56. NAVEGACIÓN INTERNA: 3 TABS REALES */}
       <div className="border-b border-[rgba(30,24,38,0.08)] overflow-x-auto">
@@ -349,90 +348,115 @@ export const DossierPage: React.FC = () => {
           </div>
 
           {/* Lista de Certificaciones */}
-          <div className="surface rounded-[18px] divide-y divide-[rgba(30,24,38,0.06)] overflow-hidden shadow-xs">
-            {filteredCertifications.map((cert) => {
-              const isExpired = cert.status === 'EXPIRED';
-
-              return (
-                <div
-                  key={cert.id}
-                  className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-white/70 transition-colors"
+          {filteredCertifications.length === 0 ? (
+            <div className="surface p-10 rounded-[18px] text-center space-y-3 shadow-xs">
+              <div className="w-12 h-12 rounded-full bg-[#f5f1ed] text-[#69666d] flex items-center justify-center mx-auto text-xl">
+                <ShieldCheck className="w-6 h-6 text-[#685cff]" />
+              </div>
+              <h3 className="font-editorial text-2xl text-[#171719]">
+                {searchTerm ? 'No hay certificaciones que coincidan' : 'Sin certificaciones registradas'}
+              </h3>
+              <p className="text-xs text-[#69666d] max-w-md mx-auto leading-relaxed">
+                {searchTerm
+                  ? 'Prueba a cambiar el término de búsqueda para localizar tu acreditación.'
+                  : `Añade las certificaciones oficiales de ${activeTenant?.name || 'tu empresa'} (como ISO/IEC 27001, Esquema Nacional de Seguridad ENS, ISO 9001 o certificaciones técnicas) para que el motor de precalificación las coteje automáticamente contra los pliegos.`}
+              </p>
+              {!searchTerm && (
+                <button
+                  onClick={() => handleOpenDrawer()}
+                  className="mt-2 inline-flex items-center gap-1.5 px-4 py-2 rounded-[11px] bg-[#171719] hover:bg-[#28282b] text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
                 >
-                  {/* Nombre y Emisor */}
-                  <div className="flex items-start gap-3.5">
-                    <div className="w-10 h-10 rounded-[10px] bg-[#f5f1ed] border border-[rgba(30,24,38,0.06)] flex items-center justify-center text-[#685cff] shrink-0">
-                      <FileText className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="text-sm font-semibold text-[#171719]">
-                          {cert.name}
-                        </h3>
-                        <DossierStatusBadge status={cert.status} />
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Añadir primera certificación</span>
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="surface rounded-[18px] divide-y divide-[rgba(30,24,38,0.06)] overflow-hidden shadow-xs">
+              {filteredCertifications.map((cert) => {
+                const isExpired = cert.status === 'EXPIRED';
+
+                return (
+                  <div
+                    key={cert.id}
+                    className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-white/70 transition-colors"
+                  >
+                    {/* Nombre y Emisor */}
+                    <div className="flex items-start gap-3.5">
+                      <div className="w-10 h-10 rounded-[10px] bg-[#f5f1ed] border border-[rgba(30,24,38,0.06)] flex items-center justify-center text-[#685cff] shrink-0">
+                        <FileText className="w-5 h-5" />
                       </div>
-                      <p className="text-xs text-[#69666d] mt-0.5">
-                        Emisor: <span className="text-[#171719]">{cert.issuer}</span>
-                      </p>
-                      {cert.certificateNumber && (
-                        <span className="text-[11px] text-[#929097] font-mono mt-1 block">
-                          Nº Certificado: {cert.certificateNumber}
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="text-sm font-semibold text-[#171719]">
+                            {cert.name}
+                          </h3>
+                          <DossierStatusBadge status={cert.status} />
+                        </div>
+                        <p className="text-xs text-[#69666d] mt-0.5">
+                          Emisor: <span className="text-[#171719]">{cert.issuer}</span>
+                        </p>
+                        {cert.certificateNumber && (
+                          <span className="text-[11px] text-[#929097] font-mono mt-1 block">
+                            Nº Certificado: {cert.certificateNumber}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Estado de Validez y Acciones */}
+                    <div className="flex items-center justify-between sm:justify-end gap-5">
+                      <div className="text-left sm:text-right">
+                        <span className="text-[11px] text-[#929097] block">
+                          {isExpired ? 'Caducada el' : 'Válida hasta'}
                         </span>
-                      )}
-                    </div>
-                  </div>
+                        <span
+                          className={`text-xs font-medium ${
+                            isExpired ? 'text-[#ca8517]' : 'text-[#171719]'
+                          }`}
+                        >
+                          {cert.expiresAt
+                            ? new Intl.DateTimeFormat('es-ES', {
+                                day: 'numeric',
+                                month: 'short',
+                                year: 'numeric',
+                              }).format(new Date(cert.expiresAt))
+                            : 'Indefinida'}
+                        </span>
+                      </div>
 
-                  {/* Estado de Validez y Acciones */}
-                  <div className="flex items-center justify-between sm:justify-end gap-5">
-                    <div className="text-left sm:text-right">
-                      <span className="text-[11px] text-[#929097] block">
-                        {isExpired ? 'Caducada el' : 'Válida hasta'}
-                      </span>
-                      <span
-                        className={`text-xs font-medium ${
-                          isExpired ? 'text-[#ca8517]' : 'text-[#171719]'
-                        }`}
-                      >
-                        {cert.expiresAt
-                          ? new Intl.DateTimeFormat('es-ES', {
-                              day: 'numeric',
-                              month: 'short',
-                              year: 'numeric',
-                            }).format(new Date(cert.expiresAt))
-                          : 'Indefinida'}
-                      </span>
-                    </div>
+                      <div className="flex items-center gap-2">
+                        {/* Botón Actualizar para caducadas (Sección 47) */}
+                        {isExpired && (
+                          <button
+                            onClick={() => handleOpenDrawer(cert)}
+                            className="px-3 py-1.5 rounded-[9px] bg-[#fff3db] hover:bg-[#ffecc4] text-[#ca8517] text-xs font-semibold transition-colors cursor-pointer border border-[#fce1b8]"
+                          >
+                            Actualizar
+                          </button>
+                        )}
 
-                    <div className="flex items-center gap-2">
-                      {/* Botón Actualizar para caducadas (Sección 47) */}
-                      {isExpired && (
                         <button
                           onClick={() => handleOpenDrawer(cert)}
-                          className="px-3 py-1.5 rounded-[9px] bg-[#fff3db] hover:bg-[#ffecc4] text-[#ca8517] text-xs font-semibold transition-colors cursor-pointer border border-[#fce1b8]"
+                          className="px-3 py-1.5 rounded-[9px] bg-white hover:bg-[#f5f1ed] text-[#171719] border border-[rgba(30,24,38,0.1)] text-xs font-medium transition-colors cursor-pointer"
                         >
-                          Actualizar
+                          Ver acreditación
                         </button>
-                      )}
 
-                      <button
-                        onClick={() => handleOpenDrawer(cert)}
-                        className="px-3 py-1.5 rounded-[9px] bg-white hover:bg-[#f5f1ed] text-[#171719] border border-[rgba(30,24,38,0.1)] text-xs font-medium transition-colors cursor-pointer"
-                      >
-                        Ver acreditación
-                      </button>
-
-                      <button
-                        onClick={() => handleOpenDrawer(cert)}
-                        className="p-1.5 rounded-lg text-[#929097] hover:text-[#171719] hover:bg-black/[0.04] transition-colors cursor-pointer"
-                        title="Opciones"
-                      >
-                        <MoreVertical className="w-4 h-4" />
-                      </button>
+                        <button
+                          onClick={() => handleOpenDrawer(cert)}
+                          className="p-1.5 rounded-lg text-[#929097] hover:text-[#171719] hover:bg-black/[0.04] transition-colors cursor-pointer"
+                          title="Opciones"
+                        >
+                          <MoreVertical className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
@@ -491,23 +515,23 @@ export const DossierPage: React.FC = () => {
           </div>
 
           {/* Chips de filtro por categoría */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 min-w-max">
+          <div className="dossier-evidence-filters flex items-center gap-1 overflow-x-auto pb-1 min-w-max">
             {categoryFilters.map((filter) => {
               const isSelected = evidenceCategory === filter.id;
               return (
                 <button
                   key={filter.id}
                   onClick={() => setEvidenceCategory(filter.id)}
-                  className={`px-3 py-1.5 rounded-[10px] text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
+                  className={`px-3 py-1.5 rounded-[8px] text-xs font-medium transition-colors cursor-pointer flex items-center gap-1.5 ${
                     isSelected
-                      ? 'bg-[#171719] text-white shadow-xs font-semibold'
-                      : 'bg-white hover:bg-[#f5f1ed] text-[#69666d] border border-[rgba(30,24,38,0.08)]'
+                      ? 'bg-[#eeeaff] text-[#685cff] font-semibold'
+                      : 'text-[#69666d] hover:text-[#171719] hover:bg-white/70'
                   }`}
                 >
                   <span>{filter.label}</span>
                   <span
-                    className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
-                      isSelected ? 'bg-white/20 text-white' : 'bg-[#f5f1ed] text-[#929097]'
+                    className={`text-[10px] font-mono ${
+                      isSelected ? 'text-[#685cff]' : 'text-[#929097]'
                     }`}
                   >
                     {filter.count}
@@ -519,12 +543,32 @@ export const DossierPage: React.FC = () => {
 
           {/* Lista de Evidencias */}
           {filteredEvidences.length === 0 ? (
-            <div className="surface p-8 rounded-[18px] text-center space-y-2">
-              <p className="text-xs font-semibold text-[#171719]">No hay evidencias que coincidan con la búsqueda</p>
-              <p className="text-xs text-[#69666d]">Prueba a cambiar el filtro de categoría o limpiar el término de búsqueda.</p>
+            <div className="surface p-10 rounded-[18px] text-center space-y-3 shadow-xs">
+              <div className="w-12 h-12 rounded-full bg-[#f5f1ed] text-[#69666d] flex items-center justify-center mx-auto text-xl">
+                <Briefcase className="w-6 h-6 text-[#10b981]" />
+              </div>
+              <h3 className="font-editorial text-2xl text-[#171719]">
+                {evidenceSearchTerm || evidenceCategory !== 'ALL'
+                  ? 'No hay evidencias que coincidan con estos filtros'
+                  : 'Sin evidencias o solvencias registradas'}
+              </h3>
+              <p className="text-xs text-[#69666d] max-w-md mx-auto leading-relaxed">
+                {evidenceSearchTerm || evidenceCategory !== 'ALL'
+                  ? 'Prueba a cambiar el filtro de categoría o limpiar el término de búsqueda.'
+                  : `Registra contratos previos ejecutados, solvencia económica auditada o cualificaciones del equipo técnico para demostrar la solvencia de ${activeTenant?.name || 'tu empresa'}.`}
+              </p>
+              {!evidenceSearchTerm && evidenceCategory === 'ALL' && (
+                <button
+                  onClick={handleOpenEvidenceDrawer}
+                  className="mt-2 inline-flex items-center gap-1.5 px-4 py-2 rounded-[11px] bg-[#171719] hover:bg-[#28282b] text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Añadir primera evidencia</span>
+                </button>
+              )}
             </div>
           ) : (
-            <div className="surface rounded-[18px] divide-y divide-[rgba(30,24,38,0.06)] overflow-hidden shadow-xs">
+            <div className="dossier-evidence-list" role="list" aria-label="Evidencias del dossier">
               {filteredEvidences.map((ev) => {
                 const meta = getEvidenceCategoryMeta(ev.category);
                 const IconComponent = meta.icon;
@@ -532,15 +576,16 @@ export const DossierPage: React.FC = () => {
                 return (
                   <div
                     key={ev.id}
-                    className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-white/70 transition-colors"
+                    role="listitem"
+                    className="dossier-evidence-row"
                   >
                     <div className="flex items-start gap-3.5">
-                      <div className={`w-10 h-10 rounded-[10px] ${meta.color} flex items-center justify-center shrink-0`}>
-                        <IconComponent className="w-5 h-5" />
+                      <div className={`dossier-evidence-mark ${meta.color}`}>
+                        <IconComponent className="w-[18px] h-[18px]" />
                       </div>
                       <div className="space-y-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-[10px] font-mono uppercase tracking-wider text-[#929097] bg-black/[0.03] px-2 py-0.5 rounded-[5px]">
+                          <span className="text-[10px] font-mono uppercase tracking-wider text-[#929097]">
                             {meta.label}
                           </span>
                           <h4 className="text-sm font-semibold text-[#171719]">
@@ -566,7 +611,7 @@ export const DossierPage: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="text-left sm:text-right shrink-0">
+                    <div className="dossier-evidence-value text-left sm:text-right shrink-0">
                       {ev.verifiedAmount && (
                         <div>
                           <span className="text-[10px] font-mono uppercase text-[#929097] block">

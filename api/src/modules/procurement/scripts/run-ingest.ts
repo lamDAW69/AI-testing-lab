@@ -1,5 +1,10 @@
 import { procurementService } from '../procurement.service.js';
-import { placspConnector, RawPlacspEntry } from '../connectors/placsp.connector.js';
+import {
+  placspConnector,
+  RawPlacspEntry,
+  PLACSP_OFFICIAL_FEED_URL,
+  PageResult,
+} from '../connectors/placsp.connector.js';
 import { pool } from '../../../db/client.js';
 
 /**
@@ -20,6 +25,8 @@ export const SAMPLE_PLACSP_ENTRIES: readonly RawPlacspEntry[] = [
     cpvCode: '72262000',
     additionalCpvCodes: ['72260000', '72000000'],
     submissionDeadline: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
+    publicationDate: '2026-09-10T10:00:00.000Z',
+    sourceUpdatedAt: '2026-09-10T10:00:00.000Z',
     authority: {
       name: 'Dirección General de Transformación Digital',
       taxId: 'S2800001B',
@@ -72,6 +79,8 @@ export const SAMPLE_PLACSP_ENTRIES: readonly RawPlacspEntry[] = [
     taxInclusiveAmountEur: 54450.0,
     cpvCode: '48000000',
     submissionDeadline: new Date(Date.now() + 20 * 24 * 60 * 60 * 1000).toISOString(),
+    publicationDate: '2026-09-12T12:30:00.000Z',
+    sourceUpdatedAt: '2026-09-12T12:30:00.000Z',
     authority: {
       name: 'Agencia Tributaria Municipal de Valencia',
       taxId: 'P4625000C',
@@ -91,38 +100,293 @@ export const SAMPLE_PLACSP_ENTRIES: readonly RawPlacspEntry[] = [
   },
 ];
 
+interface CliOptions {
+  isLive: boolean;
+  isHistorical: boolean;
+  isFixture: boolean;
+  resume: boolean;
+  fromDate?: Date;
+  maxPages?: number;
+  maxItems?: number;
+}
+
+function parseArgs(): CliOptions {
+  const args = process.argv.slice(2);
+  let isLive = args.includes('--live');
+  const isHistorical = args.includes('--historical');
+  const isFixture = args.includes('--fixture');
+  const resume = args.includes('--resume');
+
+  let fromDate: Date | undefined;
+  const fromArg = args.find((a) => a.startsWith('--from='));
+  if (fromArg) {
+    const rawDate = fromArg.split('=')[1];
+    if (rawDate) {
+      fromDate = new Date(`${rawDate}T00:00:00.000Z`);
+    }
+  } else if (isHistorical) {
+    // Por defecto en histórico: 1 de septiembre de 2026
+    fromDate = new Date('2026-09-01T00:00:00.000Z');
+  }
+
+  let maxPages: number | undefined;
+  const maxPagesArg = args.find((a) => a.startsWith('--max-pages='));
+  if (maxPagesArg) {
+    const val = parseInt(maxPagesArg.split('=')[1] ?? '', 10);
+    if (!isNaN(val) && val > 0) maxPages = val;
+  }
+
+  let maxItems: number | undefined;
+  const maxItemsArg = args.find((a) => a.startsWith('--max-items='));
+  if (maxItemsArg) {
+    const val = parseInt(maxItemsArg.split('=')[1] ?? '', 10);
+    if (!isNaN(val) && val > 0) maxItems = val;
+  }
+
+  // Si no se especifica ninguna bandera explícita, ver env o usar fixture por defecto seguro
+  if (!isLive && !isHistorical && !isFixture) {
+    if (process.env.INGEST_SOURCE === 'live') {
+      isLive = true;
+    }
+  }
+
+  return {
+    isLive,
+    isHistorical,
+    isFixture: isFixture || (!isLive && !isHistorical),
+    resume,
+    fromDate,
+    maxPages,
+    maxItems: maxItems ?? parseInt(process.env.INGEST_MAX_ITEMS ?? '50', 10),
+  };
+}
+
 async function main(): Promise<void> {
-  const isLive = process.argv.includes('--live') || process.env.INGEST_SOURCE === 'live';
-  console.log(`🔄 Iniciando ingesta oficial desde PLACSP (${isLive ? 'FEED REAL EN VIVO' : 'FIXTURE LOCAL'})...`);
+  const opts = parseArgs();
 
-  let tendersToIngest;
-  if (isLive) {
-    const maxItems = parseInt(process.env.INGEST_MAX_ITEMS ?? '20', 10);
-    console.log(`📡 Descargando hasta ${maxItems} licitaciones del feed oficial de PLACSP...`);
-    tendersToIngest = await placspConnector.fetchRealFeed(maxItems);
-    console.log(`✅ ${tendersToIngest.length} licitaciones extraídas y normalizadas del feed oficial.`);
+  console.log('══════════════════════════════════════════════════════════════════');
+  console.log('🏛️  PIPELINE DE INGESTA OFICIAL PLACSP — PLIEGO AI (CPVs 72* / 48*)');
+  console.log('══════════════════════════════════════════════════════════════════');
+  console.log(`Modo:               ${opts.isHistorical ? 'HISTÓRICO (rel="next")' : opts.isLive ? 'EN VIVO (Live Top)' : 'FIXTURE LOCAL'}`);
+  if (opts.fromDate) {
+    console.log(`Límite temporal:    ${opts.fromDate.toISOString()}`);
+  }
+  if (opts.maxPages) {
+    console.log(`Máximo de páginas:  ${opts.maxPages}`);
+  }
+  if (opts.resume) {
+    console.log(`Reanudación cursor: ACTIVADA`);
+  }
+  console.log('──────────────────────────────────────────────────────────────────');
+
+  let totalScanned = 0;
+  let totalQualified = 0;
+  let totalInserted = 0;
+  let totalUpdated = 0;
+  let totalSkipped = 0;
+  let pagesProcessed = 0;
+
+  if (opts.isHistorical) {
+    const jobType = 'HISTORICAL_BACKFILL';
+    let startUrl = PLACSP_OFFICIAL_FEED_URL;
+
+    if (opts.resume) {
+      try {
+        const syncState = await procurementService.getSyncState('ES_PLACSP', jobType);
+        if (syncState?.nextPageUrl) {
+          startUrl = syncState.nextPageUrl;
+          console.log(`📍 Reanudando desde cursor previo: ${startUrl}`);
+        } else if (syncState?.currentPageUrl) {
+          startUrl = syncState.currentPageUrl;
+          console.log(`📍 Reanudando desde última página: ${startUrl}`);
+        }
+      } catch (err) {
+        console.warn('⚠️ No se pudo cargar cursor persistente previo, iniciando desde el principio:', (err as Error).message);
+      }
+    }
+
+    // Inicializar estado de sincronización
+    try {
+      await procurementService.upsertSyncState({
+        sourceCode: 'ES_PLACSP',
+        jobType,
+        currentPageUrl: startUrl,
+        cutoffDate: opts.fromDate,
+        status: 'RUNNING',
+        startedAt: new Date(),
+        pagesProcessed: 0,
+        tendersScanned: 0,
+        tendersPersisted: 0,
+      });
+    } catch (err) {
+      console.warn('⚠️ Nota: No se pudo guardar estado inicial en BD (¿BD no disponible?):', (err as Error).message);
+    }
+
+    const crawlResult = await placspConnector.crawlFeedToCutoff({
+      startUrl,
+      cutoffDate: opts.fromDate,
+      maxPages: opts.maxPages,
+      filterTicOnly: true,
+      onPageProcessed: async (page: PageResult) => {
+        pagesProcessed++;
+        totalScanned += page.rawCount;
+        totalQualified += page.qualifiedCount;
+
+        const oldestStr = page.oldestDate ? page.oldestDate.toISOString() : 'N/A';
+        const newestStr = page.newestDate ? page.newestDate.toISOString() : 'N/A';
+
+        console.log(`📄 [Página ${pagesProcessed}] ${page.pageUrl}`);
+        console.log(`   Rango temporal: ${oldestStr}  ──>  ${newestStr}`);
+        console.log(`   Escaneados: ${page.rawCount} | TIC Calificados: ${page.qualifiedCount}`);
+
+        if (page.tenders.length > 0) {
+          try {
+            const batchSummary = await procurementService.ingestBatch(page.tenders);
+            totalInserted += batchSummary.inserted;
+            totalUpdated += batchSummary.updated;
+            totalSkipped += batchSummary.skipped;
+
+            console.log(`   Persistencia DB: +${batchSummary.inserted} nuevos | ~${batchSummary.updated} enmiendas | =${batchSummary.skipped} omitidos`);
+          } catch (dbErr) {
+            console.error(`   ❌ Error al persistir lote en base de datos:`, (dbErr as Error).message);
+          }
+        } else {
+          console.log(`   Persistencia DB: 0 licitaciones TIC en esta página`);
+        }
+
+        // Actualizar cursor persistente tras cada página
+        try {
+          await procurementService.upsertSyncState({
+            sourceCode: 'ES_PLACSP',
+            jobType,
+            currentPageUrl: page.pageUrl,
+            nextPageUrl: page.nextUrl,
+            oldestProcessedDate: page.oldestDate,
+            newestProcessedDate: page.newestDate,
+            cutoffDate: opts.fromDate,
+            pagesProcessed,
+            tendersScanned: totalScanned,
+            tendersPersisted: totalInserted + totalUpdated,
+            status: page.hitCutoff ? 'COMPLETED' : 'RUNNING',
+            completedAt: page.hitCutoff ? new Date() : null,
+          });
+        } catch {
+          // Registro silencioso si la BD no está disponible
+        }
+
+        if (page.hitCutoff) {
+          console.log(`🛑 Límite temporal alcanzado (${opts.fromDate?.toISOString()}). Deteniendo rastreo.`);
+        }
+      },
+    });
+
+    try {
+      await procurementService.upsertSyncState({
+        sourceCode: 'ES_PLACSP',
+        jobType,
+        currentPageUrl: crawlResult.lastPageUrl,
+        nextPageUrl: crawlResult.nextPageUrl,
+        oldestProcessedDate: crawlResult.oldestProcessedDate,
+        newestProcessedDate: crawlResult.newestProcessedDate,
+        cutoffDate: opts.fromDate,
+        pagesProcessed,
+        tendersScanned: totalScanned,
+        tendersPersisted: totalInserted + totalUpdated,
+        status: 'COMPLETED',
+        completedAt: new Date(),
+      });
+    } catch {
+      // Ignorar si BD no disponible
+    }
+
+  } else if (opts.isLive) {
+    const jobType = 'LIVE_SYNC';
+    console.log(`📡 Descargando página superior del feed oficial en vivo...`);
+
+    const xml = await placspConnector.fetchFeedPage(PLACSP_OFFICIAL_FEED_URL);
+    const pageResult = placspConnector.parseFeedPage(xml, {
+      maxItems: opts.maxItems,
+      filterTicOnly: true,
+      cutoffDate: opts.fromDate,
+    });
+
+    pagesProcessed = 1;
+    totalScanned = pageResult.rawCount;
+    totalQualified = pageResult.qualifiedCount;
+
+    console.log(`✅ ${pageResult.rawCount} licitaciones escaneadas, ${pageResult.qualifiedCount} corresponden a TIC (CPVs 72* y 48*).`);
+
+    if (pageResult.tenders.length > 0) {
+      const summary = await procurementService.ingestBatch(pageResult.tenders);
+      totalInserted = summary.inserted;
+      totalUpdated = summary.updated;
+      totalSkipped = summary.skipped;
+
+      console.log(`📊 Persistencia DB: +${summary.inserted} nuevos | ~${summary.updated} enmiendas | =${summary.skipped} omitidos`);
+      for (const r of summary.results) {
+        console.log(`   * [${r.action}] Expediente: ${r.sourceTenderId} (ID: ${r.tenderId})`);
+      }
+    }
+
+    try {
+      await procurementService.upsertSyncState({
+        sourceCode: 'ES_PLACSP',
+        jobType,
+        currentPageUrl: PLACSP_OFFICIAL_FEED_URL,
+        nextPageUrl: pageResult.nextUrl,
+        oldestProcessedDate: pageResult.oldestDate,
+        newestProcessedDate: pageResult.newestDate,
+        cutoffDate: opts.fromDate,
+        pagesProcessed: 1,
+        tendersScanned: totalScanned,
+        tendersPersisted: totalInserted + totalUpdated,
+        status: 'COMPLETED',
+        completedAt: new Date(),
+      });
+    } catch {
+      // Continuar si BD no accesible
+    }
+
   } else {
-    tendersToIngest = SAMPLE_PLACSP_ENTRIES.map((entry) => placspConnector.normalizeEntry(entry));
+    // Modo Fixture Local
+    console.log('🧪 Procesando expedientes desde fixture local de prueba...');
+    const normalized = SAMPLE_PLACSP_ENTRIES.map((e) => placspConnector.normalizeEntry(e));
+    pagesProcessed = 1;
+    totalScanned = normalized.length;
+    totalQualified = normalized.length;
+
+    const summary = await procurementService.ingestBatch(normalized);
+    totalInserted = summary.inserted;
+    totalUpdated = summary.updated;
+    totalSkipped = summary.skipped;
+
+    console.log(`📊 Persistencia DB: +${summary.inserted} nuevos | ~${summary.updated} enmiendas | =${summary.skipped} omitidos`);
+    for (const r of summary.results) {
+      console.log(`   * [${r.action}] Expediente: ${r.sourceTenderId} (ID: ${r.tenderId})`);
+    }
   }
 
-  const summary = await procurementService.ingestBatch(tendersToIngest);
-
-  console.log('📊 Resumen del job de ingesta:');
-  console.log(`   - Total procesados: ${summary.total}`);
-  console.log(`   - Nuevos insertados: ${summary.inserted}`);
-  console.log(`   - Modificados/enmiendas: ${summary.updated}`);
-  console.log(`   - Omitidos (sin cambios): ${summary.skipped}`);
-
-  for (const r of summary.results) {
-    console.log(`   * [${r.action}] Expediente: ${r.sourceTenderId} (ID: ${r.tenderId})`);
-  }
+  console.log('──────────────────────────────────────────────────────────────────');
+  console.log('📊 RESUMEN FINAL DEL PROCESAMIENTO');
+  console.log('──────────────────────────────────────────────────────────────────');
+  console.log(`Páginas procesadas:    ${pagesProcessed}`);
+  console.log(`Expedientes evaluados: ${totalScanned}`);
+  console.log(`Calificados sector TIC: ${totalQualified} (100% CPVs 72* y 48*)`);
+  console.log(`Nuevos insertados:     ${totalInserted}`);
+  console.log(`Enmiendas/actualiz.:   ${totalUpdated}`);
+  console.log(`Omitidos (idempot.):   ${totalSkipped}`);
+  console.log('══════════════════════════════════════════════════════════════════');
 }
 
 main()
   .catch((err: unknown) => {
-    console.error('❌ Error crítico en job de ingesta:', err);
+    console.error('❌ Error crítico en pipeline de ingesta:', err);
     process.exitCode = 1;
   })
   .finally(async () => {
-    await pool.end();
+    try {
+      await pool.end();
+    } catch {
+      // Pool end safety
+    }
   });

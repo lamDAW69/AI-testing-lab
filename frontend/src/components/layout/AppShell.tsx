@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
+import { motion, useReducedMotion } from 'framer-motion';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { CommandPalette } from './CommandPalette';
@@ -12,15 +13,22 @@ export const AppShell: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isTourOpen, setIsTourOpen] = useState(false);
   const { isDemoMode } = useAuth();
+  const location = useLocation();
+  const reduceMotion = useReducedMotion();
 
-  // Si entra en modo demo y no ha visto el tour en esta sesión, abrirlo automáticamente.
+  // Si entra en modo demo o es un usuario recién registrado, abrir el tour automáticamente.
   // En entornos de testing automatizados (Playwright/navigator.webdriver) se previene el auto-open.
   useEffect(() => {
-    if (isDemoMode) {
-      const isAutomated = typeof window !== 'undefined' && Boolean(window.navigator && window.navigator.webdriver);
-      const hasSeenTour = sessionStorage.getItem('pliego_demo_tour_seen');
-      if (!hasSeenTour && !isAutomated) {
-        setIsTourOpen(true);
+    const isAutomated = typeof window !== 'undefined' && Boolean(window.navigator && window.navigator.webdriver);
+    if (isAutomated) return;
+
+    const isFirstTimeUser = typeof window !== 'undefined' && sessionStorage.getItem('pliego_first_time_user') === 'true';
+    const hasSeenTour = typeof window !== 'undefined' && sessionStorage.getItem('pliego_demo_tour_seen');
+
+    if (isFirstTimeUser || (isDemoMode && !hasSeenTour)) {
+      setIsTourOpen(true);
+      if (isFirstTimeUser) {
+        sessionStorage.removeItem('pliego_first_time_user');
       }
     }
   }, [isDemoMode]);
@@ -32,8 +40,8 @@ export const AppShell: React.FC = () => {
 
   return (
     <div
-      className="relative min-h-screen text-[#f7f8f8] antialiased overflow-x-hidden isolate flex flex-col"
-      style={{ background: '#010102' }}
+      className="app-workspace relative min-h-screen text-[var(--ink)] antialiased overflow-x-hidden isolate flex flex-col transition-colors duration-200"
+      style={{ background: 'var(--canvas)' }}
     >
       {/* Fondo ambiental Linear: canvas #010102 + orbes CSS */}
       <SilkBackground />
@@ -59,8 +67,16 @@ export const AppShell: React.FC = () => {
         <div className="flex-1 flex flex-col min-w-0">
           <Header onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)} />
 
-          <main id="main-content" className="flex-1 pt-2 pb-16 px-3 sm:px-6 overflow-y-auto">
-            <Outlet />
+          <main id="main-content" className="app-main flex-1 pt-3 pb-16 px-3 sm:px-6 overflow-y-auto">
+            <motion.div
+              key={location.pathname}
+              initial={reduceMotion ? false : { opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: reduceMotion ? 0 : 0.42, ease: [0.22, 1, 0.36, 1] }}
+              className="app-route-stage max-w-[1560px] mx-auto"
+            >
+              <Outlet />
+            </motion.div>
           </main>
         </div>
       </div>

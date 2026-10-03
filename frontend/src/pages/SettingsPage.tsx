@@ -7,10 +7,10 @@ export const SettingsPage: React.FC = () => {
   const { user, activeTenant, logout } = useAuth();
 
   return (
-    <div className="space-y-6 max-w-2xl select-none">
-      {/* Encabezado Unificado */}
+    <div className="space-y-8 max-w-5xl select-none">
+      {/* Encabezado con la misma jerarquía editorial que el resto del workspace. */}
       <div>
-        <h1 className="text-3xl font-extrabold text-[#161616] tracking-tight">
+        <h1 className="app-page-title text-[#161616]">
           Configuración
         </h1>
         <p className="text-xs text-[#68656A] mt-0.5">
@@ -18,34 +18,34 @@ export const SettingsPage: React.FC = () => {
         </p>
       </div>
 
-      <div className="p-6 rounded-[22px] bg-white/80 backdrop-blur-[20px] border border-white/80 shadow-[0_4px_24px_rgba(20,20,30,0.04)] space-y-6">
+      <div className="surface p-6 sm:p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Cuenta */}
-        <div className="space-y-2">
+        <div className="space-y-3">
           <span className="text-[11px] font-mono uppercase tracking-wider text-[#8F8B92] block">
             Cuenta
           </span>
-          <div className="pt-1 border-t border-[rgba(20,20,20,0.06)]">
+          <div className="pt-3 border-t border-[rgba(20,20,20,0.06)]">
             <div className="text-sm font-bold text-[#161616]">
-              {user?.fullName || 'Luis Méndez'}
+              {user?.fullName || 'Operador'}
             </div>
             <div className="text-xs font-mono text-[#68656A] mt-0.5">
-              {user?.email || 'luis@techconsulting.es'}
+              {user?.email || 'usuario@empresa.com'}
             </div>
           </div>
         </div>
 
         {/* Organización */}
-        <div className="space-y-2">
+        <div className="space-y-3">
           <span className="text-[11px] font-mono uppercase tracking-wider text-[#8F8B92] block">
             Organización
           </span>
-          <div className="pt-1 border-t border-[rgba(20,20,20,0.06)] space-y-3">
+          <div className="pt-3 border-t border-[rgba(20,20,20,0.06)] space-y-3">
             <div>
               <div className="text-sm font-semibold text-[#161616]">
-                {activeTenant?.name || 'TechConsulting Soluciones S.L.'}
+                {activeTenant?.name || 'Mi Organización'}
               </div>
               <div className="text-xs font-mono text-[#68656A] mt-0.5">
-                CIF: {activeTenant?.taxId || 'B-88776655'}
+                {activeTenant?.taxId ? `CIF: ${activeTenant.taxId}` : 'CIF: Sin especificar'}
               </div>
             </div>
 
@@ -59,11 +59,11 @@ export const SettingsPage: React.FC = () => {
         </div>
 
         {/* Sesión */}
-        <div className="space-y-2">
+        <div className="space-y-3 md:col-span-2 pt-2 border-t border-[rgba(20,20,20,0.06)]">
           <span className="text-[11px] font-mono uppercase tracking-wider text-[#8F8B92] block">
             Sesión
           </span>
-          <div className="pt-2 border-t border-[rgba(20,20,20,0.06)] flex items-center justify-between">
+          <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <span className="text-xs text-[#68656A]">
               Token criptográfico seguro en memoria activa
             </span>

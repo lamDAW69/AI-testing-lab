@@ -14,13 +14,24 @@ import { formatCurrency, formatDeadlineDays } from '../lib/formatters';
 import { useData } from '../lib/data-context';
 import { StatusBadge } from '../components/ui/StatusBadge';
 
+function getTenderTerritory(authority: string): string {
+  const lower = (authority || '').toLowerCase();
+  if (lower.includes('valenciana') || lower.includes('valencia')) return 'C. Valenciana';
+  if (lower.includes('andaluz') || lower.includes('andalucía') || lower.includes('andalucia')) return 'Andalucía';
+  if (lower.includes('catalunya') || lower.includes('cataluña') || lower.includes('barcelona')) return 'Cataluña';
+  if (lower.includes('madrid') && lower.includes('ayuntamiento')) return 'Madrid Capital';
+  if (lower.includes('galicia')) return 'Galicia';
+  if (lower.includes('euskadi') || lower.includes('vasco')) return 'País Vasco';
+  return 'Estatal';
+}
+
 export const CatalogPage: React.FC = () => {
   const { tenders } = useData();
   const navigate = useNavigate();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCpv, setSelectedCpv] = useState<string>('all');
-  const [selectedState, setSelectedState] = useState<string>('PUBLISHED');
+  const [selectedState, setSelectedState] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'deadline' | 'amount' | 'date'>('deadline');
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
 
@@ -29,13 +40,13 @@ export const CatalogPage: React.FC = () => {
     .filter((tender) => {
       const matchesSearch =
         searchTerm === '' ||
-        tender.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        tender.fileReference.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        tender.contractingAuthority.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        tender.cpvCode.toLowerCase().includes(searchTerm.toLowerCase());
+        (tender.title && tender.title.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (tender.fileReference && tender.fileReference.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (tender.contractingAuthority && tender.contractingAuthority.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (tender.cpvCode && tender.cpvCode.toLowerCase().includes(searchTerm.toLowerCase()));
 
       const matchesCpv =
-        selectedCpv === 'all' || tender.cpvCode.startsWith(selectedCpv);
+        selectedCpv === 'all' || (tender.cpvCode && tender.cpvCode.startsWith(selectedCpv));
 
       const matchesState =
         selectedState === 'all' || tender.status === selectedState;
@@ -44,10 +55,17 @@ export const CatalogPage: React.FC = () => {
     })
     .sort((a, b) => {
       if (sortBy === 'deadline') {
-        return new Date(a.submissionDeadline).getTime() - new Date(b.submissionDeadline).getTime();
+        const timeA = a.submissionDeadline ? new Date(a.submissionDeadline).getTime() : 0;
+        const timeB = b.submissionDeadline ? new Date(b.submissionDeadline).getTime() : 0;
+        return timeA - timeB;
       }
       if (sortBy === 'amount') {
         return b.budgetAmount - a.budgetAmount;
+      }
+      if (sortBy === 'date') {
+        const dateA = a.publicationDate ? new Date(a.publicationDate).getTime() : 0;
+        const dateB = b.publicationDate ? new Date(b.publicationDate).getTime() : 0;
+        return dateB - dateA;
       }
       return 0;
     });
@@ -71,7 +89,7 @@ export const CatalogPage: React.FC = () => {
             <span className="text-[#171719] font-medium">Catálogo</span>
           </nav>
 
-          <h1 className="font-editorial text-4xl sm:text-5xl font-normal text-[#171719] tracking-tight">
+          <h1 className="app-page-title text-[#171719]">
             Catálogo
           </h1>
           <p className="text-xs sm:text-sm text-[#69666d] mt-1 max-w-xl">
@@ -87,7 +105,7 @@ export const CatalogPage: React.FC = () => {
           <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-[#929097]" />
           <input
             type="text"
-            placeholder="Buscar por título, organismo, CPV..."
+            placeholder="Buscar por título, expediente, organismo, CPV..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full h-12 pl-11 pr-4 bg-white/70 hover:bg-white focus:bg-white border border-[rgba(30,24,38,0.06)] focus:border-[#685cff] rounded-[14px] text-xs sm:text-sm text-[#171719] placeholder-[#929097] transition-all shadow-xs focus:outline-none"
@@ -96,16 +114,17 @@ export const CatalogPage: React.FC = () => {
 
         {/* Chips de Filtro: height 34px, radius 999px (Sección 21) */}
         <div className="flex items-center gap-2 flex-wrap">
-          {/* CPV */}
+          {/* CPV Oficiales TIC */}
           <select
             value={selectedCpv}
             onChange={(e) => setSelectedCpv(e.target.value)}
             className="h-[34px] px-3.5 rounded-full bg-white/65 hover:bg-white border border-[rgba(30,24,38,0.06)] text-xs text-[#171719] cursor-pointer focus:outline-none shadow-xs"
           >
-            <option value="all">CPV: Todos los sectores ▾</option>
-            <option value="722">CPV 72200000 · Software ▾</option>
-            <option value="728">CPV 72800000 · Auditoría TIC ▾</option>
-            <option value="384">CPV 38400000 · Sensores IoT ▾</option>
+            <option value="all">CPV: Todos los sectores TIC ▾</option>
+            <option value="72">CPV 72* · Servicios TIC y Consultoría ▾</option>
+            <option value="48">CPV 48* · Paquetes de Software y Sistemas ▾</option>
+            <option value="722">CPV 722* · Desarrollo y Mantenimiento de Software ▾</option>
+            <option value="728">CPV 728* · Auditoría TIC y Ciberseguridad ▾</option>
           </select>
 
           {/* Estado */}
@@ -119,7 +138,7 @@ export const CatalogPage: React.FC = () => {
             <option value="EVALUATION">Estado: En Evaluación ▾</option>
           </select>
 
-          {(selectedCpv !== 'all' || selectedState !== 'PUBLISHED' || searchTerm !== '') && (
+          {(selectedCpv !== 'all' || selectedState !== 'all' || searchTerm !== '') && (
             <button
               onClick={clearFilters}
               className="h-[34px] px-3 rounded-full bg-[#ffeded] text-[#e44848] text-xs font-semibold hover:bg-[#fcd2d2] transition-colors cursor-pointer"
@@ -212,8 +231,11 @@ export const CatalogPage: React.FC = () => {
                   <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-[#eeeaff] text-[#685cff] font-semibold border border-[#d5ccfe]/60">
                     {tender.fileReference}
                   </span>
-                  <StatusBadge tone="success" icon="check">
-                    Abierto
+                  <StatusBadge
+                    tone={tender.status === 'EVALUATION' ? 'warning' : 'success'}
+                    icon={tender.status === 'EVALUATION' ? 'clock' : 'check'}
+                  >
+                    {tender.status === 'EVALUATION' ? 'En Evaluación' : 'Abierto'}
                   </StatusBadge>
                 </div>
 
@@ -228,10 +250,14 @@ export const CatalogPage: React.FC = () => {
 
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-[#f5f1ed] text-[#69666d] border border-[rgba(30,24,38,0.06)]">
-                    {tender.cpvCode.split(' · ')[0]}
+                    {tender.cpvCode ? tender.cpvCode.split(' · ')[0] : 'TIC'}
                   </span>
                   <span className="text-[11px] text-[#929097] truncate">
-                    {tender.cpvCode.split(' · ')[1] || 'Servicios'}
+                    {tender.cpvCode && tender.cpvCode.includes(' · ')
+                      ? tender.cpvCode.split(' · ')[1]
+                      : tender.cpvCode && tender.cpvCode.startsWith('48')
+                      ? 'Paquetes de software'
+                      : 'Servicios TIC'}
                   </span>
                 </div>
               </div>
@@ -302,10 +328,14 @@ export const CatalogPage: React.FC = () => {
                     </p>
                     <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                       <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-[#f5f1ed] text-[#69666d] border border-[rgba(30,24,38,0.06)]">
-                        {tender.cpvCode.split(' · ')[0]}
+                        {tender.cpvCode ? tender.cpvCode.split(' · ')[0] : 'TIC'}
                       </span>
                       <span className="text-[11px] text-[#929097] truncate">
-                        {tender.cpvCode.split(' · ')[1] || 'Servicios'}
+                        {tender.cpvCode && tender.cpvCode.includes(' · ')
+                          ? tender.cpvCode.split(' · ')[1]
+                          : tender.cpvCode && tender.cpvCode.startsWith('48')
+                          ? 'Paquetes de software y sistemas'
+                          : 'Servicios TIC'}
                       </span>
                     </div>
                   </div>
@@ -323,11 +353,13 @@ export const CatalogPage: React.FC = () => {
                   {/* 24. Plazo Crítico: fecha oscura, solo los días en rojo */}
                   <div className="hidden lg:block">
                     <span className="text-xs text-[#171719] font-medium block">
-                      {new Intl.DateTimeFormat('es-ES', {
-                        day: 'numeric',
-                        month: 'short',
-                        year: 'numeric',
-                      }).format(new Date(tender.submissionDeadline))}
+                      {tender.submissionDeadline
+                        ? new Intl.DateTimeFormat('es-ES', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric',
+                          }).format(new Date(tender.submissionDeadline))
+                        : 'Sin fecha límite'}
                     </span>
                     <span
                       className={`text-[11px] tabular-nums ${
@@ -342,13 +374,16 @@ export const CatalogPage: React.FC = () => {
 
                   {/* Territorio */}
                   <div className="hidden lg:block text-xs text-[#69666d]">
-                    Nacional
+                    {getTenderTerritory(tender.contractingAuthority)}
                   </div>
 
                   {/* Estado Oficial */}
                   <div className="hidden lg:block">
-                    <StatusBadge tone="success" icon="check">
-                      Abierto
+                    <StatusBadge
+                      tone={tender.status === 'EVALUATION' ? 'warning' : 'success'}
+                      icon={tender.status === 'EVALUATION' ? 'clock' : 'check'}
+                    >
+                      {tender.status === 'EVALUATION' ? 'En Evaluación' : 'Abierto'}
                     </StatusBadge>
                   </div>
 

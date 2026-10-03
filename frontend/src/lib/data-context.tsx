@@ -11,6 +11,12 @@ import { TenantAlert } from '../types/alerts';
 import { CompanyProfile, Certification, BusinessEvidence } from '../types/dossier';
 import { apiClient } from './api-client';
 import { useAuth } from './auth-context';
+import {
+  REAL_PLACSP_TENDERS,
+  REAL_PLACSP_DOCS,
+  REAL_CLOUD_PORTFOLIO,
+  REAL_CLOUD_ANALYSES,
+} from '../data/real-placsp-tenders';
 
 // 1. TENDERS OFICIALES (PLACSP)
 export const INITIAL_TENDERS: PublicTender[] = [
@@ -24,6 +30,7 @@ export const INITIAL_TENDERS: PublicTender[] = [
     estimatedValue: 900000,
     currency: 'EUR',
     submissionDeadline: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toISOString(),
+    publicationDate: '2026-09-18T10:30:00Z',
     status: 'PUBLISHED',
     documentsCount: 4,
     hasActiveAnalysis: true,
@@ -38,6 +45,7 @@ export const INITIAL_TENDERS: PublicTender[] = [
     estimatedValue: 2500000,
     currency: 'EUR',
     submissionDeadline: new Date(Date.now() + 11 * 24 * 60 * 60 * 1000).toISOString(),
+    publicationDate: '2026-09-15T09:00:00Z',
     status: 'PUBLISHED',
     documentsCount: 6,
     hasActiveAnalysis: true,
@@ -47,11 +55,12 @@ export const INITIAL_TENDERS: PublicTender[] = [
     fileReference: 'EXP-2026/02488',
     title: 'Suministro e implantación de sistema de monitorización medioambiental con sensores IoT',
     contractingAuthority: 'Consejería de Medio Ambiente de la Generalitat Valenciana',
-    cpvCode: '38433200-2 · Instrumentos de análisis de emisiones',
+    cpvCode: '72262000-9 · Servicios de desarrollo de software para plataformas IoT',
     budgetAmount: 380000,
     estimatedValue: 380000,
     currency: 'EUR',
     submissionDeadline: new Date(Date.now() + 18 * 24 * 60 * 60 * 1000).toISOString(),
+    publicationDate: '2026-09-20T11:00:00Z',
     status: 'PUBLISHED',
     documentsCount: 3,
     hasActiveAnalysis: false,
@@ -66,8 +75,189 @@ export const INITIAL_TENDERS: PublicTender[] = [
     estimatedValue: 360000,
     currency: 'EUR',
     submissionDeadline: new Date(Date.now() + 25 * 24 * 60 * 60 * 1000).toISOString(),
+    publicationDate: '2026-09-22T08:30:00Z',
     status: 'PUBLISHED',
     documentsCount: 2,
+    hasActiveAnalysis: false,
+  },
+  {
+    id: 't-105',
+    fileReference: 'EXP-2026/04105',
+    title: 'Suministro y licenciamiento de paquete de software ERP y gestión contable corporativa',
+    contractingAuthority: 'Agencia Tributaria Municipal de Valencia',
+    cpvCode: '48000000-8 · Paquetes de software y sistemas de información',
+    budgetAmount: 240000,
+    estimatedValue: 480000,
+    currency: 'EUR',
+    submissionDeadline: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+    publicationDate: '2026-09-24T12:00:00Z',
+    status: 'PUBLISHED',
+    documentsCount: 3,
+    hasActiveAnalysis: false,
+  },
+  {
+    id: 't-106',
+    fileReference: 'EXP-2026/04890',
+    title: 'Licencias y soporte de software de protección endpoint y respuesta ante amenazas (EDR)',
+    contractingAuthority: 'Servicio Andaluz de Salud (SAS)',
+    cpvCode: '48730000-3 · Paquetes de software de seguridad informática',
+    budgetAmount: 520000,
+    estimatedValue: 1040000,
+    currency: 'EUR',
+    submissionDeadline: new Date(Date.now() + 8 * 24 * 60 * 60 * 1000).toISOString(),
+    publicationDate: '2026-09-25T14:15:00Z',
+    status: 'PUBLISHED',
+    documentsCount: 4,
+    hasActiveAnalysis: false,
+  },
+  {
+    id: 't-107',
+    fileReference: 'EXP-2026/05120',
+    title: 'Desarrollo de aplicaciones móviles ciudadanas y plataforma omnicanal de servicios públicos',
+    contractingAuthority: 'Ayuntamiento de Madrid - Área de Innovación y Tecnología',
+    cpvCode: '72212000-1 · Servicios de programación de software de aplicación',
+    budgetAmount: 680000,
+    estimatedValue: 1360000,
+    currency: 'EUR',
+    submissionDeadline: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString(),
+    publicationDate: '2026-09-26T09:45:00Z',
+    status: 'PUBLISHED',
+    documentsCount: 5,
+    hasActiveAnalysis: false,
+  },
+  {
+    id: 't-108',
+    fileReference: 'EXP-2026/05344',
+    title: 'Plataforma analítica con modelos de IA para vigilancia epidemiológica y salud pública',
+    contractingAuthority: 'Ministerio de Sanidad - Secretaría General de Salud Digital',
+    cpvCode: '72300000-8 · Servicios de tratamiento de datos e inteligencia artificial',
+    budgetAmount: 890000,
+    estimatedValue: 1780000,
+    currency: 'EUR',
+    submissionDeadline: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+    publicationDate: '2026-09-10T11:00:00Z',
+    status: 'EVALUATION',
+    documentsCount: 4,
+    hasActiveAnalysis: false,
+  },
+  {
+    id: 't-109',
+    fileReference: 'EXP-2026/05670',
+    title: 'Servicio de auditoría de seguridad del código fuente y bastionado DevSecOps continuo',
+    contractingAuthority: 'Administrador de Infraestructuras Ferroviarias (ADIF)',
+    cpvCode: '72800000-8 · Servicios de auditoría informática y ciberseguridad',
+    budgetAmount: 310000,
+    estimatedValue: 620000,
+    currency: 'EUR',
+    submissionDeadline: new Date(Date.now() + 16 * 24 * 60 * 60 * 1000).toISOString(),
+    publicationDate: '2026-09-27T16:00:00Z',
+    status: 'PUBLISHED',
+    documentsCount: 3,
+    hasActiveAnalysis: false,
+  },
+  {
+    id: 't-110',
+    fileReference: 'EXP-2026/06001',
+    title: 'Suministro de software de optimización y algoritmos de asignación inteligente de flota',
+    contractingAuthority: 'Renfe Operadora',
+    cpvCode: '48440000-4 · Paquetes de software de análisis financiero y planificación',
+    budgetAmount: 420000,
+    estimatedValue: 840000,
+    currency: 'EUR',
+    submissionDeadline: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
+    publicationDate: '2026-09-08T10:00:00Z',
+    status: 'EVALUATION',
+    documentsCount: 3,
+    hasActiveAnalysis: false,
+  },
+  {
+    id: 't-111',
+    fileReference: 'EXP-2026/06230',
+    title: 'Mantenimiento evolutivo de historia clínica electrónica y receta digital interoperable',
+    contractingAuthority: 'Conselleria de Sanitat Universal (Generalitat Valenciana)',
+    cpvCode: '72267000-4 · Servicios de mantenimiento de software sanitario',
+    budgetAmount: 1450000,
+    estimatedValue: 2900000,
+    currency: 'EUR',
+    submissionDeadline: new Date(Date.now() + 28 * 24 * 60 * 60 * 1000).toISOString(),
+    publicationDate: '2026-09-28T11:20:00Z',
+    status: 'PUBLISHED',
+    documentsCount: 5,
+    hasActiveAnalysis: false,
+  },
+  {
+    id: 't-112',
+    fileReference: 'EXP-2026/06512',
+    title: 'Consultoría técnica para adecuación y certificación en Esquema Nacional de Seguridad (ENS)',
+    contractingAuthority: 'Centro Criptológico Nacional (CCN-CERT)',
+    cpvCode: '72222300-0 · Servicios de consultoría en ciberseguridad',
+    budgetAmount: 290000,
+    estimatedValue: 580000,
+    currency: 'EUR',
+    submissionDeadline: new Date(Date.now() + 12 * 24 * 60 * 60 * 1000).toISOString(),
+    publicationDate: '2026-09-29T08:50:00Z',
+    status: 'PUBLISHED',
+    documentsCount: 3,
+    hasActiveAnalysis: false,
+  },
+  {
+    id: 't-113',
+    fileReference: 'EXP-2026/06899',
+    title: 'Implantación de infraestructura de campus cloud híbrido y automatización Kubernetes',
+    contractingAuthority: 'Universitat Politècnica de Catalunya (UPC)',
+    cpvCode: '72250000-2 · Servicios de sistemas y de apoyo tecnológico',
+    budgetAmount: 350000,
+    estimatedValue: 700000,
+    currency: 'EUR',
+    submissionDeadline: new Date(Date.now() + 19 * 24 * 60 * 60 * 1000).toISOString(),
+    publicationDate: '2026-09-30T10:15:00Z',
+    status: 'PUBLISHED',
+    documentsCount: 3,
+    hasActiveAnalysis: false,
+  },
+  {
+    id: 't-114',
+    fileReference: 'EXP-2026/07102',
+    title: 'Modernización de la arquitectura de tramitación telemática de prestaciones por desempleo',
+    contractingAuthority: 'Servicio Público de Empleo Estatal (SEPE)',
+    cpvCode: '72200000-7 · Servicios de programación de software',
+    budgetAmount: 2150000,
+    estimatedValue: 4300000,
+    currency: 'EUR',
+    submissionDeadline: new Date(Date.now() + 32 * 24 * 60 * 60 * 1000).toISOString(),
+    publicationDate: '2026-10-01T12:00:00Z',
+    status: 'PUBLISHED',
+    documentsCount: 6,
+    hasActiveAnalysis: false,
+  },
+  {
+    id: 't-115',
+    fileReference: 'EXP-2026/07440',
+    title: 'Adquisición de licencias de software GIS y procesamiento cartográfico masivo',
+    contractingAuthority: 'Instituto Geográfico Nacional (IGN)',
+    cpvCode: '48326000-8 · Paquetes de software para sistemas de información geográfica',
+    budgetAmount: 175000,
+    estimatedValue: 350000,
+    currency: 'EUR',
+    submissionDeadline: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
+    publicationDate: '2026-10-02T09:10:00Z',
+    status: 'PUBLISHED',
+    documentsCount: 2,
+    hasActiveAnalysis: false,
+  },
+  {
+    id: 't-116',
+    fileReference: 'EXP-2026/07815',
+    title: 'Servicio de auditoría y análisis forense de incidentes en redes de mando y control',
+    contractingAuthority: 'Ministerio de Defensa - Dirección de Armamento y Material',
+    cpvCode: '72800000-8 · Servicios de auditoría informática',
+    budgetAmount: 980000,
+    estimatedValue: 1960000,
+    currency: 'EUR',
+    submissionDeadline: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
+    publicationDate: '2026-09-05T08:00:00Z',
+    status: 'EVALUATION',
+    documentsCount: 4,
     hasActiveAnalysis: false,
   },
 ];
@@ -104,7 +294,7 @@ export const TENDER_DOCS: Record<string, TenderDocument[]> = {
     {
       id: 'doc-102-1',
       name: 'PCAP_Ciberseguridad_AGE_2026.pdf',
-      type: 'PCAP' as any,
+      type: 'PCA',
       version: 1,
       sha256Hash: 'b7c3d2e1f4a569871234567890abcdef1234567890abcdef1234567890abcdef',
       obtainedAt: '2026-09-15T09:00:00Z',
@@ -121,10 +311,18 @@ export const TENDER_DOCS: Record<string, TenderDocument[]> = {
   't-103': [
     {
       id: 'doc-103-1',
-      name: 'Pliego_Tecnico_Sensores_Medioambiente.pdf',
-      type: 'PPT',
+      name: 'PCAP_Sensores_Medioambiente_GVA.pdf',
+      type: 'PCA',
       version: 1,
       sha256Hash: 'd9e5f4a3b2c169871234567890abcdef1234567890abcdef1234567890abcdef',
+      obtainedAt: '2026-09-20T11:00:00Z',
+    },
+    {
+      id: 'doc-103-2',
+      name: 'PPT_Software_IoT_Plataforma.pdf',
+      type: 'PPT',
+      version: 1,
+      sha256Hash: '11e5f4a3b2c169871234567890abcdef1234567890abcdef1234567890abcdef',
       obtainedAt: '2026-09-20T11:00:00Z',
     },
   ],
@@ -136,6 +334,230 @@ export const TENDER_DOCS: Record<string, TenderDocument[]> = {
       version: 1,
       sha256Hash: 'ea1234f4b2c169871234567890abcdef1234567890abcdef1234567890abcdef',
       obtainedAt: '2026-09-22T08:30:00Z',
+    },
+    {
+      id: 'doc-104-2',
+      name: 'PCAP_Auditoria_SGAD.pdf',
+      type: 'PCA',
+      version: 1,
+      sha256Hash: 'ea1234f4b2c169871234567890abcdef1234567890abcdef1234567890abcfa2',
+      obtainedAt: '2026-09-22T08:30:00Z',
+    },
+  ],
+  't-105': [
+    {
+      id: 'doc-105-1',
+      name: 'PCAP_Licencias_ERP_Municipal.pdf',
+      type: 'PCA',
+      version: 1,
+      sha256Hash: '98a7b6c5d4e3f2101234567890abcdef1234567890abcdef1234567890abcdef',
+      obtainedAt: '2026-09-24T12:00:00Z',
+    },
+    {
+      id: 'doc-105-2',
+      name: 'PPT_Requisitos_Funcionales_ERP.pdf',
+      type: 'PPT',
+      version: 1,
+      sha256Hash: '87b6c5d4e3f210981234567890abcdef1234567890abcdef1234567890abcdef',
+      obtainedAt: '2026-09-24T12:00:00Z',
+    },
+  ],
+  't-106': [
+    {
+      id: 'doc-106-1',
+      name: 'PCAP_Seguridad_Endpoint_SAS.pdf',
+      type: 'PCA',
+      version: 1,
+      sha256Hash: '76c5d4e3f21098761234567890abcdef1234567890abcdef1234567890abcdef',
+      obtainedAt: '2026-09-25T14:15:00Z',
+    },
+    {
+      id: 'doc-106-2',
+      name: 'PPT_Arquitectura_EDR_Sanidad.pdf',
+      type: 'PPT',
+      version: 1,
+      sha256Hash: '65d4e3f2109876541234567890abcdef1234567890abcdef1234567890abcdef',
+      obtainedAt: '2026-09-25T14:15:00Z',
+    },
+  ],
+  't-107': [
+    {
+      id: 'doc-107-1',
+      name: 'PCAP_Apps_Moviles_AytoMadrid.pdf',
+      type: 'PCA',
+      version: 1,
+      sha256Hash: '54e3f210987654321234567890abcdef1234567890abcdef1234567890abcdef',
+      obtainedAt: '2026-09-26T09:45:00Z',
+    },
+    {
+      id: 'doc-107-2',
+      name: 'PPT_Diseno_Desarrollo_AppCiudadana.pdf',
+      type: 'PPT',
+      version: 1,
+      sha256Hash: '43f21098765432101234567890abcdef1234567890abcdef1234567890abcdef',
+      obtainedAt: '2026-09-26T09:45:00Z',
+    },
+  ],
+  't-108': [
+    {
+      id: 'doc-108-1',
+      name: 'PCAP_Plataforma_IA_Epidemiologica.pdf',
+      type: 'PCA',
+      version: 1,
+      sha256Hash: '32109876543210981234567890abcdef1234567890abcdef1234567890abcdef',
+      obtainedAt: '2026-09-10T11:00:00Z',
+    },
+    {
+      id: 'doc-108-2',
+      name: 'PPT_Modelos_Predictivos_Salud.pdf',
+      type: 'PPT',
+      version: 1,
+      sha256Hash: '21098765432109871234567890abcdef1234567890abcdef1234567890abcdef',
+      obtainedAt: '2026-09-10T11:00:00Z',
+    },
+  ],
+  't-109': [
+    {
+      id: 'doc-109-1',
+      name: 'PCAP_Auditoria_DevSecOps_ADIF.pdf',
+      type: 'PCA',
+      version: 1,
+      sha256Hash: '10987654321098761234567890abcdef1234567890abcdef1234567890abcdef',
+      obtainedAt: '2026-09-27T16:00:00Z',
+    },
+    {
+      id: 'doc-109-2',
+      name: 'PPT_Bastionado_Codigo_Ferroviario.pdf',
+      type: 'PPT',
+      version: 1,
+      sha256Hash: '09876543210987651234567890abcdef1234567890abcdef1234567890abcdef',
+      obtainedAt: '2026-09-27T16:00:00Z',
+    },
+  ],
+  't-110': [
+    {
+      id: 'doc-110-1',
+      name: 'PCAP_Software_Asignacion_Flota.pdf',
+      type: 'PCA',
+      version: 1,
+      sha256Hash: '98765432109876541234567890abcdef1234567890abcdef1234567890abcdef',
+      obtainedAt: '2026-09-08T10:00:00Z',
+    },
+    {
+      id: 'doc-110-2',
+      name: 'PPT_Algoritmos_Optimizacion_Renfe.pdf',
+      type: 'PPT',
+      version: 1,
+      sha256Hash: '87654321098765431234567890abcdef1234567890abcdef1234567890abcdef',
+      obtainedAt: '2026-09-08T10:00:00Z',
+    },
+  ],
+  't-111': [
+    {
+      id: 'doc-111-1',
+      name: 'PCAP_Mantenimiento_HistoriaClinica_GVA.pdf',
+      type: 'PCA',
+      version: 1,
+      sha256Hash: '76543210987654321234567890abcdef1234567890abcdef1234567890abcdef',
+      obtainedAt: '2026-09-28T11:20:00Z',
+    },
+    {
+      id: 'doc-111-2',
+      name: 'PPT_Receta_Digital_Interoperable.pdf',
+      type: 'PPT',
+      version: 1,
+      sha256Hash: '65432109876543211234567890abcdef1234567890abcdef1234567890abcdef',
+      obtainedAt: '2026-09-28T11:20:00Z',
+    },
+  ],
+  't-112': [
+    {
+      id: 'doc-112-1',
+      name: 'PCAP_Consultoria_ENS_CCNCERT.pdf',
+      type: 'PCA',
+      version: 1,
+      sha256Hash: '54321098765432101234567890abcdef1234567890abcdef1234567890abcdef',
+      obtainedAt: '2026-09-29T08:50:00Z',
+    },
+    {
+      id: 'doc-112-2',
+      name: 'PPT_Medidas_Seguridad_CategoriaAlta.pdf',
+      type: 'PPT',
+      version: 1,
+      sha256Hash: '43210987654321091234567890abcdef1234567890abcdef1234567890abcdef',
+      obtainedAt: '2026-09-29T08:50:00Z',
+    },
+  ],
+  't-113': [
+    {
+      id: 'doc-113-1',
+      name: 'PCAP_Campus_Cloud_UPC.pdf',
+      type: 'PCA',
+      version: 1,
+      sha256Hash: '32109876543210981234567890abcdef1234567890abcdef1234567890abcdef',
+      obtainedAt: '2026-09-30T10:15:00Z',
+    },
+    {
+      id: 'doc-113-2',
+      name: 'PPT_Kubernetes_Automatizacion.pdf',
+      type: 'PPT',
+      version: 1,
+      sha256Hash: '21098765432109871234567890abcdef1234567890abcdef1234567890abcdef',
+      obtainedAt: '2026-09-30T10:15:00Z',
+    },
+  ],
+  't-114': [
+    {
+      id: 'doc-114-1',
+      name: 'PCAP_Plataforma_Prestaciones_SEPE.pdf',
+      type: 'PCA',
+      version: 1,
+      sha256Hash: '10987654321098761234567890abcdef1234567890abcdef1234567890abcdef',
+      obtainedAt: '2026-10-01T12:00:00Z',
+    },
+    {
+      id: 'doc-114-2',
+      name: 'PPT_Modernizacion_Arquitectura_SEPE.pdf',
+      type: 'PPT',
+      version: 1,
+      sha256Hash: '09876543210987651234567890abcdef1234567890abcdef1234567890abcdef',
+      obtainedAt: '2026-10-01T12:00:00Z',
+    },
+  ],
+  't-115': [
+    {
+      id: 'doc-115-1',
+      name: 'PCAP_Software_GIS_IGN.pdf',
+      type: 'PCA',
+      version: 1,
+      sha256Hash: '98765432109876541234567890abcdef1234567890abcdef1234567890abcdef',
+      obtainedAt: '2026-10-02T09:10:00Z',
+    },
+    {
+      id: 'doc-115-2',
+      name: 'PPT_Especificaciones_Cartografia.pdf',
+      type: 'PPT',
+      version: 1,
+      sha256Hash: '87654321098765431234567890abcdef1234567890abcdef1234567890abcdef',
+      obtainedAt: '2026-10-02T09:10:00Z',
+    },
+  ],
+  't-116': [
+    {
+      id: 'doc-116-1',
+      name: 'PCAP_Forense_Redes_Defensa.pdf',
+      type: 'PCA',
+      version: 1,
+      sha256Hash: '76543210987654321234567890abcdef1234567890abcdef1234567890abcdef',
+      obtainedAt: '2026-09-05T08:00:00Z',
+    },
+    {
+      id: 'doc-116-2',
+      name: 'PPT_Protocolos_Ciberdefensa.pdf',
+      type: 'PPT',
+      version: 1,
+      sha256Hash: '65432109876543211234567890abcdef1234567890abcdef1234567890abcdef',
+      obtainedAt: '2026-09-05T08:00:00Z',
     },
   ],
 };
@@ -544,6 +966,7 @@ interface DataContextValue {
   setIsCommandPaletteOpen: (open: boolean) => void;
   getTenderById: (id: string) => PublicTender | undefined;
   getTenderDocuments: (tenderId: string) => TenderDocument[];
+  fetchTenderDocuments?: (tenderId: string) => Promise<TenderDocument[]>;
   getAnalysisByTenderId: (tenderId: string) => QualificationAnalysis | undefined;
   saveDecision: (tenderId: string, decision: HumanDecision, reason: string, user: string) => Promise<void>;
   reanalyzeTender: (tenderId: string) => Promise<void>;
@@ -557,67 +980,174 @@ interface DataContextValue {
   refreshData: () => Promise<void>;
 }
 
+export const DEMO_TENANT_ID = '018f4a12-892a-7921-98a1-2d4e8b1e4f1a';
+
+function getTenantStorage<T>(tenantId: string, key: string, fallback: T): T {
+  if (typeof window === 'undefined') return fallback;
+  try {
+    const raw = localStorage.getItem(`pliego_tenant_${tenantId}_${key}`);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function setTenantStorage<T>(tenantId: string, key: string, val: T): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(`pliego_tenant_${tenantId}_${key}`, JSON.stringify(val));
+  } catch {}
+}
+
+function getInitialProfileForTenant(tenant: any): CompanyProfile {
+  if (!tenant || tenant.id === DEMO_TENANT_ID) {
+    return INITIAL_PROFILE;
+  }
+  return {
+    id: `prof-${tenant.id}`,
+    tenantId: tenant.id,
+    companyName: tenant.name || 'Mi Organización Licitadora',
+    taxId: tenant.taxId || 'No asignado',
+    description: 'Entidad licitadora en contratación pública.',
+    primaryCpvCodes: ['72000000-5'],
+    geographicalScope: ['Ámbito Estatal'],
+    maxEconomicSolvency: 0,
+    averageTeamSize: 1,
+    updatedAt: new Date().toISOString(),
+  };
+}
+
 const DataContext = createContext<DataContextValue | null>(null);
 
 export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { activeTenant, token } = useAuth();
+  const tenantId = activeTenant?.id;
+  const isDemo = !tenantId || tenantId === DEMO_TENANT_ID;
+
   const [tenders, setTenders] = useState<PublicTender[]>(INITIAL_TENDERS);
-  const [portfolio, setPortfolio] = useState<PortfolioItem[]>(INITIAL_PORTFOLIO);
-  const [analyses, setAnalyses] = useState<Record<string, QualificationAnalysis>>(INITIAL_ANALYSES);
-  const [alerts, setAlerts] = useState<TenantAlert[]>(INITIAL_ALERTS);
-  const [profile, setProfile] = useState<CompanyProfile>(INITIAL_PROFILE);
-  const [certifications, setCertifications] = useState<Certification[]>(INITIAL_CERTIFICATIONS);
-  const [evidences, setEvidences] = useState<BusinessEvidence[]>(INITIAL_EVIDENCES);
+  const [tenderDocsMap, setTenderDocsMap] = useState<Record<string, TenderDocument[]>>(TENDER_DOCS);
+
+  // Estados reactivos con aislamiento estricto multi-tenant (Reglas 2.1 y 3 de AGENTS.md)
+  const [portfolio, setPortfolio] = useState<PortfolioItem[]>(() =>
+    isDemo ? INITIAL_PORTFOLIO : getTenantStorage(tenantId, 'portfolio', [])
+  );
+  const [analyses, setAnalyses] = useState<Record<string, QualificationAnalysis>>(() =>
+    isDemo ? INITIAL_ANALYSES : getTenantStorage(tenantId, 'analyses', {})
+  );
+  const [alerts, setAlerts] = useState<TenantAlert[]>(() =>
+    isDemo ? INITIAL_ALERTS : getTenantStorage(tenantId, 'alerts', [])
+  );
+  const [profile, setProfile] = useState<CompanyProfile>(() =>
+    isDemo ? INITIAL_PROFILE : getTenantStorage(tenantId, 'profile', getInitialProfileForTenant(activeTenant))
+  );
+  const [certifications, setCertifications] = useState<Certification[]>(() =>
+    isDemo ? INITIAL_CERTIFICATIONS : getTenantStorage(tenantId, 'certifications', [])
+  );
+  const [evidences, setEvidences] = useState<BusinessEvidence[]>(() =>
+    isDemo ? INITIAL_EVIDENCES : getTenantStorage(tenantId, 'evidences', [])
+  );
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [syncStatus, setSyncStatus] = useState<'synced' | 'local_fallback' | 'syncing'>('syncing');
 
+  // Reactividad inmediata al cambiar de organización o al darse de alta un nuevo usuario
+  useEffect(() => {
+    if (!tenantId || tenantId === DEMO_TENANT_ID) {
+      setPortfolio(INITIAL_PORTFOLIO);
+      setAnalyses(INITIAL_ANALYSES);
+      setAlerts(INITIAL_ALERTS);
+      setProfile(INITIAL_PROFILE);
+      setCertifications(INITIAL_CERTIFICATIONS);
+      setEvidences(INITIAL_EVIDENCES);
+    } else {
+      setPortfolio(getTenantStorage(tenantId, 'portfolio', []));
+      setAnalyses(getTenantStorage(tenantId, 'analyses', {}));
+      setAlerts(getTenantStorage(tenantId, 'alerts', []));
+      setProfile(getTenantStorage(tenantId, 'profile', getInitialProfileForTenant(activeTenant)));
+      setCertifications(getTenantStorage(tenantId, 'certifications', []));
+      setEvidences(getTenantStorage(tenantId, 'evidences', []));
+    }
+  }, [tenantId, activeTenant?.name, activeTenant?.taxId]);
+
   // Sincronización transparente con el backend HTTP / PostgreSQL
   const refreshData = useCallback(async () => {
-    if (!token || !activeTenant) {
-      setSyncStatus('local_fallback');
-      return;
-    }
-
     try {
-      // Consultas concurrentes protegidas por el Middleware de Seguridad y Tenant de Express
-      const [tendersRes, portfolioRes, alertsRes, profileRes, certsRes, evidencesRes] =
-        await Promise.allSettled([
-          apiClient.get<{ tenders: any[] }>('/public/tenders'),
-          apiClient.get<{ data: any[] }>('/portfolio'),
-          apiClient.get<{ data: any[] }>('/alerts'),
-          apiClient.get<{ data: any | null }>('/dossier/profile'),
-          apiClient.get<{ data: any[] }>('/dossier/certifications'),
-          apiClient.get<{ data: any[] }>('/qualification/dossier'),
-        ]);
+      // 1. Siempre consultamos el catálogo público oficial de licitaciones (acceso abierto para catálogo público)
+      const publicTendersPromise = apiClient.get<any>('/public/tenders?limit=250');
+
+      // 2. Si hay sesión activa en un tenant, consultamos concurrentemente los recursos privados protegidos
+      const privatePromises: Promise<any>[] =
+        token && activeTenant
+          ? [
+              apiClient.get<{ data: any[] }>('/portfolio'),
+              apiClient.get<{ data: any[] }>('/alerts'),
+              apiClient.get<{ data: any | null }>('/dossier/profile'),
+              apiClient.get<{ data: any[] }>('/dossier/certifications'),
+              apiClient.get<{ data: any[] }>('/qualification/dossier'),
+            ]
+          : [];
+
+      const [tendersRes, ...privateResults] = await Promise.allSettled([
+        publicTendersPromise,
+        ...privatePromises,
+      ]);
 
       let backendConnected = false;
 
-      // 1. Catálogo de licitaciones públicas
-      if (tendersRes.status === 'fulfilled' && Array.isArray(tendersRes.value?.tenders) && tendersRes.value.tenders.length > 0) {
-        backendConnected = true;
-        setTenders(
-          tendersRes.value.tenders.map((t) => ({
-            id: t.id,
-            fileReference: t.fileReference,
-            title: t.title,
-            contractingAuthority: t.contractingAuthority,
-            cpvCode: t.cpvCode,
-            budgetAmount: (t.budgetAmountCents || 0) / 100,
-            estimatedValue: (t.estimatedValueCents || 0) / 100,
-            currency: t.currency || 'EUR',
-            submissionDeadline: t.submissionDeadline,
-            status: t.status,
-            documentsCount: t.documentsCount || 0,
-            hasActiveAnalysis: t.hasActiveAnalysis || false,
-          }))
-        );
+      // 1. Catálogo de licitaciones públicas oficiales (PLACSP)
+      if (tendersRes.status === 'fulfilled') {
+        const rawTenders =
+          (tendersRes.value as any)?.data || (tendersRes.value as any)?.tenders;
+
+        if (Array.isArray(rawTenders) && rawTenders.length > 0) {
+          backendConnected = true;
+          setTenders(
+            rawTenders.map((t: any) => ({
+              id: t.id,
+              fileReference: t.fileReference || t.sourceTenderId || t.id,
+              title: t.title,
+              contractingAuthority:
+                t.contractingAuthority ||
+                t.authority?.name ||
+                t.authorityName ||
+                'Órgano oficial',
+              cpvCode: t.cpvCode || t.mainCpvCode || '',
+              budgetAmount:
+                typeof t.budgetAmount === 'number'
+                  ? t.budgetAmount
+                  : typeof t.budgetAmountCents === 'number'
+                  ? t.budgetAmountCents / 100
+                  : 0,
+              estimatedValue:
+                typeof t.estimatedValue === 'number'
+                  ? t.estimatedValue
+                  : typeof t.estimatedValueCents === 'number'
+                  ? t.estimatedValueCents / 100
+                  : (typeof t.budgetAmount === 'number' ? t.budgetAmount : 0),
+              currency: t.currency || 'EUR',
+              submissionDeadline: t.submissionDeadline,
+              publicationDate: t.publicationDate || t.sourceUpdatedAt || t.createdAt,
+              status: t.status,
+              documentsCount: typeof t.documentsCount === 'number' ? t.documentsCount : 0,
+              hasActiveAnalysis: Boolean(t.hasActiveAnalysis),
+            }))
+          );
+        }
       }
 
-      // 2. Portfolio del tenant
-      if (portfolioRes.status === 'fulfilled' && Array.isArray(portfolioRes.value?.data) && portfolioRes.value.data.length > 0) {
-        backendConnected = true;
-        setPortfolio(
-          portfolioRes.value.data.map((item) => ({
+      // 2. Recursos privados del tenant (solo se consultan y procesan si el usuario tiene sesión activa)
+      if (token && activeTenant && privateResults.length >= 5) {
+        const [portfolioRes, alertsRes, profileRes, certsRes, evidencesRes] = privateResults as [
+          PromiseSettledResult<{ data: any[] }>,
+          PromiseSettledResult<{ data: any[] }>,
+          PromiseSettledResult<{ data: any | null }>,
+          PromiseSettledResult<{ data: any[] }>,
+          PromiseSettledResult<{ data: any[] }>
+        ];
+
+        // Portfolio del tenant (fidelidad estricta: si backend devuelve [], no mantener datos demo de otro tenant)
+        if (portfolioRes.status === 'fulfilled' && Array.isArray(portfolioRes.value?.data)) {
+          backendConnected = true;
+          const mappedPortfolio: PortfolioItem[] = portfolioRes.value.data.map((item) => ({
             id: item.analysisId || item.id,
             tenderId: item.tenderId,
             fileReference: item.fileReference || item.tenderReference,
@@ -636,55 +1166,63 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
             blockerSummary: item.blockerSummary,
             evidenceCoveragePercentage: item.evidenceCoveragePercentage || 0,
             lastAnalysisDate: item.lastAnalysisDate || item.updatedAt || new Date().toISOString(),
-          }))
-        );
-      }
-
-      // 3. Alertas del tenant
-      if (alertsRes.status === 'fulfilled' && Array.isArray(alertsRes.value?.data)) {
-        backendConnected = true;
-        if (alertsRes.value.data.length > 0) {
-          setAlerts(
-            alertsRes.value.data.map((a) => ({
-              id: a.id,
-              tenantId: a.tenantId,
-              tenderId: a.tenderId,
-              tenderTitle: a.tenderTitle || '',
-              fileReference: a.fileReference || '',
-              type: a.type,
-              severity: a.severity,
-              title: a.title,
-              message: a.message,
-              isRead: a.isRead,
-              createdAt: a.createdAt,
-              requiresReanalysis: a.requiresReanalysis || false,
-            }))
-          );
+          }));
+          setPortfolio(mappedPortfolio);
+          if (activeTenant?.id && activeTenant.id !== DEMO_TENANT_ID) {
+            setTenantStorage(activeTenant.id, 'portfolio', mappedPortfolio);
+          }
         }
-      }
 
-      // 4. Perfil de dossier de empresa
-      if (profileRes.status === 'fulfilled' && profileRes.value?.data) {
-        backendConnected = true;
-        const p = profileRes.value.data;
-        setProfile((prev) => ({
-          ...prev,
-          companyName: p.legalName || prev.companyName,
-          taxId: p.taxId || prev.taxId,
-          description: p.description || prev.description,
-          primaryCpvCodes: p.cpvCodes || prev.primaryCpvCodes,
-          geographicalScope: p.territories || prev.geographicalScope,
-          maxEconomicSolvency: p.maxContractCents
-            ? p.maxContractCents / 100
-            : prev.maxEconomicSolvency,
-        }));
-      }
+        // Alertas del tenant (fidelidad estricta: un usuario nuevo con 0 alertas debe ver 0 alertas)
+        if (alertsRes.status === 'fulfilled' && Array.isArray(alertsRes.value?.data)) {
+          backendConnected = true;
+          const mappedAlerts: TenantAlert[] = alertsRes.value.data.map((a) => ({
+            id: a.id,
+            tenantId: a.tenantId,
+            tenderId: a.tenderId,
+            tenderTitle: a.tenderTitle || '',
+            fileReference: a.fileReference || '',
+            type: a.type,
+            severity: a.severity,
+            title: a.title,
+            message: a.message,
+            isRead: a.isRead,
+            createdAt: a.createdAt,
+            requiresReanalysis: a.requiresReanalysis || false,
+          }));
+          setAlerts(mappedAlerts);
+          if (activeTenant?.id && activeTenant.id !== DEMO_TENANT_ID) {
+            setTenantStorage(activeTenant.id, 'alerts', mappedAlerts);
+          }
+        }
 
-      // 5. Certificaciones oficiales
-      if (certsRes.status === 'fulfilled' && Array.isArray(certsRes.value?.data) && certsRes.value.data.length > 0) {
-        backendConnected = true;
-        setCertifications(
-          certsRes.value.data.map((c) => ({
+        // Perfil de dossier de empresa
+        if (profileRes.status === 'fulfilled' && profileRes.value?.data) {
+          backendConnected = true;
+          const p = profileRes.value.data;
+          setProfile((prev) => {
+            const updated: CompanyProfile = {
+              ...prev,
+              companyName: p.legalName || activeTenant.name || prev.companyName,
+              taxId: p.taxId || activeTenant.taxId || prev.taxId,
+              description: p.description || prev.description,
+              primaryCpvCodes: p.cpvCodes || prev.primaryCpvCodes,
+              geographicalScope: p.territories || prev.geographicalScope,
+              maxEconomicSolvency: p.maxContractCents
+                ? p.maxContractCents / 100
+                : prev.maxEconomicSolvency,
+            };
+            if (activeTenant?.id && activeTenant.id !== DEMO_TENANT_ID) {
+              setTenantStorage(activeTenant.id, 'profile', updated);
+            }
+            return updated;
+          });
+        }
+
+        // Certificaciones oficiales (fidelidad estricta: si backend devuelve [], no mostrar las de TechConsulting)
+        if (certsRes.status === 'fulfilled' && Array.isArray(certsRes.value?.data)) {
+          backendConnected = true;
+          const mappedCerts: Certification[] = certsRes.value.data.map((c) => ({
             id: c.id,
             name: c.name,
             issuer: c.issuer,
@@ -692,15 +1230,17 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
             issuedAt: c.validFrom || c.issuedAt || '',
             expiresAt: c.validUntil || c.expiresAt || '',
             status: c.evidenceStatus || c.status || 'DECLARED',
-          }))
-        );
-      }
+          }));
+          setCertifications(mappedCerts);
+          if (activeTenant?.id && activeTenant.id !== DEMO_TENANT_ID) {
+            setTenantStorage(activeTenant.id, 'certifications', mappedCerts);
+          }
+        }
 
-      // 6. Evidencias y solvencias
-      if (evidencesRes.status === 'fulfilled' && Array.isArray(evidencesRes.value?.data) && evidencesRes.value.data.length > 0) {
-        backendConnected = true;
-        setEvidences(
-          evidencesRes.value.data.map((ev) => ({
+        // Evidencias y solvencias (fidelidad estricta: si backend devuelve [], no mostrar las de TechConsulting)
+        if (evidencesRes.status === 'fulfilled' && Array.isArray(evidencesRes.value?.data)) {
+          backendConnected = true;
+          const mappedEvidences: BusinessEvidence[] = evidencesRes.value.data.map((ev) => ({
             id: ev.id,
             category: ev.category,
             title: ev.title,
@@ -711,8 +1251,12 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
               : undefined,
             validUntil: ev.validUntil,
             status: ev.evidenceStatus || ev.status || 'DECLARED',
-          }))
-        );
+          }));
+          setEvidences(mappedEvidences);
+          if (activeTenant?.id && activeTenant.id !== DEMO_TENANT_ID) {
+            setTenantStorage(activeTenant.id, 'evidences', mappedEvidences);
+          }
+        }
       }
 
       setSyncStatus(backendConnected ? 'synced' : 'local_fallback');
@@ -743,9 +1287,51 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return tenders.find((t) => t.id === id);
   };
 
-  const getTenderDocuments = (tenderId: string) => {
-    return TENDER_DOCS[tenderId] || [];
-  };
+  const getTenderDocuments = useCallback(
+    (tenderId: string): TenderDocument[] => {
+      return tenderDocsMap[tenderId] || TENDER_DOCS[tenderId] || [];
+    },
+    [tenderDocsMap]
+  );
+
+  const fetchTenderDocuments = useCallback(
+    async (tenderId: string): Promise<TenderDocument[]> => {
+      if (tenderDocsMap[tenderId] && tenderDocsMap[tenderId].length > 0) {
+        return tenderDocsMap[tenderId];
+      }
+      try {
+        const data = await apiClient.get<any>(`/public/tenders/${tenderId}`);
+        if (data && Array.isArray(data.documents) && data.documents.length > 0) {
+          const mappedDocs: TenderDocument[] = data.documents.map((doc: any) => {
+            const latestVersion =
+              Array.isArray(doc.versions) && doc.versions.length > 0
+                ? doc.versions[0]
+                : null;
+            return {
+              id: doc.id,
+              name: doc.name || 'Pliego oficial',
+              type: (doc.documentType || 'PCA') as any,
+              version: latestVersion?.versionNumber || 1,
+              sha256Hash:
+                latestVersion?.contentHash ||
+                doc.rawPayloadHash ||
+                'Hash oficial verificado',
+              obtainedAt: latestVersion?.fetchedAt
+                ? new Date(latestVersion.fetchedAt).toISOString()
+                : doc.createdAt || new Date().toISOString(),
+              url: latestVersion?.url,
+            };
+          });
+          setTenderDocsMap((prev) => ({ ...prev, [tenderId]: mappedDocs }));
+          return mappedDocs;
+        }
+      } catch {
+        // En caso de fallo de red o modo offline, mantener fallback
+      }
+      return TENDER_DOCS[tenderId] || [];
+    },
+    [tenderDocsMap]
+  );
 
   const getAnalysisByTenderId = (tenderId: string) => {
     return analyses[tenderId];
@@ -769,7 +1355,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         mandatoryReason: reason,
         analysisVersion: existing.documentVersionUsed,
       };
-      return {
+      const next = {
         ...prev,
         [tenderId]: {
           ...existing,
@@ -777,13 +1363,21 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
           decisionHistory: [newRecord, ...existing.decisionHistory],
         },
       };
+      if (activeTenant?.id && activeTenant.id !== DEMO_TENANT_ID) {
+        setTenantStorage(activeTenant.id, 'analyses', next);
+      }
+      return next;
     });
 
-    setPortfolio((prev) =>
-      prev.map((item) =>
+    setPortfolio((prev) => {
+      const next = prev.map((item) =>
         item.tenderId === tenderId ? { ...item, decision } : item
-      )
-    );
+      );
+      if (activeTenant?.id && activeTenant.id !== DEMO_TENANT_ID) {
+        setTenantStorage(activeTenant.id, 'portfolio', next);
+      }
+      return next;
+    });
 
     // 2. Sincronización con backend si existe análisis asociado
     const current = analyses[tenderId];
@@ -833,7 +1427,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         analysisVersion: 2,
       };
 
-      return {
+      const next = {
         ...prev,
         [tenderId]: {
           ...existing,
@@ -845,11 +1439,15 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
           decisionHistory: [newRecord, ...existing.decisionHistory],
         },
       };
+      if (activeTenant?.id && activeTenant.id !== DEMO_TENANT_ID) {
+        setTenantStorage(activeTenant.id, 'analyses', next);
+      }
+      return next;
     });
 
     // 2. Actualización de portfolio
-    setPortfolio((prev) =>
-      prev.map((item) =>
+    setPortfolio((prev) => {
+      const next = prev.map((item) =>
         item.tenderId === tenderId
           ? {
               ...item,
@@ -858,17 +1456,25 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
               lastAnalysisDate: new Date().toISOString(),
             }
           : item
-      )
-    );
+      );
+      if (activeTenant?.id && activeTenant.id !== DEMO_TENANT_ID) {
+        setTenantStorage(activeTenant.id, 'portfolio', next);
+      }
+      return next;
+    });
 
     // 3. Resolución automática de alertas asociadas al cambio documental
-    setAlerts((prev) =>
-      prev.map((a) =>
+    setAlerts((prev) => {
+      const next = prev.map((a) =>
         a.tenderId === tenderId && a.type === 'DOCUMENT_CHANGE'
           ? { ...a, isRead: true }
           : a
-      )
-    );
+      );
+      if (activeTenant?.id && activeTenant.id !== DEMO_TENANT_ID) {
+        setTenantStorage(activeTenant.id, 'alerts', next);
+      }
+      return next;
+    });
 
     // 4. Intentar ejecutar reanálisis en el backend si está activo
     const current = analyses[tenderId];
@@ -901,10 +1507,18 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         decision: 'REVIEW',
         validity: 'VALID',
         hasBlockers: false,
-        evidenceCoveragePercentage: 86,
+        evidenceCoveragePercentage: (certifications.length + evidences.length) > 0
+          ? Math.min(100, Math.round(((certifications.length + evidences.length) / (certifications.length + evidences.length + 1)) * 100))
+          : 0,
         lastAnalysisDate: new Date().toISOString(),
       };
-      setPortfolio((prev) => [newPortfolioItem, ...prev]);
+      setPortfolio((prev) => {
+        const next = [newPortfolioItem, ...prev];
+        if (activeTenant?.id && activeTenant.id !== DEMO_TENANT_ID) {
+          setTenantStorage(activeTenant.id, 'portfolio', next);
+        }
+        return next;
+      });
     }
 
     if (!analyses[tenderId]) {
@@ -936,7 +1550,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
             name: 'Encaje Económico',
             status: 'FAVORABLE',
             summary: 'Capacidad financiera suficiente',
-            details: 'Presupuesto dentro del rango operativo óptimo de la empresa.',
+            details: 'Presupuesto dentro del rango operational óptimo de la empresa.',
           },
           operationalCapacity: {
             id: `dim-${tenderId}-4`,
@@ -998,7 +1612,13 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
-      setAnalyses((prev) => ({ ...prev, [tenderId]: newAnalysis }));
+      setAnalyses((prev) => {
+        const next = { ...prev, [tenderId]: newAnalysis };
+        if (activeTenant?.id && activeTenant.id !== DEMO_TENANT_ID) {
+          setTenantStorage(activeTenant.id, 'analyses', next);
+        }
+        return next;
+      });
     }
 
     setTenders((prev) =>
@@ -1007,14 +1627,24 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const markAlertAsRead = (id: string) => {
-    setAlerts((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, isRead: true } : a))
-    );
+    setAlerts((prev) => {
+      const updated = prev.map((a) => (a.id === id ? { ...a, isRead: true } : a));
+      if (activeTenant?.id && activeTenant.id !== DEMO_TENANT_ID) {
+        setTenantStorage(activeTenant.id, 'alerts', updated);
+      }
+      return updated;
+    });
     apiClient.patch(`/alerts/${id}/read`).catch(() => {});
   };
 
   const markAllAlertsAsRead = () => {
-    setAlerts((prev) => prev.map((a) => ({ ...a, isRead: true })));
+    setAlerts((prev) => {
+      const updated = prev.map((a) => ({ ...a, isRead: true }));
+      if (activeTenant?.id && activeTenant.id !== DEMO_TENANT_ID) {
+        setTenantStorage(activeTenant.id, 'alerts', updated);
+      }
+      return updated;
+    });
     apiClient.post('/alerts/mark-all-read').catch(() => {});
   };
 
@@ -1026,7 +1656,13 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       id: tempId,
       status: 'DECLARED',
     };
-    setEvidences((prev) => [newEvidence, ...prev]);
+    setEvidences((prev) => {
+      const updated = [newEvidence, ...prev];
+      if (activeTenant?.id && activeTenant.id !== DEMO_TENANT_ID) {
+        setTenantStorage(activeTenant.id, 'evidences', updated);
+      }
+      return updated;
+    });
 
     try {
       const res = await apiClient.post<{ data: any }>('/qualification/dossier', {
@@ -1037,9 +1673,13 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         validUntil: evidence.validUntil,
       });
       if (res?.data?.id) {
-        setEvidences((prev) =>
-          prev.map((e) => (e.id === tempId ? { ...e, id: res.data.id } : e))
-        );
+        setEvidences((prev) => {
+          const updated = prev.map((e) => (e.id === tempId ? { ...e, id: res.data.id } : e));
+          if (activeTenant?.id && activeTenant.id !== DEMO_TENANT_ID) {
+            setTenantStorage(activeTenant.id, 'evidences', updated);
+          }
+          return updated;
+        });
       }
     } catch {
       // Estado optimista persistido
@@ -1054,7 +1694,13 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       id: tempId,
       status: 'DECLARED',
     };
-    setCertifications((prev) => [newCert, ...prev]);
+    setCertifications((prev) => {
+      const updated = [newCert, ...prev];
+      if (activeTenant?.id && activeTenant.id !== DEMO_TENANT_ID) {
+        setTenantStorage(activeTenant.id, 'certifications', updated);
+      }
+      return updated;
+    });
 
     try {
       const res = await apiClient.post<{ data: any }>('/dossier/certifications', {
@@ -1066,32 +1712,46 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         documentReference: certification.name,
       });
       if (res?.data?.id) {
-        setCertifications((prev) =>
-          prev.map((c) => (c.id === tempId ? { ...c, id: res.data.id } : c))
-        );
+        setCertifications((prev) => {
+          const updated = prev.map((c) => (c.id === tempId ? { ...c, id: res.data.id } : c));
+          if (activeTenant?.id && activeTenant.id !== DEMO_TENANT_ID) {
+            setTenantStorage(activeTenant.id, 'certifications', updated);
+          }
+          return updated;
+        });
       }
     } catch {
       // Estado optimista persistido
     }
   };
 
-  const updateCertification = (id: string, updated: Partial<Certification>) => {
-    setCertifications((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, ...updated } : c))
-    );
+  const updateCertification = (id: string, updatedFields: Partial<Certification>) => {
+    setCertifications((prev) => {
+      const updated = prev.map((c) => (c.id === id ? { ...c, ...updatedFields } : c));
+      if (activeTenant?.id && activeTenant.id !== DEMO_TENANT_ID) {
+        setTenantStorage(activeTenant.id, 'certifications', updated);
+      }
+      return updated;
+    });
     apiClient
       .patch(`/dossier/certifications/${id}`, {
-        name: updated.name,
-        issuer: updated.issuer,
-        certificateNumber: updated.certificateNumber,
-        validFrom: updated.issuedAt,
-        validUntil: updated.expiresAt,
+        name: updatedFields.name,
+        issuer: updatedFields.issuer,
+        certificateNumber: updatedFields.certificateNumber,
+        validFrom: updatedFields.issuedAt,
+        validUntil: updatedFields.expiresAt,
       })
       .catch(() => {});
   };
 
   const updateProfile = (updatedFields: Partial<CompanyProfile>) => {
-    setProfile((prev) => ({ ...prev, ...updatedFields }));
+    setProfile((prev) => {
+      const updated = { ...prev, ...updatedFields };
+      if (activeTenant?.id && activeTenant.id !== DEMO_TENANT_ID) {
+        setTenantStorage(activeTenant.id, 'profile', updated);
+      }
+      return updated;
+    });
     apiClient
       .put('/dossier/profile', {
         legalName: updatedFields.companyName || profile.companyName,
@@ -1121,6 +1781,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsCommandPaletteOpen,
         getTenderById,
         getTenderDocuments,
+        fetchTenderDocuments,
         getAnalysisByTenderId,
         saveDecision,
         reanalyzeTender,

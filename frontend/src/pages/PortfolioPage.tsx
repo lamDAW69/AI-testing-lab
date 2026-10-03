@@ -101,7 +101,7 @@ export const PortfolioPage: React.FC = () => {
             <span className="text-[#171719] font-medium">Portfolio</span>
           </nav>
 
-          <h1 className="font-editorial text-4xl sm:text-5xl font-normal text-[#171719] tracking-tight">
+          <h1 className="app-page-title text-[#171719]">
             Portfolio
           </h1>
           <p className="text-xs sm:text-sm text-[#69666d] mt-1">
