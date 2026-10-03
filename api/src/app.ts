@@ -11,6 +11,7 @@ import { alertsRouter } from './modules/alerts/alerts.controller.js';
 import { portfolioRouter } from './modules/portfolio/portfolio.controller.js';
 import { documentContentRouter } from './modules/documents/document-content.controller.js';
 import { requestContextMiddleware } from './middleware/request-context.middleware.js';
+import { onboardingRouter } from './modules/onboarding/onboarding.controller.js';
 
 export function createApp(): Express {
   const app = express();
@@ -33,6 +34,7 @@ export function createApp(): Express {
   app.use('/api/alerts', alertsRouter);
   app.use('/api/portfolio', portfolioRouter);
   app.use('/api/internal/documents', documentContentRouter);
+  app.use('/api/onboarding', onboardingRouter);
 
   // 4. Captura de rutas inexistentes (404 seguro)
   app.use((req: Request, _res: Response, next) => {

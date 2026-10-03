@@ -54,72 +54,32 @@ export const DEMO_USER: UserProfile = {
 
 interface AuthContextValue extends AuthState {
   login: (email: string, password: string) => Promise<void>;
-  signup: (data: SignupData) => Promise<void>;
+  signup: (data: SignupData) => Promise<'provisioned' | 'confirmation_required'>;
   loginAsDemo: () => void;
-  loginAsLuisArias: () => void;
   logout: () => Promise<void>;
   switchTenant: (tenantId: string) => void;
   canPerformAction: (action: 'analyze' | 'decide' | 'edit_dossier' | 'manage_alerts') => boolean;
 }
 
-const AUTH_STORAGE_KEY = 'pliego_auth_session';
-const REGISTERED_USERS_KEY = 'pliego_registered_users';
-
-function getSavedSession(): {
-  token: string | null;
-  user: UserProfile | null;
-  activeTenant: TenantMembership | null;
-  isDemoMode: boolean;
-} | null {
-  if (typeof window === 'undefined') return null;
-  try {
-    const raw = localStorage.getItem(AUTH_STORAGE_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
-}
-
-function saveSession(session: {
-  token: string | null;
-  user: UserProfile | null;
-  activeTenant: TenantMembership | null;
-  isDemoMode: boolean;
-}) {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session));
-  } catch {}
-}
-
-function clearSavedSession() {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.removeItem(AUTH_STORAGE_KEY);
-  } catch {}
-}
-
-function getRegisteredUsers(): UserProfile[] {
-  if (typeof window === 'undefined') return [];
-  try {
-    const raw = localStorage.getItem(REGISTERED_USERS_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveRegisteredUser(newUser: UserProfile) {
-  if (typeof window === 'undefined') return;
-  try {
-    const list = getRegisteredUsers();
-    const filtered = list.filter((u) => u.email.toLowerCase() !== newUser.email.toLowerCase());
-    filtered.push(newUser);
-    localStorage.setItem(REGISTERED_USERS_KEY, JSON.stringify(filtered));
-  } catch {}
-}
-
 const AuthContext = createContext<AuthContextValue | null>(null);
+
+interface OnboardingTenantResponse {
+  readonly data: {
+    readonly tenantId: string;
+    readonly name: string;
+    readonly taxId: string;
+    readonly role: UserRole;
+  };
+}
+
+function toMembership(response: OnboardingTenantResponse): TenantMembership {
+  return {
+    id: response.data.tenantId,
+    name: response.data.name,
+    taxId: response.data.taxId,
+    role: response.data.role,
+  };
+}
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const isDemoExplicit = () => {
@@ -130,37 +90,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const [token, setToken] = useState<string | null>(() => {
-    const saved = getSavedSession();
-    if (saved?.token) return saved.token;
     return isDemoExplicit() ? 'demo-in-memory-jwt-token-active' : null;
   });
 
   const [user, setUser] = useState<UserProfile | null>(() => {
-    const saved = getSavedSession();
-    if (saved?.user) return saved.user;
     return isDemoExplicit() ? DEMO_USER : null;
   });
 
   const [activeTenant, setActiveTenant] = useState<TenantMembership | null>(() => {
-    const saved = getSavedSession();
-    if (saved?.activeTenant) return saved.activeTenant;
     return isDemoExplicit() ? DEMO_MEMBERSHIPS[0] : null;
   });
 
   const [isDemoMode, setIsDemoMode] = useState<boolean>(() => {
-    const saved = getSavedSession();
-    if (saved !== null && saved !== undefined) return saved.isDemoMode;
     return isDemoExplicit();
   });
-
-  // Guardar reactivamente la sesión activa en almacenamiento local
-  useEffect(() => {
-    if (token && user) {
-      saveSession({ token, user, activeTenant, isDemoMode });
-    } else {
-      clearSavedSession();
-    }
-  }, [token, user, activeTenant, isDemoMode]);
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -204,15 +147,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   }, [token, activeTenant]);
 
-  const loginAsLuisArias = () => {
-    setIsDemoMode(false);
-    const jwt = 'luis-arias-jwt-session-active';
-    setToken(jwt);
-    setUser(LUIS_ARIAS_USER);
-    setActiveTenant(LUIS_ARIAS_MEMBERSHIP);
-    setError(null);
-  };
-
   const loginAsDemo = () => {
     setIsDemoMode(true);
     const jwt = 'demo-in-memory-jwt-token-active';
@@ -228,34 +162,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const cleanEmail = email.trim().toLowerCase();
 
-      // Atajo inmediato para Luis Arias
-      if (
-        cleanEmail === 'luis.arias@empresa.es' ||
-        cleanEmail === 'luis' ||
-        cleanEmail === 'b123456789' ||
-        cleanEmail.includes('luis.arias')
-      ) {
-        loginAsLuisArias();
-        return;
-      }
-
-      // Atajo para Demo
-      if (cleanEmail === 'demo@techconsulting.es' || cleanEmail === 'demo') {
-        loginAsDemo();
-        return;
-      }
-
-      // Comprobar usuarios registrados previamente
-      const registered = getRegisteredUsers();
-      const existing = registered.find((u) => u.email.toLowerCase() === cleanEmail);
-      if (existing) {
-        setIsDemoMode(false);
-        setToken(`jwt-${existing.id}`);
-        setUser(existing);
-        setActiveTenant(existing.memberships[0] || null);
-        return;
-      }
-
       if (isSupabaseConfigured() && supabase) {
         const { data, error: authError } = await supabase.auth.signInWithPassword({
           email: cleanEmail,
@@ -263,46 +169,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
         if (authError) throw authError;
         if (data.session) {
+          const membershipResponse = await apiClient.get<OnboardingTenantResponse>('/onboarding/membership', {
+            headers: { Authorization: `Bearer ${data.session.access_token}` },
+          });
+          const membership = toMembership(membershipResponse);
           setIsDemoMode(false);
           setToken(data.session.access_token);
           const mappedUser: UserProfile = {
             id: data.user.id,
             email: data.user.email || cleanEmail,
             fullName: data.user.user_metadata?.full_name || cleanEmail.split('@')[0],
-            memberships: [],
+            memberships: [membership],
           };
           setUser(mappedUser);
-          setActiveTenant(null);
+          setActiveTenant(membership);
         }
       } else {
-        // En entorno local de pruebas, aprovisionar sesión de operador segura
-        const fallbackTenantId = `018f4a12-${Date.now().toString(16).padStart(12, '0')}`;
-        const fallbackUserId = `018f4a13-${Date.now().toString(16).padStart(12, '0')}`;
-        const fallbackTenant: TenantMembership = {
-          id: fallbackTenantId,
-          name: cleanEmail.split('@')[0],
-          taxId: 'B-PENDIENTE',
-          role: 'owner',
-        };
-        const fallbackUser: UserProfile = {
-          id: fallbackUserId,
-          email: cleanEmail,
-          fullName: cleanEmail.split('@')[0],
-          memberships: [
-            fallbackTenant,
-            {
-              id: DEMO_TENANT_ID,
-              name: 'TechConsulting Soluciones S.L. (Demo)',
-              taxId: 'B-88776655',
-              role: 'viewer',
-            },
-          ],
-        };
-        setIsDemoMode(false);
-        setToken(`jwt-${fallbackUserId}`);
-        setUser(fallbackUser);
-        setActiveTenant(fallbackTenant);
-        saveRegisteredUser(fallbackUser);
+        throw new Error('El inicio de sesión no está disponible hasta configurar Supabase Auth. Puedes usar la demo explícita para explorar el producto.');
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al autenticar');
@@ -312,81 +195,48 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signup = async (data: SignupData) => {
+  const signup = async (data: SignupData): Promise<'provisioned' | 'confirmation_required'> => {
     setIsLoading(true);
     setError(null);
     try {
-      if (isSupabaseConfigured() && supabase) {
-        const { error: authError } = await supabase.auth.signUp({
-          email: data.email.trim().toLowerCase(),
-          password: data.password || 'temp-password-123',
-          options: {
-            data: {
-              full_name: data.fullName.trim(),
-              company_name: data.companyName.trim(),
-              tax_id: data.taxId.trim().toUpperCase(),
-            },
-          },
-        });
-        if (authError) throw authError;
+      if (!isSupabaseConfigured() || !supabase) {
+        throw new Error('El registro no está disponible hasta configurar Supabase Auth. No se ha creado ninguna cuenta.');
+      }
+      if (!data.password) {
+        throw new Error('Debes indicar una contraseña para crear la cuenta.');
       }
 
-      // Alta local determinista con identificadores UUIDv7
-      const newTenantId = `018f4a12-${Date.now().toString(16).padStart(12, '0')}`;
-      const newUserId = `018f4a13-${Date.now().toString(16).padStart(12, '0')}`;
-      const newTenant: TenantMembership = {
-        id: newTenantId,
-        name: data.companyName.trim(),
-        taxId: data.taxId.trim().toUpperCase(),
-        role: 'owner',
-      };
-      const newUser: UserProfile = {
-        id: newUserId,
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: data.email.trim().toLowerCase(),
-        fullName: data.fullName.trim(),
-        memberships: [
-          newTenant,
-          {
-            id: DEMO_TENANT_ID,
-            name: 'TechConsulting Soluciones S.L. (Demo)',
-            taxId: 'B-88776655',
-            role: 'viewer',
-          },
-        ],
-      };
+        password: data.password,
+        options: { data: { full_name: data.fullName.trim() } },
+      });
+      if (signUpError) throw signUpError;
 
-      // Inicializar el almacenamiento del nuevo inquilino con 0 alertas y 0 certificaciones
-      if (typeof window !== 'undefined') {
-        const initialProfile = {
-          id: `prof-${newTenantId}`,
-          tenantId: newTenantId,
-          companyName: data.companyName.trim(),
-          taxId: data.taxId.trim().toUpperCase(),
-          description: `Entidad licitadora especializada en el sector ${data.cpvSector || 'TIC'}.`,
-          primaryCpvCodes: [
-            data.cpvSector
-              ? `${data.cpvSector} · Especialidad principal`
-              : '72000000-5 · Servicios TIC',
-          ],
-          geographicalScope: ['Ámbito Estatal'],
-          maxEconomicSolvency: 0,
-          averageTeamSize: 1,
-          updatedAt: new Date().toISOString(),
-        };
-        localStorage.setItem(`pliego_tenant_${newTenantId}_profile`, JSON.stringify(initialProfile));
-        localStorage.setItem(`pliego_tenant_${newTenantId}_certifications`, JSON.stringify([]));
-        localStorage.setItem(`pliego_tenant_${newTenantId}_evidences`, JSON.stringify([]));
-        localStorage.setItem(`pliego_tenant_${newTenantId}_portfolio`, JSON.stringify([]));
-        localStorage.setItem(`pliego_tenant_${newTenantId}_alerts`, JSON.stringify([]));
-        localStorage.setItem(`pliego_tenant_${newTenantId}_analyses`, JSON.stringify({}));
-        sessionStorage.setItem('pliego_first_time_user', 'true');
+      // Cuando Supabase exige confirmar el correo no emite sesión. En ese caso
+      // no se crea ningún tenant hasta que el usuario pueda autenticarse.
+      if (!signUpData.session || !signUpData.user) {
+        return 'confirmation_required';
       }
 
+      const provisioned = await apiClient.post<OnboardingTenantResponse>('/onboarding/tenant', {
+        legalName: data.companyName.trim(),
+        taxId: data.taxId.trim().toUpperCase(),
+        cpvCode: data.cpvSector,
+      }, {
+        headers: { Authorization: `Bearer ${signUpData.session.access_token}` },
+      });
+      const membership = toMembership(provisioned);
       setIsDemoMode(false);
-      setToken(`jwt-${newUserId}`);
-      setUser(newUser);
-      setActiveTenant(newTenant);
-      saveRegisteredUser(newUser);
+      setToken(signUpData.session.access_token);
+      setUser({
+        id: signUpData.user.id,
+        email: signUpData.user.email || data.email.trim().toLowerCase(),
+        fullName: data.fullName.trim(),
+        memberships: [membership],
+      });
+      setActiveTenant(membership);
+      return 'provisioned';
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al registrar la empresa');
       throw err;
@@ -403,7 +253,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Silenciar si la sesión ya no era válida
       }
     }
-    clearSavedSession();
     setIsDemoMode(false);
     setToken(null);
     setUser(null);
@@ -411,11 +260,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const switchTenant = (tenantId: string) => {
-    let target = user?.memberships.find((m) => m.id === tenantId);
-    if (!target) {
-      if (tenantId === DEMO_TENANT_ID) target = DEMO_MEMBERSHIPS[0];
-      else if (tenantId === LUIS_ARIAS_TENANT_ID) target = LUIS_ARIAS_MEMBERSHIP;
-    }
+    const target = user?.memberships.find((m) => m.id === tenantId);
     if (target) {
       setActiveTenant(target);
       setIsDemoMode(target.id === DEMO_TENANT_ID);
@@ -443,7 +288,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         login,
         signup,
         loginAsDemo,
-        loginAsLuisArias,
         logout,
         switchTenant,
         canPerformAction,

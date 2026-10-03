@@ -13,10 +13,17 @@ export interface AuthenticatedUser {
   readonly email?: string;
 }
 
+/** Identidad obtenida exclusivamente de un JWT cuya firma ya fue verificada. */
+export interface AuthenticatedIdentity {
+  readonly userId: string;
+  readonly email?: string;
+}
+
 declare global {
   namespace Express {
     interface Request {
       user?: AuthenticatedUser;
+      identity?: AuthenticatedIdentity;
     }
   }
 }
@@ -138,7 +145,7 @@ if (env.SUPABASE_PROJECT_URL) {
   jwks = createRemoteJWKSet(jwksUrl);
 }
 
-export async function authMiddleware(req: Request, res: Response, next: NextFunction): Promise<void> {
+async function resolveAuthenticatedIdentity(req: Request, res: Response): Promise<AuthenticatedIdentity | null> {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -146,7 +153,7 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
       error: 'Unauthorized',
       message: 'Falta el encabezado Authorization con formato Bearer <token>',
     });
-    return;
+    return null;
   }
 
   const token = authHeader.split(' ')[1];
@@ -156,7 +163,7 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
       error: 'Unauthorized',
       message: 'Token de autorización ausente',
     });
-    return;
+    return null;
   }
 
   // Si no se configuró SUPABASE_PROJECT_URL en entorno local, requerimos su definición
@@ -165,7 +172,7 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
       error: 'ConfigurationError',
       message: 'SUPABASE_PROJECT_URL no está configurado para verificar tokens criptográficamente',
     });
-    return;
+    return null;
   }
 
   let payload: Awaited<ReturnType<typeof jwtVerify>>['payload'];
@@ -182,18 +189,40 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
       message: 'Firma de token inválida o token expirado',
       details: env.NODE_ENV === 'development' ? (error as Error).message : undefined,
     });
-    return;
+    return null;
   }
 
   const userId = UserIdSchema.safeParse(payload.sub);
   if (!userId.success) {
     res.status(401).json({ error: 'Unauthorized', message: 'Token no contiene un sujeto UUID válido' });
-    return;
+    return null;
   }
+
+  return Object.freeze({
+    userId: userId.data,
+    email: typeof payload['email'] === 'string' ? payload['email'] : undefined,
+  });
+}
+
+/**
+ * Valida la identidad, pero no exige aún una membresía. Solo las rutas de
+ * onboarding pueden usarlo: es necesario para que un usuario recién creado
+ * pueda recibir su primera membresía sin abrir una vía de BOLA.
+ */
+export async function identityMiddleware(req: Request, res: Response, next: NextFunction): Promise<void> {
+  const identity = await resolveAuthenticatedIdentity(req, res);
+  if (!identity) return;
+  req.identity = identity;
+  next();
+}
+
+export async function authMiddleware(req: Request, res: Response, next: NextFunction): Promise<void> {
+  const identity = await resolveAuthenticatedIdentity(req, res);
+  if (!identity) return;
 
   let resolution: MembershipResolution;
   try {
-    resolution = await resolveMembership(req, userId.data);
+    resolution = await resolveMembership(req, identity.userId);
   } catch (error) {
     console.error('No se pudo resolver la membresía del tenant:', error);
     res.status(503).json({
@@ -208,14 +237,12 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
     return;
   }
 
-  const email = typeof payload['email'] === 'string' ? payload['email'] : undefined;
-
   // 2. Inyección inmutable del contexto en Request (Anti-Tampering)
   req.user = Object.freeze({
-    userId: userId.data,
+    userId: identity.userId,
     tenantId: resolution.membership.tenantId,
     role: resolution.membership.role,
-    email,
+    email: identity.email,
   });
 
   next();

@@ -29,7 +29,7 @@ test.describe('Landing Page y Flujo de Registro / Onboarding', () => {
     await expect(page.locator('h1.home-greeting')).toBeVisible();
   });
 
-  test('debe permitir dar de alta una nueva empresa en el formulario de registro', async ({ page }) => {
+  test('debe rechazar el alta local en vez de inventar un tenant o una sesión', async ({ page }) => {
     await page.goto('/registro');
 
     // Verificar título del onboarding
@@ -47,9 +47,21 @@ test.describe('Landing Page y Flujo de Registro / Onboarding', () => {
     // Enviar registro
     await page.click('button[type="submit"]');
 
-    // Debe navegar a /app/inicio con el nuevo usuario activo
-    await expect(page).toHaveURL(/\/app\/inicio/);
-    await expect(page.locator('h1.home-greeting')).toContainText('Hola, Elena.');
+    // Sin un backend de provisión, no se crea una cuenta ficticia ni se
+    // navega al espacio demo.
+    await expect(page).toHaveURL(/\/registro/);
+    await expect(page.getByText('No se ha creado ninguna cuenta.')).toBeVisible();
+  });
+
+  test('no debe autenticar credenciales arbitrarias como el usuario demo', async ({ page }) => {
+    await page.goto('/login');
+    await page.fill('input[type="email"]', 'qa.no-existe@example.test');
+    await page.fill('input[type="password"]', 'PruebaSegura2026!');
+    await page.click('button[type="submit"]');
+
+    await expect(page).toHaveURL(/\/login/);
+    await expect(page.getByText('El inicio de sesión no está disponible')).toBeVisible();
+    await expect(page.getByText('Operador Demo')).not.toBeVisible();
   });
 
   test('debe permitir navegar entre login, registro y la página principal', async ({ page }) => {

@@ -26,11 +26,12 @@ export const RegisterPage: React.FC = () => {
   const [companyName, setCompanyName] = useState('');
   const [taxId, setTaxId] = useState('');
   const [cpvSector, setCpvSector] = useState('72000000');
+  const [confirmationRequired, setConfirmationRequired] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await signup({
+      const result = await signup({
         fullName,
         email,
         password,
@@ -38,6 +39,10 @@ export const RegisterPage: React.FC = () => {
         taxId: taxId.toUpperCase().trim(),
         cpvSector,
       });
+      if (result === 'confirmation_required') {
+        setConfirmationRequired(true);
+        return;
+      }
       sessionStorage.setItem('pliego_first_time_user', 'true');
       navigate('/app/inicio');
     } catch {
@@ -208,6 +213,12 @@ export const RegisterPage: React.FC = () => {
             {error && (
               <div className="p-3 rounded-[8px] bg-[#D93838]/10 text-[#dc2626] dark:text-[#ff6b6b] border border-[#D93838]/30 text-xs">
                 {error}
+              </div>
+            )}
+
+            {confirmationRequired && (
+              <div className="p-3 rounded-[8px] bg-[#047857]/10 text-[#047857] dark:text-[#10b981] border border-[#047857]/30 text-xs">
+                Revisa tu correo y confírmalo. La organización se provisionará de forma segura al iniciar sesión por primera vez.
               </div>
             )}
 
