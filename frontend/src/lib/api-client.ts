@@ -30,10 +30,11 @@ class ApiClient {
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const cleanBase = this.baseUrl.replace(/\/+$/, '');
     const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    const apiPrefix = cleanBase.endsWith('/api') || cleanEndpoint.startsWith('/api') ? '' : '/api';
     const normalizedPath =
       cleanBase.endsWith('/api') && cleanEndpoint.startsWith('/api/')
         ? cleanEndpoint.substring(4)
-        : cleanEndpoint;
+        : `${apiPrefix}${cleanEndpoint}`;
     const url = `${cleanBase}${normalizedPath}`;
     const headers = new Headers(options.headers || {});
 

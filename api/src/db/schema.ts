@@ -186,6 +186,8 @@ export const tenders = pgTable('tenders', {
   additionalCpvCodes: text('additional_cpv_codes').array().notNull().default([]),
   submissionDeadline: timestamp('submission_deadline', { withTimezone: true }),
   awardDate: timestamp('award_date', { withTimezone: true }),
+  publicationDate: timestamp('publication_date', { withTimezone: true }),
+  sourceUpdatedAt: timestamp('source_updated_at', { withTimezone: true }),
   rawPayloadHash: varchar('raw_payload_hash', { length: 64 }).notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
@@ -193,6 +195,9 @@ export const tenders = pgTable('tenders', {
   uqSourceTender: uniqueIndex('uq_tenders_source_tender').on(table.sourceId, table.sourceTenderId),
   idxMainCpv: index('idx_tenders_main_cpv').on(table.mainCpvCode),
   idxStatusDeadline: index('idx_tenders_status_deadline').on(table.status, table.submissionDeadline),
+  idxSubmissionDeadline: index('idx_tenders_submission_deadline').on(table.submissionDeadline),
+  idxPublicationDate: index('idx_tenders_publication_date').on(table.publicationDate),
+  idxPubCpv: index('idx_tenders_pub_cpv').on(table.publicationDate, table.mainCpvCode),
   idxBudget: index('idx_tenders_budget').on(table.budgetAmountCents),
   idxAuthority: index('idx_tenders_authority').on(table.authorityId),
 }));
@@ -290,6 +295,31 @@ export const cpvCodes = pgTable('cpv_codes', {
   description: text('description').notNull(),
   parentCode: varchar('parent_code', { length: 20 }),
 });
+
+// 15. Estado de sincronización y cursor del feed oficial PLACSP
+export const ingestionSyncStates = pgTable('ingestion_sync_states', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  sourceCode: varchar('source_code', { length: 50 }).notNull(),
+  jobType: varchar('job_type', { length: 50 }).notNull(),
+  currentPageUrl: varchar('current_page_url', { length: 2048 }).notNull(),
+  nextPageUrl: varchar('next_page_url', { length: 2048 }),
+  oldestProcessedDate: timestamp('oldest_processed_date', { withTimezone: true }),
+  newestProcessedDate: timestamp('newest_processed_date', { withTimezone: true }),
+  cutoffDate: timestamp('cutoff_date', { withTimezone: true }),
+  pagesProcessed: integer('pages_processed').notNull().default(0),
+  tendersScanned: integer('tenders_scanned').notNull().default(0),
+  tendersPersisted: integer('tenders_persisted').notNull().default(0),
+  status: varchar('status', { length: 30 }).notNull().default('IDLE'),
+  lastError: text('last_error'),
+  startedAt: timestamp('started_at', { withTimezone: true }),
+  completedAt: timestamp('completed_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  uqSourceJob: uniqueIndex('uq_ingestion_sync_source_job').on(table.sourceCode, table.jobType),
+  idxStatus: index('idx_ingestion_sync_status').on(table.status),
+}));
+
 
 // ============================================================================
 // ANÁLISIS DOCUMENTAL PRIVADO POR TENANT (Fase 3)
@@ -597,6 +627,10 @@ export type NewTenderEvent = typeof tenderEvents.$inferInsert;
 
 export type CpvCode = typeof cpvCodes.$inferSelect;
 export type NewCpvCode = typeof cpvCodes.$inferInsert;
+
+export type IngestionSyncState = typeof ingestionSyncStates.$inferSelect;
+export type NewIngestionSyncState = typeof ingestionSyncStates.$inferInsert;
+
 
 export type RequirementExtraction = typeof requirementExtractions.$inferSelect;
 export type Requirement = typeof requirements.$inferSelect;

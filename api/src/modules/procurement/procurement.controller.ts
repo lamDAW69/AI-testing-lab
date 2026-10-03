@@ -108,15 +108,37 @@ procurementRouter.post('/ingest', requireIngestSecret, async (req: Request, res:
       return;
     }
 
-    let tendersToIngest;
     if (bodyResult.data.mode === 'live') {
       const { placspConnector } = await import('./connectors/placsp.connector.js');
-      tendersToIngest = await placspConnector.fetchRealFeed(bodyResult.data.maxItems);
-    } else {
-      tendersToIngest = bodyResult.data.tenders;
+      const tendersToIngest = await placspConnector.fetchRealFeed(bodyResult.data.maxItems);
+      const summary = await procurementService.ingestBatch(tendersToIngest);
+      res.status(200).json({
+        message: 'Lote de licitaciones procesado con éxito',
+        ...summary,
+      });
+      return;
     }
 
-    const summary = await procurementService.ingestBatch(tendersToIngest);
+    if (bodyResult.data.mode === 'historical') {
+      const { placspConnector } = await import('./connectors/placsp.connector.js');
+      const cutoffDate = bodyResult.data.fromDate ? new Date(bodyResult.data.fromDate) : undefined;
+      const crawlSummary = await placspConnector.crawlFeedToCutoff({
+        cutoffDate,
+        maxPages: bodyResult.data.maxPages,
+        onPageProcessed: async (page) => {
+          if (page.tenders.length > 0) {
+            await procurementService.ingestBatch(page.tenders);
+          }
+        },
+      });
+      res.status(200).json({
+        message: 'Rastreo histórico procesado con éxito',
+        ...crawlSummary,
+      });
+      return;
+    }
+
+    const summary = await procurementService.ingestBatch(bodyResult.data.tenders);
     res.status(200).json({
       message: 'Lote de licitaciones procesado con éxito',
       ...summary,

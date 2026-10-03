@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   ArrowRight,
@@ -28,15 +28,22 @@ import { ProductTourModal } from '../components/layout/ProductTourModal';
 
 export const HomePage: React.FC = () => {
   const navigate = useNavigate();
-  const { user, isDemoMode } = useAuth();
+  const { user, isDemoMode, activeTenant } = useAuth();
   const { portfolio, tenders, alerts, certifications, evidences } = useData();
   const [isTourModalOpen, setIsTourModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && sessionStorage.getItem('pliego_first_time_user') === 'true') {
+      setIsTourModalOpen(true);
+      sessionStorage.removeItem('pliego_first_time_user');
+    }
+  }, []);
 
   const firstName = user?.fullName === 'Operador Demo'
     ? 'Operador Demo (TechConsulting)'
     : user?.fullName
     ? user.fullName.split(' ')[0]
-    : 'Marta';
+    : 'Operador';
 
   // Fecha en formato editorial español: "Miércoles, 24 de septiembre"
   const formattedDate = new Intl.DateTimeFormat('es-ES', {
@@ -81,23 +88,23 @@ export const HomePage: React.FC = () => {
         onClose={() => setIsTourModalOpen(false)}
       />
 
-      {/* BANNER GUÍA DE DEMOSTRACIÓN (Solo visible en Modo Demo) */}
-      {isDemoMode && (
-        <section className="p-4 sm:p-5 rounded-[20px] bg-gradient-to-r from-[#eeeaff] via-white to-[#f6f4fb] border border-[#d5ccfe] shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      {/* BANNER GUÍA DE INCORPORACIÓN / BIENVENIDA */}
+      {isDemoMode ? (
+        <section className="home-demo-banner p-4 sm:p-5 rounded-[20px] bg-[var(--surface-1)] border border-[var(--hairline)] shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="flex items-start gap-3">
-            <div className="w-9 h-9 rounded-[12px] bg-[#685cff] text-white flex items-center justify-center shrink-0 shadow-2xs mt-0.5">
+            <div className="w-9 h-9 rounded-[12px] bg-[var(--primary)] text-white flex items-center justify-center shrink-0 shadow-2xs mt-0.5">
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-mono uppercase tracking-wider font-bold text-[#685cff] bg-white px-2 py-0.5 rounded-full border border-[#d5ccfe]">
+                <span className="text-[10px] font-mono uppercase tracking-wider font-bold text-[var(--primary)] bg-[var(--surface-2)] px-2 py-0.5 rounded-full border border-[var(--hairline)]">
                   Demostración Interactiva
                 </span>
-                <span className="text-xs font-bold text-[#171719]">
+                <span className="text-xs font-bold text-[var(--ink)]">
                   ¿Cómo funciona Pliego AI?
                 </span>
               </div>
-              <p className="text-xs text-[#69666d] mt-1 leading-relaxed max-w-2xl">
+              <p className="text-xs text-[var(--ink-secondary)] mt-1 leading-relaxed max-w-2xl">
                 Has entrado con la empresa de prueba <strong>TechConsulting Soluciones S.L.</strong>. La IA monitoriza el feed de PLACSP, sella pliegos con hash SHA-256 y precalifica solvencia técnica y económica frente a tu dossier.
               </p>
             </div>
@@ -106,18 +113,114 @@ export const HomePage: React.FC = () => {
           <div className="flex flex-wrap items-center gap-2 shrink-0">
             <button
               onClick={() => setIsTourModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[12px] bg-white hover:bg-white/80 border border-[#685cff]/30 text-[#685cff] text-xs font-semibold shadow-2xs transition-all cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[12px] bg-[var(--surface-2)] hover:bg-[var(--surface-3)] border border-[var(--hairline)] text-[var(--primary)] text-xs font-semibold shadow-2xs transition-all cursor-pointer"
             >
               <HelpCircle className="w-3.5 h-3.5" />
               <span>Ver Guía Paso a Paso</span>
             </button>
             <button
               onClick={() => navigate('/app/catalogo')}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[12px] bg-[#685cff] hover:bg-[#5544ea] text-white text-xs font-semibold shadow-2xs transition-all cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[12px] bg-[var(--primary)] hover:opacity-90 text-white text-xs font-semibold shadow-2xs transition-all cursor-pointer"
             >
               <span>1. Explorar Catálogo</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
+          </div>
+        </section>
+      ) : (
+        <section className="home-onboarding-guide p-5 sm:p-6 rounded-[20px] bg-[var(--surface-1)] border border-[var(--hairline)] shadow-xs space-y-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-[14px] bg-[var(--primary)] text-white flex items-center justify-center shrink-0 shadow-2xs mt-0.5">
+                <Sparkles className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-mono uppercase tracking-wider font-bold text-[var(--primary)] bg-[var(--surface-2)] px-2 py-0.5 rounded-full border border-[var(--hairline)]">
+                    Guía de Inicio Rápido
+                  </span>
+                  <span className="text-xs font-bold text-[var(--ink)]">
+                    Bienvenido a Pliego AI, {firstName}
+                  </span>
+                </div>
+                <p className="text-xs text-[var(--ink-secondary)] mt-1 leading-relaxed max-w-2xl">
+                  Tu organización <strong>{activeTenant?.name || 'Licitadora'}</strong> ({activeTenant?.taxId ? `CIF ${activeTenant.taxId}` : 'Entidad nueva'}) está lista. Sigue estos 4 pasos para maximizar tu ratio de éxito en contratación pública:
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
+              <button
+                onClick={() => setIsTourModalOpen(true)}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-[12px] bg-[var(--surface-2)] hover:bg-[var(--surface-3)] border border-[var(--hairline)] text-[var(--primary)] text-xs font-semibold shadow-2xs transition-all cursor-pointer"
+              >
+                <HelpCircle className="w-3.5 h-3.5" />
+                <span>Ver Tour de la Plataforma</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Grid de 4 Pilares Operativos */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2">
+            <div
+              onClick={() => navigate('/app/dossier')}
+              className="p-3.5 rounded-[14px] bg-[var(--surface-2)] border border-[var(--hairline)] hover:border-[var(--primary)]/40 transition-all cursor-pointer group"
+            >
+              <div className="text-[10px] font-mono font-bold text-[#047857] dark:text-[#10b981] uppercase tracking-wider">
+                1. Dossier
+              </div>
+              <h4 className="text-xs font-bold text-[var(--ink)] mt-1 group-hover:text-[var(--primary)] transition-colors">
+                Registra tus solvencias
+              </h4>
+              <p className="text-[11px] text-[var(--ink-secondary)] mt-1 leading-snug">
+                Da de alta certificaciones (ISO, ENS) y contratos previos para que la IA conozca tus capacidades reales.
+              </p>
+            </div>
+
+            <div
+              onClick={() => navigate('/app/catalogo')}
+              className="p-3.5 rounded-[14px] bg-[var(--surface-2)] border border-[var(--hairline)] hover:border-[var(--primary)]/40 transition-all cursor-pointer group"
+            >
+              <div className="text-[10px] font-mono font-bold text-[var(--primary)] uppercase tracking-wider">
+                2. Catálogo PLACSP
+              </div>
+              <h4 className="text-xs font-bold text-[var(--ink)] mt-1 group-hover:text-[var(--primary)] transition-colors">
+                Explora licitaciones
+              </h4>
+              <p className="text-[11px] text-[var(--ink-secondary)] mt-1 leading-snug">
+                Filtra por sector TIC (CPVs 72* y 48*), accede a los pliegos oficiales PCAP y PPT sellados con SHA-256.
+              </p>
+            </div>
+
+            <div
+              onClick={() => navigate('/app/catalogo')}
+              className="p-3.5 rounded-[14px] bg-[var(--surface-2)] border border-[var(--hairline)] hover:border-[var(--primary)]/40 transition-all cursor-pointer group"
+            >
+              <div className="text-[10px] font-mono font-bold text-[var(--primary)] uppercase tracking-wider">
+                3. Precalificación IA
+              </div>
+              <h4 className="text-xs font-bold text-[var(--ink)] mt-1 group-hover:text-[var(--primary)] transition-colors">
+                Cotejo en 7 dimensiones
+              </h4>
+              <p className="text-[11px] text-[var(--ink-secondary)] mt-1 leading-snug">
+                La IA analiza requisitos obligatorios contra tu dossier con citas exactas (página y caracteres).
+              </p>
+            </div>
+
+            <div
+              onClick={() => navigate('/app/portfolio')}
+              className="p-3.5 rounded-[14px] bg-[var(--surface-2)] border border-[var(--hairline)] hover:border-[var(--primary)]/40 transition-all cursor-pointer group"
+            >
+              <div className="text-[10px] font-mono font-bold text-[#b45309] dark:text-[#f59e0b] uppercase tracking-wider">
+                4. Cartera y Alertas
+              </div>
+              <h4 className="text-xs font-bold text-[var(--ink)] mt-1 group-hover:text-[var(--primary)] transition-colors">
+                Control de adendas
+              </h4>
+              <p className="text-[11px] text-[var(--ink-secondary)] mt-1 leading-snug">
+                Decide si licitar (PURSUE) o descartar. Recibe alertas automáticas si el organismo publica cambios.
+              </p>
+            </div>
           </div>
         </section>
       )}
@@ -132,6 +235,11 @@ export const HomePage: React.FC = () => {
           <h1 className="home-greeting text-[#171719]">
             Hola, {firstName}.
           </h1>
+          <p className="home-attention mt-3 max-w-xl">
+            {priorityOpportunities.length === 0
+              ? 'Tu cartera está al día.'
+              : `Hoy tienes ${priorityOpportunities.length} ${priorityOpportunities.length === 1 ? 'expediente que priorizar' : 'expedientes que priorizar'}.`}
+          </p>
         </div>
 
         {/* Lado Derecho: Acceso Rápido y Panel Operativo */}
@@ -187,7 +295,7 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* 2. MÉTRICAS DINÁMICAS BASADAS EN LOS DATOS REALES DEL TENANT */}
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
+      <section className="home-metrics grid grid-cols-2 md:grid-cols-4 gap-3.5">
         {/* Métrica 1: Oportunidades en cartera */}
         <div className="glass-soft p-4 rounded-[18px] flex items-center gap-3.5">
           <div className="w-10 h-10 rounded-[12px] bg-white/80 border border-[rgba(30,24,38,0.06)] flex items-center justify-center text-[#171719] shrink-0 shadow-2xs">

@@ -16,9 +16,9 @@ export const Card: React.FC<CardProps> = ({
   return (
     <div
       onClick={onClick}
-      className={`bg-white border border-[rgba(20,20,20,0.06)] rounded-[18px] shadow-[0_1px_3px_rgba(20,20,30,0.02)] ${
+      className={`app-card bg-[var(--surface-1)] border border-[var(--hairline)] rounded-[18px] text-[var(--ink)] ${
         hoverable
-          ? 'hover:border-[rgba(20,20,20,0.12)] hover:shadow-[0_4px_16px_rgba(20,20,30,0.05)] transition-all cursor-pointer'
+          ? 'app-card--interactive cursor-pointer'
           : ''
       } ${className}`}
     >
@@ -34,10 +34,10 @@ export const CardHeader: React.FC<{
   className?: string;
 }> = ({ title, description, action, className = '' }) => {
   return (
-    <div className={`p-5 pb-3.5 border-b border-[rgba(20,20,20,0.06)] flex items-start justify-between gap-4 ${className}`}>
+    <div className={`p-5 pb-3.5 border-b border-[var(--hairline)] flex items-start justify-between gap-4 ${className}`}>
       <div className="space-y-0.5">
-        <h3 className="text-sm font-semibold text-[#161616] tracking-tight">{title}</h3>
-        {description && <p className="text-xs text-[#68656A] leading-relaxed">{description}</p>}
+        <h3 className="text-sm font-semibold text-[var(--ink)] tracking-tight">{title}</h3>
+        {description && <p className="text-xs text-[var(--ink-secondary)] leading-relaxed">{description}</p>}
       </div>
       {action && <div className="shrink-0">{action}</div>}
     </div>
@@ -55,5 +55,5 @@ export const CardFooter: React.FC<{ children: React.ReactNode; className?: strin
   children,
   className = '',
 }) => {
-  return <div className={`p-4 px-5 bg-[#F6F3EF]/40 border-t border-[rgba(20,20,20,0.06)] rounded-b-[18px] ${className}`}>{children}</div>;
+  return <div className={`p-4 px-5 bg-[var(--surface-2)] border-t border-[var(--hairline)] rounded-b-[18px] ${className}`}>{children}</div>;
 };

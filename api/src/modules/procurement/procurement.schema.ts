@@ -117,6 +117,8 @@ export const PlacspTenderInputSchema = z.object({
   additionalCpvCodes: z.array(z.string()).default([]),
   submissionDeadline: z.string().datetime().optional(),
   awardDate: z.string().datetime().optional(),
+  publicationDate: z.string().datetime().optional(),
+  sourceUpdatedAt: z.string().datetime().optional(),
   authority: AuthorityInputSchema,
   lots: z.array(LotInputSchema).default([]),
   documents: z.array(DocumentInputSchema).default([]),
@@ -136,7 +138,7 @@ export const TenderQueryFilterSchema = z.object({
   deadlineTo: z.string().datetime().optional(),
   search: z.string().max(100).optional(),
   page: z.coerce.number().int().positive().default(1),
-  limit: z.coerce.number().int().min(1).max(50).default(20),
+  limit: z.coerce.number().int().min(1).max(500).default(20),
 }).strict();
 export type TenderQueryFilter = z.infer<typeof TenderQueryFilterSchema>;
 
@@ -144,7 +146,13 @@ export type TenderQueryFilter = z.infer<typeof TenderQueryFilterSchema>;
 export const IngestionJobInputSchema = z.union([
   z.object({
     mode: z.literal('live'),
-    maxItems: z.number().int().positive().max(100).default(20),
+    maxItems: z.number().int().positive().max(500).default(20),
+  }).strict(),
+  z.object({
+    mode: z.literal('historical'),
+    fromDate: z.string().datetime().optional(),
+    maxPages: z.number().int().positive().optional(),
+    resume: z.boolean().default(false),
   }).strict(),
   z.object({
     mode: z.literal('batch').optional().default('batch'),

@@ -20,6 +20,7 @@ export interface PublicTender {
   estimatedValue: number; // Valor estimado del contrato
   currency: string;
   submissionDeadline: string; // ISO 8601
+  publicationDate?: string; // Fecha de publicación oficial (PLACSP)
   status: TenderStatus;
   documentsCount: number;
   documents?: TenderDocument[];

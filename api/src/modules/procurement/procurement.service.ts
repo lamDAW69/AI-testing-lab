@@ -69,6 +69,14 @@ export class ProcurementService {
   async listSources() {
     return procurementRepository.listSources();
   }
+
+  async getSyncState(sourceCode: string, jobType: string) {
+    return procurementRepository.getSyncState(sourceCode, jobType);
+  }
+
+  async upsertSyncState(data: Parameters<typeof procurementRepository.upsertSyncState>[0]) {
+    return procurementRepository.upsertSyncState(data);
+  }
 }
 
 export const procurementService = new ProcurementService();

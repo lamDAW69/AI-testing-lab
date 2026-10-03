@@ -106,7 +106,7 @@ export const AlertsPage: React.FC = () => {
           </nav>
 
           <div className="flex items-center gap-3">
-            <h1 className="font-editorial text-4xl sm:text-5xl font-normal text-[#171719] tracking-tight">
+            <h1 className="app-page-title text-[#171719]">
               Alertas
             </h1>
             {unreadCount > 0 && (

@@ -14,13 +14,24 @@ import { formatCurrency, formatDeadlineDays } from '../lib/formatters';
 import { useData } from '../lib/data-context';
 import { StatusBadge } from '../components/ui/StatusBadge';
 
+function getTenderTerritory(authority: string): string {
+  const lower = (authority || '').toLowerCase();
+  if (lower.includes('valenciana') || lower.includes('valencia')) return 'C. Valenciana';
+  if (lower.includes('andaluz') || lower.includes('andalucía') || lower.includes('andalucia')) return 'Andalucía';
+  if (lower.includes('catalunya') || lower.includes('cataluña') || lower.includes('barcelona')) return 'Cataluña';
+  if (lower.includes('madrid') && lower.includes('ayuntamiento')) return 'Madrid Capital';
+  if (lower.includes('galicia')) return 'Galicia';
+  if (lower.includes('euskadi') || lower.includes('vasco')) return 'País Vasco';
+  return 'Estatal';
+}
+
 export const CatalogPage: React.FC = () => {
   const { tenders } = useData();
   const navigate = useNavigate();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCpv, setSelectedCpv] = useState<string>('all');
-  const [selectedState, setSelectedState] = useState<string>('PUBLISHED');
+  const [selectedState, setSelectedState] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'deadline' | 'amount' | 'date'>('deadline');
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
 
@@ -29,13 +40,13 @@ export const CatalogPage: React.FC = () => {
     .filter((tender) => {
       const matchesSearch =
         searchTerm === '' ||
-        tender.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        tender.fileReference.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        tender.contractingAuthority.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        tender.cpvCode.toLowerCase().includes(searchTerm.toLowerCase());
+        (tender.title && tender.title.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (tender.fileReference && tender.fileReference.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (tender.contractingAuthority && tender.contractingAuthority.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (tender.cpvCode && tender.cpvCode.toLowerCase().includes(searchTerm.toLowerCase()));
 
       const matchesCpv =
-        selectedCpv === 'all' || tender.cpvCode.startsWith(selectedCpv);
+        selectedCpv === 'all' || (tender.cpvCode && tender.cpvCode.startsWith(selectedCpv));
 
       const matchesState =
         selectedState === 'all' || tender.status === selectedState;
@@ -44,10 +55,17 @@ export const CatalogPage: React.FC = () => {
     })
     .sort((a, b) => {
       if (sortBy === 'deadline') {
-        return new Date(a.submissionDeadline).getTime() - new Date(b.submissionDeadline).getTime();
+        const timeA = a.submissionDeadline ? new Date(a.submissionDeadline).getTime() : 0;
+        const timeB = b.submissionDeadline ? new Date(b.submissionDeadline).getTime() : 0;
+        return timeA - timeB;
       }
       if (sortBy === 'amount') {
         return b.budgetAmount - a.budgetAmount;
+      }
+      if (sortBy === 'date') {
+        const dateA = a.publicationDate ? new Date(a.publicationDate).getTime() : 0;
+        const dateB = b.publicationDate ? new Date(b.publicationDate).getTime() : 0;
+        return dateB - dateA;
       }
       return 0;
     });
@@ -63,18 +81,18 @@ export const CatalogPage: React.FC = () => {
       {/* 19. HEADER DE CATÁLOGO (Sección 19) */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <nav className="text-xs text-[#929097] flex items-center gap-1.5 mb-1.5">
-            <Link to="/app/inicio" className="hover:text-[#171719] transition-colors">
+          <nav className="text-xs text-[var(--ink-tertiary)] flex items-center gap-1.5 mb-1.5">
+            <Link to="/app/inicio" className="hover:text-[var(--ink)] transition-colors">
               Inicio
             </Link>
             <span>›</span>
-            <span className="text-[#171719] font-medium">Catálogo</span>
+            <span className="text-[var(--ink)] font-medium">Catálogo</span>
           </nav>
 
-          <h1 className="font-editorial text-4xl sm:text-5xl font-normal text-[#171719] tracking-tight">
+          <h1 className="app-page-title text-[var(--ink)]">
             Catálogo
           </h1>
-          <p className="text-xs sm:text-sm text-[#69666d] mt-1 max-w-xl">
+          <p className="text-xs sm:text-sm text-[var(--ink-secondary)] mt-1 max-w-xl">
             Encuentra oportunidades públicas relevantes y analiza su potencial para tu organización.
           </p>
         </div>
@@ -84,42 +102,97 @@ export const CatalogPage: React.FC = () => {
       <div className="space-y-3">
         {/* Search Input: height 48px, max-w-640px, radius 14px (Sección 20) */}
         <div className="relative max-w-[640px]">
-          <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-[#929097]" />
+          <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-[var(--ink-tertiary)]" />
           <input
             type="text"
-            placeholder="Buscar por título, organismo, CPV..."
+            placeholder="Buscar por título, expediente, organismo, CPV..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full h-12 pl-11 pr-4 bg-white/70 hover:bg-white focus:bg-white border border-[rgba(30,24,38,0.06)] focus:border-[#685cff] rounded-[14px] text-xs sm:text-sm text-[#171719] placeholder-[#929097] transition-all shadow-xs focus:outline-none"
+            className="w-full h-12 pl-11 pr-4 bg-[var(--surface-1)] hover:bg-white focus:bg-white border border-[var(--hairline)] focus:border-[#685cff] rounded-[14px] text-xs sm:text-sm text-[var(--ink)] placeholder-[#929097] transition-all shadow-xs focus:outline-none"
           />
+        </div>
+
+        {/* Chips de acceso rápido por sector */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <button
+            onClick={() => setSelectedCpv('all')}
+            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
+              selectedCpv === 'all'
+                ? 'bg-[var(--primary)] text-white shadow-xs'
+                : 'bg-[var(--surface-2)] text-[var(--ink-secondary)] hover:text-[var(--ink)] border border-[var(--hairline)]'
+            }`}
+          >
+            Todos ({tenders.length})
+          </button>
+          <button
+            onClick={() => setSelectedCpv('72')}
+            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
+              selectedCpv === '72'
+                ? 'bg-[var(--primary)] text-white shadow-xs'
+                : 'bg-[var(--surface-2)] text-[var(--ink-secondary)] hover:text-[var(--ink)] border border-[var(--hairline)]'
+            }`}
+          >
+            TIC y Software (72*)
+          </button>
+          <button
+            onClick={() => setSelectedCpv('71')}
+            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
+              selectedCpv === '71'
+                ? 'bg-[var(--primary)] text-white shadow-xs'
+                : 'bg-[var(--surface-2)] text-[var(--ink-secondary)] hover:text-[var(--ink)] border border-[var(--hairline)]'
+            }`}
+          >
+            Ingeniería (71*)
+          </button>
+          <button
+            onClick={() => setSelectedCpv('79')}
+            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
+              selectedCpv === '79'
+                ? 'bg-[var(--primary)] text-white shadow-xs'
+                : 'bg-[var(--surface-2)] text-[var(--ink-secondary)] hover:text-[var(--ink)] border border-[var(--hairline)]'
+            }`}
+          >
+            Consultoría (79*)
+          </button>
+          <button
+            onClick={() => setSelectedCpv('45')}
+            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
+              selectedCpv === '45'
+                ? 'bg-[var(--primary)] text-white shadow-xs'
+                : 'bg-[var(--surface-2)] text-[var(--ink-secondary)] hover:text-[var(--ink)] border border-[var(--hairline)]'
+            }`}
+          >
+            Obras (45*)
+          </button>
         </div>
 
         {/* Chips de Filtro: height 34px, radius 999px (Sección 21) */}
         <div className="flex items-center gap-2 flex-wrap">
-          {/* CPV */}
+          {/* CPV Oficiales TIC */}
           <select
             value={selectedCpv}
             onChange={(e) => setSelectedCpv(e.target.value)}
-            className="h-[34px] px-3.5 rounded-full bg-white/65 hover:bg-white border border-[rgba(30,24,38,0.06)] text-xs text-[#171719] cursor-pointer focus:outline-none shadow-xs"
+            className="h-[34px] px-3.5 rounded-full bg-[var(--surface-1)] hover:bg-white border border-[var(--hairline)] text-xs text-[var(--ink)] cursor-pointer focus:outline-none shadow-xs"
           >
-            <option value="all">CPV: Todos los sectores ▾</option>
-            <option value="722">CPV 72200000 · Software ▾</option>
-            <option value="728">CPV 72800000 · Auditoría TIC ▾</option>
-            <option value="384">CPV 38400000 · Sensores IoT ▾</option>
+            <option value="all">CPV: Todos los sectores TIC ▾</option>
+            <option value="72">CPV 72* · Servicios TIC y Consultoría ▾</option>
+            <option value="48">CPV 48* · Paquetes de Software y Sistemas ▾</option>
+            <option value="722">CPV 722* · Desarrollo y Mantenimiento de Software ▾</option>
+            <option value="728">CPV 728* · Auditoría TIC y Ciberseguridad ▾</option>
           </select>
 
           {/* Estado */}
           <select
             value={selectedState}
             onChange={(e) => setSelectedState(e.target.value)}
-            className="h-[34px] px-3.5 rounded-full bg-white/65 hover:bg-white border border-[rgba(30,24,38,0.06)] text-xs text-[#171719] cursor-pointer focus:outline-none shadow-xs"
+            className="h-[34px] px-3.5 rounded-full bg-[var(--surface-1)] hover:bg-white border border-[var(--hairline)] text-xs text-[var(--ink)] cursor-pointer focus:outline-none shadow-xs"
           >
             <option value="all">Estado: Todos ▾</option>
             <option value="PUBLISHED">Estado: Abierto (Publicado) ▾</option>
             <option value="EVALUATION">Estado: En Evaluación ▾</option>
           </select>
 
-          {(selectedCpv !== 'all' || selectedState !== 'PUBLISHED' || searchTerm !== '') && (
+          {(selectedCpv !== 'all' || selectedState !== 'all' || searchTerm !== '') && (
             <button
               onClick={clearFilters}
               className="h-[34px] px-3 rounded-full bg-[#ffeded] text-[#e44848] text-xs font-semibold hover:bg-[#fcd2d2] transition-colors cursor-pointer"
@@ -131,9 +204,9 @@ export const CatalogPage: React.FC = () => {
       </div>
 
       {/* TOOLBAR DEL CATÁLOGO */}
-      <div className="flex items-center justify-between text-xs text-[#69666d] pt-2 pb-1 border-b border-[rgba(30,24,38,0.055)]">
+      <div className="flex items-center justify-between text-xs text-[var(--ink-secondary)] pt-2 pb-1 border-b border-[var(--hairline)]">
         <div className="flex items-center gap-4">
-          <span className="font-semibold text-[#171719]">
+          <span className="font-semibold text-[var(--ink)]">
             {filteredTenders.length} {filteredTenders.length === 1 ? 'resultado' : 'resultados'}
           </span>
         </div>
@@ -144,7 +217,7 @@ export const CatalogPage: React.FC = () => {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
-              className="bg-transparent text-[#171719] font-medium cursor-pointer focus:outline-none"
+              className="bg-transparent text-[var(--ink)] font-medium cursor-pointer focus:outline-none"
             >
               <option value="deadline">Fecha presentación ▾</option>
               <option value="date">Fecha publicación ▾</option>
@@ -152,13 +225,13 @@ export const CatalogPage: React.FC = () => {
             </select>
           </div>
 
-          <div className="hidden sm:flex items-center gap-1 pl-2 border-l border-[rgba(30,24,38,0.08)]">
+          <div className="hidden sm:flex items-center gap-1 pl-2 border-l border-[var(--hairline)]">
             <button
               onClick={() => setViewMode('list')}
               className={`p-1 rounded-md transition-colors ${
                 viewMode === 'list'
-                  ? 'bg-white text-[#171719] shadow-xs'
-                  : 'text-[#929097] hover:text-[#171719]'
+                  ? 'bg-white text-[var(--ink)] shadow-xs'
+                  : 'text-[var(--ink-tertiary)] hover:text-[var(--ink)]'
               }`}
               title="Vista de lista"
             >
@@ -168,8 +241,8 @@ export const CatalogPage: React.FC = () => {
               onClick={() => setViewMode('grid')}
               className={`p-1 rounded-md transition-colors ${
                 viewMode === 'grid'
-                  ? 'bg-white text-[#171719] shadow-xs'
-                  : 'text-[#929097] hover:text-[#171719]'
+                  ? 'bg-white text-[var(--ink)] shadow-xs'
+                  : 'text-[var(--ink-tertiary)] hover:text-[var(--ink)]'
               }`}
               title="Vista de cuadrícula"
             >
@@ -182,18 +255,18 @@ export const CatalogPage: React.FC = () => {
       {/* 22, 23, 24. FILAS DE CATÁLOGO (Secciones 22-24) */}
       {filteredTenders.length === 0 ? (
         <div className="surface p-12 rounded-[20px] text-center max-w-lg mx-auto space-y-3">
-          <div className="w-12 h-12 rounded-full bg-[#f5f1ed] text-[#69666d] flex items-center justify-center mx-auto text-xl">
+          <div className="w-12 h-12 rounded-full bg-[var(--surface-2)] text-[var(--ink-secondary)] flex items-center justify-center mx-auto text-xl">
             ◈
           </div>
-          <h3 className="font-editorial text-2xl text-[#171719]">
+          <h3 className="font-editorial text-2xl text-[var(--ink)]">
             No encontramos oportunidades con estos filtros.
           </h3>
-          <p className="text-xs text-[#69666d] leading-relaxed">
+          <p className="text-xs text-[var(--ink-secondary)] leading-relaxed">
             Prueba eliminando alguno de los filtros o ampliando los términos de búsqueda.
           </p>
           <button
             onClick={clearFilters}
-            className="mt-2 inline-flex items-center gap-1.5 px-4 py-2 rounded-[11px] bg-[#171719] text-white text-xs font-semibold hover:bg-[#28282b] transition-colors cursor-pointer"
+            className="mt-2 inline-flex items-center gap-1.5 px-4 py-2 rounded-[11px] bg-[var(--primary)] text-white text-xs font-semibold hover:opacity-90 transition-colors cursor-pointer"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span>Limpiar filtros</span>
@@ -212,36 +285,43 @@ export const CatalogPage: React.FC = () => {
                   <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-[#eeeaff] text-[#685cff] font-semibold border border-[#d5ccfe]/60">
                     {tender.fileReference}
                   </span>
-                  <StatusBadge tone="success" icon="check">
-                    Abierto
+                  <StatusBadge
+                    tone={tender.status === 'EVALUATION' ? 'warning' : 'success'}
+                    icon={tender.status === 'EVALUATION' ? 'clock' : 'check'}
+                  >
+                    {tender.status === 'EVALUATION' ? 'En Evaluación' : 'Abierto'}
                   </StatusBadge>
                 </div>
 
                 <div>
-                  <h3 className="text-sm font-semibold text-[#171719] line-clamp-2 group-hover:text-[#685cff] transition-colors leading-snug">
+                  <h3 className="text-sm font-semibold text-[var(--ink)] line-clamp-2 group-hover:text-[#685cff] transition-colors leading-snug">
                     {tender.title}
                   </h3>
-                  <p className="text-xs text-[#69666d] truncate mt-1">
+                  <p className="text-xs text-[var(--ink-secondary)] truncate mt-1">
                     {tender.contractingAuthority}
                   </p>
                 </div>
 
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-[#f5f1ed] text-[#69666d] border border-[rgba(30,24,38,0.06)]">
-                    {tender.cpvCode.split(' · ')[0]}
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-[var(--surface-2)] text-[var(--ink-secondary)] border border-[var(--hairline)]">
+                    {tender.cpvCode ? tender.cpvCode.split(' · ')[0] : 'TIC'}
                   </span>
-                  <span className="text-[11px] text-[#929097] truncate">
-                    {tender.cpvCode.split(' · ')[1] || 'Servicios'}
+                  <span className="text-[11px] text-[var(--ink-tertiary)] truncate">
+                    {tender.cpvCode && tender.cpvCode.includes(' · ')
+                      ? tender.cpvCode.split(' · ')[1]
+                      : tender.cpvCode && tender.cpvCode.startsWith('48')
+                      ? 'Paquetes de software'
+                      : 'Servicios TIC'}
                   </span>
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-[rgba(30,24,38,0.06)] flex items-center justify-between">
+              <div className="pt-3 border-t border-[var(--hairline)] flex items-center justify-between">
                 <div>
-                  <span className="text-xs font-bold text-[#171719] tabular-nums font-mono block">
+                  <span className="text-xs font-bold text-[var(--ink)] tabular-nums font-mono block">
                     {formatCurrency(tender.budgetAmount)}
                   </span>
-                  <span className="text-[11px] text-[#69666d] block">
+                  <span className="text-[11px] text-[var(--ink-secondary)] block">
                     {formatDeadlineDays(tender.submissionDeadline).label}
                   </span>
                 </div>
@@ -251,7 +331,7 @@ export const CatalogPage: React.FC = () => {
                     e.stopPropagation();
                     navigate(`/app/oportunidades/${tender.id}`);
                   }}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-[10px] bg-white group-hover:bg-[#171719] text-[#171719] group-hover:text-white border border-[rgba(30,24,38,0.12)] group-hover:border-[#171719] text-xs font-semibold transition-all shadow-xs cursor-pointer"
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-[10px] bg-white group-hover:bg-[var(--primary)] text-[var(--ink)] group-hover:text-white border border-[var(--hairline)] group-hover:border-[#171719] text-xs font-semibold transition-all shadow-xs cursor-pointer"
                 >
                   <span>Detalle</span>
                   <ArrowRight className="w-3.5 h-3.5" />
@@ -263,7 +343,7 @@ export const CatalogPage: React.FC = () => {
       ) : (
         <div className="space-y-2">
           {/* Encabezado visible en desktop */}
-          <div className="hidden lg:grid grid-cols-[76px_minmax(320px,1.6fr)_100px_115px_125px_110px_120px] gap-4 px-3.5 text-[11px] font-mono uppercase text-[#929097] select-none">
+          <div className="hidden lg:grid grid-cols-[76px_minmax(320px,1.6fr)_100px_115px_125px_110px_120px] gap-4 px-3.5 text-[11px] font-mono uppercase text-[var(--ink-tertiary)] select-none">
             <span>Expediente</span>
             <span>Objeto / Entidad</span>
             <span>Importe</span>
@@ -288,52 +368,58 @@ export const CatalogPage: React.FC = () => {
                   className="tender-row group cursor-pointer"
                 >
                   {/* 22. Thumbnail 76x54px con degradado arquitectónico suave (Sección 22 & 39) */}
-                  <div className="w-[76px] h-[54px] rounded-[10px] bg-gradient-to-br from-[#f8f5f2] via-[#eee9f2] to-[#e7e1ff] border border-[rgba(30,24,38,0.06)] flex items-center justify-center text-[#685cff] shrink-0">
+                  <div className="w-[76px] h-[54px] rounded-[10px] bg-gradient-to-br from-[#f8f5f2] via-[#eee9f2] to-[#e7e1ff] border border-[var(--hairline)] flex items-center justify-center text-[#685cff] shrink-0">
                     <FileText className="w-5 h-5 opacity-70" />
                   </div>
 
                   {/* Título y Organismo */}
                   <div className="min-w-0 pr-2">
-                    <h3 className="text-xs sm:text-sm font-semibold text-[#171719] truncate group-hover:text-[#685cff] transition-colors">
+                    <h3 className="text-xs sm:text-sm font-semibold text-[var(--ink)] truncate group-hover:text-[#685cff] transition-colors">
                       {tender.title}
                     </h3>
-                    <p className="text-xs text-[#69666d] truncate mt-0.5">
+                    <p className="text-xs text-[var(--ink-secondary)] truncate mt-0.5">
                       {tender.contractingAuthority}
                     </p>
                     <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                      <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-[#f5f1ed] text-[#69666d] border border-[rgba(30,24,38,0.06)]">
-                        {tender.cpvCode.split(' · ')[0]}
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-[var(--surface-2)] text-[var(--ink-secondary)] border border-[var(--hairline)]">
+                        {tender.cpvCode ? tender.cpvCode.split(' · ')[0] : 'TIC'}
                       </span>
-                      <span className="text-[11px] text-[#929097] truncate">
-                        {tender.cpvCode.split(' · ')[1] || 'Servicios'}
+                      <span className="text-[11px] text-[var(--ink-tertiary)] truncate">
+                        {tender.cpvCode && tender.cpvCode.includes(' · ')
+                          ? tender.cpvCode.split(' · ')[1]
+                          : tender.cpvCode && tender.cpvCode.startsWith('48')
+                          ? 'Paquetes de software y sistemas'
+                          : 'Servicios TIC'}
                       </span>
                     </div>
                   </div>
 
                   {/* Importe en tabular-nums */}
                   <div className="hidden lg:block">
-                    <span className="text-xs sm:text-sm font-semibold text-[#171719] tabular-nums font-mono">
+                    <span className="text-xs sm:text-sm font-semibold text-[var(--ink)] tabular-nums font-mono">
                       {formatCurrency(tender.budgetAmount)}
                     </span>
-                    <span className="block text-[10px] text-[#929097]">
+                    <span className="block text-[10px] text-[var(--ink-tertiary)]">
                       Presupuesto base
                     </span>
                   </div>
 
                   {/* 24. Plazo Crítico: fecha oscura, solo los días en rojo */}
                   <div className="hidden lg:block">
-                    <span className="text-xs text-[#171719] font-medium block">
-                      {new Intl.DateTimeFormat('es-ES', {
-                        day: 'numeric',
-                        month: 'short',
-                        year: 'numeric',
-                      }).format(new Date(tender.submissionDeadline))}
+                    <span className="text-xs text-[var(--ink)] font-medium block">
+                      {tender.submissionDeadline
+                        ? new Intl.DateTimeFormat('es-ES', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric',
+                          }).format(new Date(tender.submissionDeadline))
+                        : 'Sin fecha límite'}
                     </span>
                     <span
                       className={`text-[11px] tabular-nums ${
                         isCritical
                           ? 'text-[#e44848] font-semibold'
-                          : 'text-[#69666d]'
+                          : 'text-[var(--ink-secondary)]'
                       }`}
                     >
                       {formatDeadlineDays(tender.submissionDeadline).label}
@@ -341,14 +427,17 @@ export const CatalogPage: React.FC = () => {
                   </div>
 
                   {/* Territorio */}
-                  <div className="hidden lg:block text-xs text-[#69666d]">
-                    Nacional
+                  <div className="hidden lg:block text-xs text-[var(--ink-secondary)]">
+                    {getTenderTerritory(tender.contractingAuthority)}
                   </div>
 
                   {/* Estado Oficial */}
                   <div className="hidden lg:block">
-                    <StatusBadge tone="success" icon="check">
-                      Abierto
+                    <StatusBadge
+                      tone={tender.status === 'EVALUATION' ? 'warning' : 'success'}
+                      icon={tender.status === 'EVALUATION' ? 'clock' : 'check'}
+                    >
+                      {tender.status === 'EVALUATION' ? 'En Evaluación' : 'Abierto'}
                     </StatusBadge>
                   </div>
 
@@ -359,7 +448,7 @@ export const CatalogPage: React.FC = () => {
                         e.stopPropagation();
                         navigate(`/app/oportunidades/${tender.id}`);
                       }}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] bg-white group-hover:bg-[#171719] text-[#171719] group-hover:text-white border border-[rgba(30,24,38,0.12)] group-hover:border-[#171719] text-xs font-semibold transition-all shadow-xs cursor-pointer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] bg-white group-hover:bg-[var(--primary)] text-[var(--ink)] group-hover:text-white border border-[var(--hairline)] group-hover:border-[#171719] text-xs font-semibold transition-all shadow-xs cursor-pointer"
                     >
                       <span>Ver detalle</span>
                       <ArrowRight className="w-3.5 h-3.5" />

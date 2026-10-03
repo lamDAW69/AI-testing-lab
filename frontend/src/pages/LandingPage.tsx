@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence, useScroll, useSpring } from 'framer-motion';
 import { useAuth } from '../lib/auth-context';
 import { SilkBackground } from '../components/layout/SilkBackground';
+import { ThemeToggle } from '../components/ui/ThemeToggle';
 import {
   ArrowRight,
   ShieldCheck,
@@ -252,7 +253,7 @@ Recomendación: Ejecutar reanálisis con Gemini 3.1 Flash v2.`
   ];
 
   return (
-    <div className="relative min-h-screen bg-[#010102] text-[#f7f8f8] font-sans selection:bg-[#5e6ad2]/30 selection:text-white overflow-x-hidden">
+    <div className="landing-shell relative min-h-screen bg-[var(--canvas)] text-[var(--ink)] font-sans selection:bg-[#5e6ad2]/30 selection:text-white overflow-x-hidden transition-colors duration-200">
       {/* 0. BARRA SUPERIOR INDICADORA DE SCROLL CON FÍSICA DE RESORTE */}
       <motion.div
         style={{ scaleX }}
@@ -262,47 +263,50 @@ Recomendación: Ejecutar reanálisis con Gemini 3.1 Flash v2.`
       {/* 1. FONDO AMBIENTAL DE CRISTAL LÍQUIDO */}
       <SilkBackground />
 
-      {/* 2. NAVEGACIÓN SUPERIOR TRANSLÚCIDA CON CHROME DARK (LINEAR AESTHETIC) */}
-      <header className="sticky top-0 z-50 bg-[#010102]/80 backdrop-blur-xl border-b border-[#23252a] shadow-[0_4px_24px_rgba(0,0,0,0.5)]">
+      {/* 2. NAVEGACIÓN SUPERIOR TRANSLÚCIDA CON CHROME DARK/LIGHT */}
+      <header className="sticky top-0 z-50 bg-[var(--canvas)]/85 backdrop-blur-xl border-b border-[var(--hairline)] shadow-[0_4px_24px_rgba(0,0,0,0.06)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.5)] transition-colors duration-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2.5 group">
             <div className="w-8 h-8 rounded-[10px] bg-gradient-to-tr from-[#5e6ad2] to-[#828fff] flex items-center justify-center text-white font-bold text-sm shadow-[0_0_14px_rgba(94,106,210,0.4)] group-hover:scale-105 transition-transform">
               ✦
             </div>
             <div className="flex flex-col">
-              <span className="font-bold text-sm tracking-tight text-[#f7f8f8] leading-none">
+              <span className="font-bold text-sm tracking-tight text-[var(--ink)] leading-none">
                 Pliego AI
               </span>
-              <span className="text-[10px] font-mono text-[#8a8f98] tracking-wider uppercase mt-0.5">
+              <span className="text-[10px] font-mono text-[var(--ink-subtle)] tracking-wider uppercase mt-0.5">
                 Contratación Pública Inteligente
               </span>
             </div>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-6 text-xs font-semibold text-[#8a8f98]">
-            <a href="#como-funciona" className="hover:text-[#f7f8f8] transition-colors">¿Cómo funciona?</a>
-            <a href="#dossier" className="hover:text-[#f7f8f8] transition-colors">Dossier de Empresa</a>
-            <a href="#seguridad" className="hover:text-[#f7f8f8] transition-colors">Seguridad y Cumplimiento</a>
-            <a href="#faq" className="hover:text-[#f7f8f8] transition-colors">Preguntas Frecuentes</a>
+          <nav className="hidden md:flex items-center gap-6 text-xs font-semibold text-[var(--ink-subtle)]">
+            <a href="#como-funciona" className="hover:text-[var(--ink)] transition-colors">¿Cómo funciona?</a>
+            <a href="#dossier" className="hover:text-[var(--ink)] transition-colors">Dossier de Empresa</a>
+            <a href="#seguridad" className="hover:text-[var(--ink)] transition-colors">Seguridad y Cumplimiento</a>
+            <a href="#faq" className="hover:text-[var(--ink)] transition-colors">Preguntas Frecuentes</a>
           </nav>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2 sm:gap-2.5">
+            {/* Botón de alternancia de tema Claro/Oscuro */}
+            <ThemeToggle />
+
             <button
               onClick={handleLaunchDemo}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] bg-[#5e6ad2]/15 text-[#828fff] hover:bg-[#5e6ad2]/25 border border-[#5e6ad2]/30 text-xs font-semibold transition-all cursor-pointer active:scale-98"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] bg-[#5e6ad2]/15 text-[#5e6ad2] dark:text-[#828fff] hover:bg-[#5e6ad2]/25 border border-[#5e6ad2]/30 text-xs font-semibold transition-all cursor-pointer active:scale-98"
             >
               <Sparkles className="w-3.5 h-3.5" />
               <span>Demo Interactiva</span>
             </button>
             <Link
               to="/login"
-              className="px-3.5 py-1.5 rounded-[10px] text-xs font-semibold text-[#d0d6e0] hover:text-white hover:bg-white/5 transition-all"
+              className="px-3.5 py-1.5 rounded-[10px] text-xs font-semibold text-[var(--ink-secondary)] hover:text-[var(--ink)] hover:bg-[var(--surface-2)] transition-all whitespace-nowrap"
             >
               Iniciar sesión
             </Link>
             <Link
               to="/registro"
-              className="hidden sm:inline-flex px-4 py-2 rounded-[10px] bg-[#f7f8f8] hover:bg-white text-[#010102] text-xs font-semibold shadow-[0_0_14px_rgba(255,255,255,0.2)] transition-all items-center gap-1.5 active:scale-98"
+              className="hidden sm:inline-flex px-4 py-2 rounded-[10px] bg-[#5e6ad2] hover:bg-[#4d59c7] text-white text-xs font-semibold shadow-[0_2px_10px_rgba(94,106,210,0.3)] transition-all items-center gap-1.5 active:scale-98 whitespace-nowrap"
             >
               <span>Registrar Empresa</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -323,26 +327,26 @@ Recomendación: Ejecutar reanálisis con Gemini 3.1 Flash v2.`
             className="lg:col-span-7 space-y-6"
           >
             {/* Baliza PLACSP viva con ping de telemetría activa */}
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#0f1011] backdrop-blur-md border border-[#23252a] shadow-xs">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[var(--surface-1)] border border-[var(--hairline)] shadow-xs">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#10b981] opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-[#10b981]"></span>
               </span>
-              <span className="text-[11px] font-mono font-bold tracking-wider text-[#10b981] uppercase">
+              <span className="text-[11px] font-mono font-bold tracking-wider text-[#047857] dark:text-[#10b981] uppercase">
                 PLACSP · Sindicación Activa (CODICE XML)
               </span>
             </div>
 
             {/* Titular Principal con Tipografía Tight y Alta Densidad */}
-            <h1 className="text-4xl sm:text-5xl lg:text-[3.35rem] font-bold tracking-[-0.03em] text-[#f7f8f8] leading-[1.08] text-balance">
+            <h1 className="text-4xl sm:text-5xl lg:text-[3.35rem] font-bold tracking-[-0.03em] text-[var(--ink)] leading-[1.08] text-balance">
               De la licitación pública a la oferta adjudicada.{' '}
-              <span className="text-[#828fff] block sm:inline font-normal italic">
+              <span className="text-[var(--primary)] block sm:inline font-normal italic">
                 Sin perder semanas leyendo pliegos.
               </span>
             </h1>
 
             {/* Subtexto conciso */}
-            <p className="text-sm sm:text-base text-[#8a8f98] max-w-[50ch] leading-relaxed">
+            <p className="text-sm sm:text-base text-[var(--ink-secondary)] max-w-[50ch] leading-relaxed">
               Monitorización oficial del Estado, sellado inmutable SHA-256 y precalificación técnica en 7 dimensiones frente a tu dossier empresarial.
             </p>
 
@@ -358,36 +362,36 @@ Recomendación: Ejecutar reanálisis con Gemini 3.1 Flash v2.`
               
               <button
                 onClick={handleLaunchDemo}
-                className="px-6 py-3.5 rounded-[12px] bg-[#0f1011] hover:bg-[#141516] active:scale-98 border border-[#23252a] hover:border-[#34343a] text-[#f7f8f8] text-sm font-semibold shadow-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
+                className="px-6 py-3.5 rounded-[12px] bg-[var(--surface-1)] hover:bg-[var(--surface-2)] active:scale-98 border border-[var(--hairline)] hover:border-[var(--hairline-strong)] text-[var(--ink)] text-sm font-semibold shadow-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
               >
-                <Sparkles className="w-4 h-4 text-[#828fff]" />
+                <Sparkles className="w-4 h-4 text-[var(--primary)]" />
                 <span>Explorar Demo en Vivo (Sin Registro)</span>
               </button>
             </div>
 
             {/* Tira de Métricas Factuales Verificables con Cifras Tabulares */}
-            <div className="pt-6 border-t border-[#23252a] grid grid-cols-3 gap-4">
+            <div className="pt-6 border-t border-[var(--hairline)] grid grid-cols-3 gap-4">
               <div>
-                <span className="block text-xl sm:text-2xl font-bold text-[#f7f8f8] tracking-tight tabular-nums font-mono">
+                <span className="block text-xl sm:text-2xl font-bold text-[var(--ink)] tracking-tight tabular-nums font-mono">
                   850.000 €
                 </span>
-                <span className="text-[11px] font-medium text-[#8a8f98] leading-tight block mt-0.5">
+                <span className="text-[11px] font-medium text-[var(--ink-secondary)] leading-tight block mt-0.5">
                   Expediente DGT en vivo
                 </span>
               </div>
               <div>
-                <span className="block text-xl sm:text-2xl font-bold tracking-tight text-[#10b981] tabular-nums font-mono">
+                <span className="block text-xl sm:text-2xl font-bold tracking-tight text-[#047857] dark:text-[#10b981] tabular-nums font-mono">
                   100%
                 </span>
-                <span className="text-[11px] font-medium text-[#8a8f98] leading-tight block mt-0.5">
+                <span className="text-[11px] font-medium text-[var(--ink-secondary)] leading-tight block mt-0.5">
                   Citas físicas auditables
                 </span>
               </div>
               <div>
-                <span className="block text-xl sm:text-2xl font-bold tracking-tight text-[#828fff] font-mono">
+                <span className="block text-xl sm:text-2xl font-bold tracking-tight text-[var(--primary)] font-mono">
                   Gemini 3.1
                 </span>
-                <span className="text-[11px] font-medium text-[#8a8f98] leading-tight block mt-0.5">
+                <span className="text-[11px] font-medium text-[var(--ink-secondary)] leading-tight block mt-0.5">
                   Matching semántico
                 </span>
               </div>
@@ -401,7 +405,7 @@ Recomendación: Ejecutar reanálisis con Gemini 3.1 Flash v2.`
             transition={{ duration: 0.55, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
             className="lg:col-span-5"
           >
-            <div className="relative overflow-hidden rounded-[20px] bg-[#0f1011] border border-[#23252a] hover:border-[#34343a] shadow-[0_20px_50px_rgba(0,0,0,0.8)] transition-all p-5 group">
+            <div className="relative overflow-hidden rounded-[20px] bg-[var(--surface-1)] border border-[var(--hairline)] shadow-xl transition-all p-5 group">
               
               {/* Animación de escaneo láser en vivo cuando se audita */}
               <AnimatePresence>
@@ -417,14 +421,14 @@ Recomendación: Ejecutar reanálisis con Gemini 3.1 Flash v2.`
               </AnimatePresence>
 
               {/* Cabecera del expediente */}
-              <div className="flex items-center justify-between pb-3.5 border-b border-[#23252a]">
+              <div className="flex items-center justify-between pb-3.5 border-b border-[var(--hairline)]">
                 <div className="flex items-center gap-2">
                   <div className="w-2.5 h-2.5 rounded-full bg-[#10b981] animate-pulse" />
-                  <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#8a8f98]">
+                  <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[var(--ink-secondary)]">
                     DGT-2026-EXP-8891 · INSPECCIÓN EN VIVO
                   </span>
                 </div>
-                <span className="text-[11px] font-mono font-bold text-[#10b981] bg-[#10b981]/15 px-2 py-0.5 rounded-[6px] border border-[#10b981]/30 flex items-center gap-1">
+                <span className="text-[11px] font-mono font-bold text-[#047857] dark:text-[#10b981] bg-[#10b981]/15 px-2 py-0.5 rounded-[6px] border border-[#10b981]/30 flex items-center gap-1">
                   <Check className="w-3 h-3" />
                   PURSUE
                 </span>
@@ -433,12 +437,12 @@ Recomendación: Ejecutar reanálisis con Gemini 3.1 Flash v2.`
               {/* Título de la licitación */}
               <div className="py-3.5 space-y-1">
                 <div className="flex items-center justify-between text-[10px] font-mono">
-                  <span className="uppercase tracking-widest text-[#828fff] font-bold">
+                  <span className="uppercase tracking-widest text-[var(--primary)] font-bold">
                     DIRECCIÓN GENERAL DE TRÁFICO
                   </span>
-                  <span className="text-[#8a8f98] tabular-nums">Presupuesto: 850.000 €</span>
+                  <span className="text-[var(--ink-tertiary)] tabular-nums">Presupuesto: 850.000 €</span>
                 </div>
-                <h3 className="text-sm sm:text-base font-bold text-[#f7f8f8] leading-snug">
+                <h3 className="text-sm sm:text-base font-bold text-[var(--ink)] leading-snug">
                   Migración y securización en la nube para telemática vial
                 </h3>
               </div>
@@ -446,10 +450,10 @@ Recomendación: Ejecutar reanálisis con Gemini 3.1 Flash v2.`
               {/* SELECTOR INTERACTIVO DE REQUISITOS */}
               <div className="space-y-2 pt-1">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-[#8a8f98] font-bold">
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-[var(--ink-secondary)] font-bold">
                     Prueba en directo el cruce con Gemini:
                   </span>
-                  <span className="text-[10px] text-[#828fff] font-mono font-semibold flex items-center gap-1">
+                  <span className="text-[10px] text-[var(--primary)] font-mono font-semibold flex items-center gap-1">
                     <Activity className="w-3 h-3 animate-spin" />
                     <span>Latencia: {currentCriterion.latencyMs} ms</span>
                   </span>
@@ -462,8 +466,8 @@ Recomendación: Ejecutar reanálisis con Gemini 3.1 Flash v2.`
                       onClick={() => handleTriggerScan(idx)}
                       className={`px-2 py-1.5 rounded-[8px] text-[11px] font-medium transition-all text-left cursor-pointer border ${
                         selectedCriterion === idx
-                          ? 'bg-[#5e6ad2] text-white border-[#5e6ad2] shadow-[0_0_12px_rgba(94,106,210,0.4)]'
-                          : 'bg-[#141516] hover:bg-[#18191a] text-[#8a8f98] hover:text-[#f7f8f8] border-[#23252a]'
+                          ? 'bg-[var(--primary)] text-white border-[var(--primary)] shadow-[0_0_12px_rgba(79,89,199,0.4)]'
+                          : 'bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-[var(--ink-secondary)] hover:text-[var(--ink)] border-[var(--hairline)]'
                       }`}
                     >
                       <div className="truncate font-semibold">{c.name}</div>
@@ -473,47 +477,47 @@ Recomendación: Ejecutar reanálisis con Gemini 3.1 Flash v2.`
               </div>
 
               {/* RESULTADO VIVO DEL ANÁLISIS DE GEMINI 3.1 FLASH */}
-              <div className="mt-3 p-3.5 rounded-[12px] bg-[#141516] border border-[#23252a] space-y-2.5">
+              <div className="mt-3 p-3.5 rounded-[12px] bg-[var(--surface-2)] border border-[var(--hairline)] space-y-2.5">
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold text-[#f7f8f8] flex items-center gap-1.5">
+                  <span className="text-[11px] font-bold text-[var(--ink)] flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-[#10b981]" />
                     <span>{currentCriterion.name}</span>
                   </span>
-                  <span className="text-[10px] font-mono font-bold text-[#10b981] bg-[#10b981]/15 px-2 py-0.5 rounded-[6px] border border-[#10b981]/30">
+                  <span className="text-[10px] font-mono font-bold text-[#047857] dark:text-[#10b981] bg-[#10b981]/15 px-2 py-0.5 rounded-[6px] border border-[#10b981]/30">
                     SUPPORTED · {currentCriterion.confidence}% Confianza
                   </span>
                 </div>
 
                 {/* Cita Física del Pliego */}
-                <div className="p-2 rounded-[8px] bg-[#010102] border border-[#23252a] text-[11px] space-y-1">
-                  <div className="flex items-center justify-between text-[10px] text-[#8a8f98] font-mono">
+                <div className="p-2 rounded-[8px] bg-[var(--surface-1)] border border-[var(--hairline)] text-[11px] space-y-1">
+                  <div className="flex items-center justify-between text-[10px] text-[var(--ink-tertiary)] font-mono">
                     <span>CITA FÍSICA AUDITADA</span>
-                    <span className="text-[#828fff] font-semibold">{currentCriterion.pageRef}</span>
+                    <span className="text-[var(--primary)] font-semibold">{currentCriterion.pageRef}</span>
                   </div>
-                  <p className="italic text-[#d0d6e0] leading-tight font-mono text-[10.5px]">
+                  <p className="italic text-[var(--ink-secondary)] leading-tight font-mono text-[10.5px]">
                     "{currentCriterion.pliegoQuote}"
                   </p>
                 </div>
 
                 {/* Evidencia contrastada del dossier de la empresa */}
-                <div className="text-[11px] text-[#8a8f98] flex items-start gap-1.5 pt-0.5">
+                <div className="text-[11px] text-[var(--ink-secondary)] flex items-start gap-1.5 pt-0.5">
                   <CheckCircle2 className="w-3.5 h-3.5 text-[#10b981] shrink-0 mt-0.5" />
                   <span className="leading-snug">
-                    <strong className="text-[#f7f8f8]">Evidencia del Dossier: </strong>
+                    <strong className="text-[var(--ink)]">Evidencia del Dossier: </strong>
                     {currentCriterion.dossierProof}
                   </span>
                 </div>
               </div>
 
               {/* Sello criptográfico SHA-256 */}
-              <div className="mt-3 flex items-center justify-between p-2 rounded-[8px] bg-[#010102] border border-[#23252a] text-[10px] font-mono">
-                <span className="text-[#8a8f98] flex items-center gap-1 truncate">
-                  <Fingerprint className="w-3.5 h-3.5 text-[#828fff] shrink-0" />
+              <div className="mt-3 flex items-center justify-between p-2 rounded-[8px] bg-[var(--surface-1)] border border-[var(--hairline)] text-[10px] font-mono">
+                <span className="text-[var(--ink-secondary)] flex items-center gap-1 truncate">
+                  <Fingerprint className="w-3.5 h-3.5 text-[var(--primary)] shrink-0" />
                   <span className="truncate">SHA-256: 8f9a2b4c107e3d1982b6e82af0c399b1a5e...</span>
                 </span>
                 <button
                   onClick={handleCopyHash}
-                  className="shrink-0 text-[#828fff] hover:text-white font-semibold ml-2 cursor-pointer flex items-center gap-1"
+                  className="shrink-0 text-[var(--primary)] hover:opacity-80 font-semibold ml-2 cursor-pointer flex items-center gap-1"
                 >
                   {copiedHash ? <Check className="w-3 h-3 text-[#10b981]" /> : <Copy className="w-3 h-3" />}
                   <span>{copiedHash ? 'Copiado' : 'Copiar'}</span>
@@ -543,45 +547,45 @@ Recomendación: Ejecutar reanálisis con Gemini 3.1 Flash v2.`
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-40px' }}
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          className="p-4 sm:p-5 rounded-[20px] bg-[#0f1011] backdrop-blur-xl border border-[#23252a] shadow-xs grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4"
+          className="p-4 sm:p-5 rounded-[20px] bg-[var(--surface-1)] border border-[var(--hairline)] shadow-xs grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4"
         >
-          <motion.div whileHover={{ y: -2 }} className="p-3.5 rounded-[12px] bg-[#141516] border border-[#23252a] hover:border-[#34343a] space-y-1 transition-all">
+          <motion.div whileHover={{ y: -2 }} className="p-3.5 rounded-[12px] bg-[var(--surface-2)] border border-[var(--hairline)] space-y-1 transition-all">
             <div className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-[#5e6ad2]" />
-              <span className="text-[11px] font-bold text-[#f7f8f8]">Lavanda (#5E6AD2)</span>
+              <span className="text-[11px] font-bold text-[var(--ink)]">Lavanda (#5E6AD2)</span>
             </div>
-            <p className="text-[11px] text-[#8a8f98] leading-tight">
+            <p className="text-[11px] text-[var(--ink-secondary)] leading-tight">
               <strong>Inferencia y Motor IA:</strong> Gemini 3.1 Flash y GPT Terra/Sol, análisis CODICE XML y Structured Outputs.
             </p>
           </motion.div>
 
-          <motion.div whileHover={{ y: -2 }} className="p-3.5 rounded-[12px] bg-[#141516] border border-[#23252a] hover:border-[#34343a] space-y-1 transition-all">
+          <motion.div whileHover={{ y: -2 }} className="p-3.5 rounded-[12px] bg-[var(--surface-2)] border border-[var(--hairline)] space-y-1 transition-all">
             <div className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-[#10b981]" />
-              <span className="text-[11px] font-bold text-[#f7f8f8]">Esmeralda (#10B981)</span>
+              <span className="text-[11px] font-bold text-[var(--ink)]">Esmeralda (#10B981)</span>
             </div>
-            <p className="text-[11px] text-[#8a8f98] leading-tight">
-              <strong>Conformidad y Éxito:</strong> Requisito cumplido (<code className="text-[#10b981] font-mono">SUPPORTED</code>), oferta apta (<code className="text-[#10b981] font-mono">PURSUE</code>) y hash SHA-256 verificado.
+            <p className="text-[11px] text-[var(--ink-secondary)] leading-tight">
+              <strong>Conformidad y Éxito:</strong> Requisito cumplido (<code className="text-[#047857] dark:text-[#10b981] font-mono">SUPPORTED</code>), oferta apta (<code className="text-[#047857] dark:text-[#10b981] font-mono">PURSUE</code>) y hash SHA-256 verificado.
             </p>
           </motion.div>
 
-          <motion.div whileHover={{ y: -2 }} className="p-3.5 rounded-[12px] bg-[#141516] border border-[#23252a] hover:border-[#34343a] space-y-1 transition-all">
+          <motion.div whileHover={{ y: -2 }} className="p-3.5 rounded-[12px] bg-[var(--surface-2)] border border-[var(--hairline)] space-y-1 transition-all">
             <div className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-[#f59e0b]" />
-              <span className="text-[11px] font-bold text-[#f7f8f8]">Ámbar (#F59E0B)</span>
+              <span className="text-[11px] font-bold text-[var(--ink)]">Ámbar (#F59E0B)</span>
             </div>
-            <p className="text-[11px] text-[#8a8f98] leading-tight">
-              <strong>Centinela de Adendas:</strong> Modificación detectada en PLACSP, alerta activa y necesidad de reanálisis (<code className="text-[#f59e0b] font-mono">REQUIRES_REANALYSIS</code>).
+            <p className="text-[11px] text-[var(--ink-secondary)] leading-tight">
+              <strong>Centinela de Adendas:</strong> Modificación detectada en PLACSP, alerta activa y necesidad de reanálisis (<code className="text-[#b45309] dark:text-[#f59e0b] font-mono">REQUIRES_REANALYSIS</code>).
             </p>
           </motion.div>
 
-          <motion.div whileHover={{ y: -2 }} className="p-3.5 rounded-[12px] bg-[#141516] border border-[#23252a] hover:border-[#34343a] space-y-1 transition-all">
+          <motion.div whileHover={{ y: -2 }} className="p-3.5 rounded-[12px] bg-[var(--surface-2)] border border-[var(--hairline)] space-y-1 transition-all">
             <div className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-[#ef4444]" />
-              <span className="text-[11px] font-bold text-[#f7f8f8]">Rojo Coral (#EF4444)</span>
+              <span className="text-[11px] font-bold text-[var(--ink)]">Rojo Coral (#EF4444)</span>
             </div>
-            <p className="text-[11px] text-[#8a8f98] leading-tight">
-              <strong>Bloqueo Determinista:</strong> Presupuesto inviable, plazo vencido o requisito obligatorio no soportado (<code className="text-[#ef4444] font-mono">DISCARD</code>).
+            <p className="text-[11px] text-[var(--ink-secondary)] leading-tight">
+              <strong>Bloqueo Determinista:</strong> Presupuesto inviable, plazo vencido o requisito obligatorio no soportado (<code className="text-[#dc2626] dark:text-[#ef4444] font-mono">DISCARD</code>).
             </p>
           </motion.div>
         </motion.div>
@@ -598,10 +602,10 @@ Recomendación: Ejecutar reanálisis con Gemini 3.1 Flash v2.`
             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
             className="max-w-2xl mb-10"
           >
-            <h2 className="text-2xl sm:text-3xl font-bold text-[#f7f8f8] tracking-[-0.03em]">
+            <h2 className="text-2xl sm:text-3xl font-bold text-[var(--ink)] tracking-[-0.03em]">
               Arquitectura determinista de 4 fases
             </h2>
-            <p className="text-xs sm:text-sm text-[#8a8f98] mt-2">
+            <p className="text-xs sm:text-sm text-[var(--ink-secondary)] mt-2">
               Haz clic en cada fase para ver el flujo real y prueba el simulador interactivo de adendas.
             </p>
           </motion.div>
@@ -624,30 +628,30 @@ Recomendación: Ejecutar reanálisis con Gemini 3.1 Flash v2.`
                     onClick={() => setActiveStep(step.id)}
                     className={`w-full text-left p-4 sm:p-5 rounded-[16px] transition-all cursor-pointer flex items-start gap-3.5 border ${
                       isSelected
-                        ? 'bg-[#0f1011] shadow-[0_0_24px_rgba(94,106,210,0.18)] border-[#5e6ad2]/50 ring-1 ring-[#5e6ad2]/30'
-                        : 'bg-[#0f1011]/60 hover:bg-[#0f1011] border-[#23252a] hover:border-[#34343a]'
+                        ? 'bg-[var(--surface-1)] shadow-md border-[var(--primary)] ring-1 ring-[var(--primary)]/30'
+                        : 'bg-[var(--surface-1)]/60 hover:bg-[var(--surface-1)] border-[var(--hairline)]'
                     }`}
                   >
                     <div
                       className={`w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0 mt-0.5 ${
-                        isSelected ? 'bg-[#5e6ad2]/20 text-[#828fff]' : 'bg-[#141516] text-[#8a8f98]'
+                        isSelected ? 'bg-[var(--primary)]/15 text-[var(--primary)]' : 'bg-[var(--surface-2)] text-[var(--ink-secondary)]'
                       }`}
                     >
                       {step.icon}
                     </div>
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-mono uppercase tracking-wider font-bold text-[#828fff]">
+                        <span className="text-[10px] font-mono uppercase tracking-wider font-bold text-[var(--primary)]">
                           {step.badge}
                         </span>
-                        <span className="text-[10px] font-mono uppercase text-[#8a8f98]">
+                        <span className="text-[10px] font-mono uppercase text-[var(--ink-tertiary)]">
                           · {step.semantic}
                         </span>
                       </div>
-                      <h4 className="text-xs sm:text-sm font-bold text-[#f7f8f8]">
+                      <h4 className="text-xs sm:text-sm font-bold text-[var(--ink)]">
                         {step.title}
                       </h4>
-                      <p className="text-xs text-[#8a8f98] leading-relaxed">
+                      <p className="text-xs text-[var(--ink-secondary)] leading-relaxed">
                         {step.shortDesc}
                       </p>
                     </div>
@@ -671,47 +675,47 @@ Recomendación: Ejecutar reanálisis con Gemini 3.1 Flash v2.`
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.25 }}
-                  className="p-6 sm:p-8 rounded-[20px] bg-[#0f1011] backdrop-blur-xl border border-[#23252a] shadow-[0_20px_50px_rgba(0,0,0,0.8)] space-y-6"
+                  className="p-6 sm:p-8 rounded-[20px] bg-[var(--surface-1)] border border-[var(--hairline)] shadow-xl space-y-6"
                 >
-                  <div className="flex items-center justify-between border-b border-[#23252a] pb-4">
+                  <div className="flex items-center justify-between border-b border-[var(--hairline)] pb-4">
                     <div>
-                      <span className="text-[10px] font-mono uppercase tracking-wider text-[#828fff] font-bold">
+                      <span className="text-[10px] font-mono uppercase tracking-wider text-[var(--primary)] font-bold">
                         {pipelineSteps[activeStep].content.tag}
                       </span>
-                      <h3 className="text-lg sm:text-xl font-bold text-[#f7f8f8] mt-0.5 tracking-tight">
+                      <h3 className="text-lg sm:text-xl font-bold text-[var(--ink)] mt-0.5 tracking-tight">
                         {pipelineSteps[activeStep].content.heading}
                       </h3>
                     </div>
-                    <div className="w-8 h-8 rounded-full bg-[#141516] border border-[#23252a] flex items-center justify-center text-xs font-mono font-bold text-[#828fff]">
+                    <div className="w-8 h-8 rounded-full bg-[var(--surface-2)] border border-[var(--hairline)] flex items-center justify-center text-xs font-mono font-bold text-[var(--primary)]">
                       0{activeStep + 1}
                     </div>
                   </div>
 
-                  <p className="text-xs sm:text-sm text-[#8a8f98] leading-relaxed">
+                  <p className="text-xs sm:text-sm text-[var(--ink-secondary)] leading-relaxed">
                     {pipelineSteps[activeStep].content.desc}
                   </p>
 
                   {/* FASE 4: SIMULADOR INTERACTIVO DE ADENDA EN VIVO */}
                   {activeStep === 3 && (
-                    <div className="p-4 rounded-[14px] bg-[#141516] border border-[#f59e0b]/30 space-y-3">
+                    <div className="p-4 rounded-[14px] bg-[var(--surface-2)] border border-[#f59e0b]/30 space-y-3">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-[#f59e0b] flex items-center gap-1.5 font-mono">
+                        <span className="text-xs font-bold text-[#b45309] dark:text-[#f59e0b] flex items-center gap-1.5 font-mono">
                           <AlertTriangle className="w-4 h-4" />
                           <span>Simulador de Detección de Rectificaciones en Vivo</span>
                         </span>
-                        <span className="text-[10px] font-mono font-bold text-[#f59e0b] bg-[#f59e0b]/15 px-2 py-0.5 rounded-[6px] border border-[#f59e0b]/30">
+                        <span className="text-[10px] font-mono font-bold text-[#b45309] dark:text-[#f59e0b] bg-[#f59e0b]/15 px-2 py-0.5 rounded-[6px] border border-[#f59e0b]/30">
                           ESTADO: {simulatedAdendaState}
                         </span>
                       </div>
 
                       {simulatedAdendaState === 'INITIAL' && (
                         <div className="space-y-2">
-                          <p className="text-xs text-[#8a8f98]">
-                            El pliego actual se encuentra sellado y validado en estado <strong className="text-[#10b981]">VALID (PURSUE)</strong>. Pulsa para simular que el organismo publica una adenda en el portal de contratación:
+                          <p className="text-xs text-[var(--ink-secondary)]">
+                            El pliego actual se encuentra sellado y validado en estado <strong className="text-[#047857] dark:text-[#10b981]">VALID (PURSUE)</strong>. Pulsa para simular que el organismo publica una adenda en el portal de contratación:
                           </p>
                           <button
                             onClick={() => setSimulatedAdendaState('ADENDA_DETECTED')}
-                            className="px-3.5 py-2 rounded-[8px] bg-[#f59e0b] hover:bg-[#d97706] text-[#010102] text-xs font-bold transition-all shadow-[0_0_12px_rgba(245,158,11,0.3)] cursor-pointer flex items-center gap-1.5"
+                            className="px-3.5 py-2 rounded-[8px] bg-[#f59e0b] hover:bg-[#d97706] text-white text-xs font-bold transition-all shadow-sm cursor-pointer flex items-center gap-1.5"
                           >
                             <Zap className="w-3.5 h-3.5" />
                             <span>Simular Publicación de Adenda en PLACSP</span>
@@ -723,18 +727,18 @@ Recomendación: Ejecutar reanálisis con Gemini 3.1 Flash v2.`
                         <motion.div
                           initial={{ opacity: 0, scale: 0.98 }}
                           animate={{ opacity: 1, scale: 1 }}
-                          className="space-y-2.5 p-3.5 rounded-[10px] bg-[#010102] border border-[#ef4444]/40"
+                          className="space-y-2.5 p-3.5 rounded-[10px] bg-[var(--surface-1)] border border-[#ef4444]/40"
                         >
-                          <div className="flex items-center gap-2 text-xs font-bold text-[#ef4444]">
+                          <div className="flex items-center gap-2 text-xs font-bold text-[#dc2626] dark:text-[#ef4444]">
                             <AlertCircle className="w-4 h-4" />
                             <span>¡ALERTA CRÍTICA! Se detectó nuevo hash de pliego en PLACSP.</span>
                           </div>
-                          <p className="text-xs text-[#8a8f98]">
-                            El análisis anterior ha sido invalidado atómicamente a <strong className="text-[#f59e0b]">REQUIRES_REANALYSIS</strong> para protegerte de ofertar con datos obsoletos.
+                          <p className="text-xs text-[var(--ink-secondary)]">
+                            El análisis anterior ha sido invalidado atómicamente a <strong className="text-[#b45309] dark:text-[#f59e0b]">REQUIRES_REANALYSIS</strong> para protegerte de ofertar con datos obsoletos.
                           </p>
                           <button
                             onClick={() => setSimulatedAdendaState('REANALYZED')}
-                            className="px-3.5 py-2 rounded-[8px] bg-[#5e6ad2] hover:bg-[#828fff] text-white text-xs font-bold transition-all shadow-[0_0_14px_rgba(94,106,210,0.35)] cursor-pointer flex items-center gap-1.5"
+                            className="px-3.5 py-2 rounded-[8px] bg-[#5e6ad2] hover:bg-[#828fff] text-white text-xs font-bold transition-all shadow-sm cursor-pointer flex items-center gap-1.5"
                           >
                             <RefreshCw className="w-3.5 h-3.5" />
                             <span>Reanalizar con Gemini 3.1 Flash (Motor v2)</span>
@@ -746,18 +750,18 @@ Recomendación: Ejecutar reanálisis con Gemini 3.1 Flash v2.`
                         <motion.div
                           initial={{ opacity: 0, scale: 0.98 }}
                           animate={{ opacity: 1, scale: 1 }}
-                          className="space-y-2 p-3.5 rounded-[10px] bg-[#010102] border border-[#10b981]/40"
+                          className="space-y-2 p-3.5 rounded-[10px] bg-[var(--surface-1)] border border-[#10b981]/40"
                         >
-                          <div className="flex items-center gap-2 text-xs font-bold text-[#10b981]">
+                          <div className="flex items-center gap-2 text-xs font-bold text-[#047857] dark:text-[#10b981]">
                             <CheckCircle2 className="w-4 h-4" />
                             <span>Reanálisis v2 completado con éxito</span>
                           </div>
-                          <p className="text-xs text-[#10b981]">
+                          <p className="text-xs text-[#047857] dark:text-[#10b981]">
                             Nuevo hash sellado, cita auditada integrada y expediente restaurado a estado <strong className="font-bold">VALID (PURSUE)</strong>.
                           </p>
                           <button
                             onClick={() => setSimulatedAdendaState('INITIAL')}
-                            className="text-[11px] font-semibold text-[#828fff] hover:underline cursor-pointer pt-1"
+                            className="text-[11px] font-semibold text-[var(--primary)] hover:underline cursor-pointer pt-1"
                           >
                             ← Reiniciar simulación
                           </button>
@@ -769,11 +773,11 @@ Recomendación: Ejecutar reanálisis con Gemini 3.1 Flash v2.`
                   {/* Métricas clave de la fase */}
                   <div className="grid grid-cols-3 gap-3">
                     {pipelineSteps[activeStep].content.metrics.map((m, idx) => (
-                      <div key={idx} className="p-3 rounded-[10px] bg-[#141516] border border-[#23252a]">
-                        <span className="text-[10px] text-[#8a8f98] font-medium block">
+                      <div key={idx} className="p-3 rounded-[10px] bg-[var(--surface-2)] border border-[var(--hairline)]">
+                        <span className="text-[10px] text-[var(--ink-secondary)] font-medium block">
                           {m.label}
                         </span>
-                        <span className="text-xs font-bold text-[#f7f8f8] mt-0.5 block tabular-nums font-mono">
+                        <span className="text-xs font-bold text-[var(--ink)] mt-0.5 block tabular-nums font-mono">
                           {m.value}
                         </span>
                       </div>
@@ -782,10 +786,10 @@ Recomendación: Ejecutar reanálisis con Gemini 3.1 Flash v2.`
 
                   {/* Consola de Código y Telemetría Real */}
                   <div className="space-y-1.5">
-                    <span className="text-[10px] font-mono uppercase tracking-wider text-[#8a8f98] font-bold">
+                    <span className="text-[10px] font-mono uppercase tracking-wider text-[var(--ink-secondary)] font-bold">
                       Evidencia en tiempo de ejecución:
                     </span>
-                    <pre className="p-4 rounded-[12px] bg-[#010102] border border-[#23252a] text-[#828fff] font-mono text-[11px] leading-relaxed overflow-x-auto shadow-inner">
+                    <pre className="p-4 rounded-[12px] bg-[var(--surface-2)] border border-[var(--hairline)] text-[var(--ink)] font-mono text-[11px] leading-relaxed overflow-x-auto shadow-inner">
                       <code>{pipelineSteps[activeStep].content.codeSnippet}</code>
                     </pre>
                   </div>
@@ -809,10 +813,10 @@ Recomendación: Ejecutar reanálisis con Gemini 3.1 Flash v2.`
             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
             className="max-w-2xl mb-10"
           >
-            <h2 className="text-2xl sm:text-3xl font-bold text-[#f7f8f8] tracking-[-0.03em]">
+            <h2 className="text-2xl sm:text-3xl font-bold text-[var(--ink)] tracking-[-0.03em]">
               Dossier corporativo y separación de identidades
             </h2>
-            <p className="text-xs sm:text-sm text-[#8a8f98] mt-2">
+            <p className="text-xs sm:text-sm text-[var(--ink-secondary)] mt-2">
               Tus credenciales personales nunca se mezclan con la solvencia jurídica de tu empresa licitadora.
             </p>
           </motion.div>
@@ -826,20 +830,20 @@ Recomendación: Ejecutar reanálisis con Gemini 3.1 Flash v2.`
               viewport={{ once: true, margin: '-50px' }}
               transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
               whileHover={{ y: -3 }}
-              className="p-6 sm:p-8 rounded-[20px] bg-[#0f1011] backdrop-blur-xl border border-[#23252a] hover:border-[#34343a] shadow-xs space-y-4 transition-all"
+              className="p-6 sm:p-8 rounded-[20px] bg-[var(--surface-1)] border border-[var(--hairline)] hover:border-[var(--hairline-strong)] shadow-xs space-y-4 transition-all"
             >
-              <div className="w-10 h-10 rounded-[10px] bg-[#5e6ad2]/20 text-[#828fff] flex items-center justify-center">
+              <div className="w-10 h-10 rounded-[10px] bg-[var(--primary)]/15 text-[var(--primary)] flex items-center justify-center">
                 <Building2 className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-base sm:text-lg font-bold text-[#f7f8f8]">
+                <h3 className="text-base sm:text-lg font-bold text-[var(--ink)]">
                   1. Cuenta del Operador (Personal)
                 </h3>
-                <p className="text-xs text-[#8a8f98] mt-1 leading-relaxed">
+                <p className="text-xs text-[var(--ink-secondary)] mt-1 leading-relaxed">
                   Gestiona el acceso seguro a la plataforma, tokens de sesión criptográficos en memoria activa y preferencias individuales de notificaciones.
                 </p>
               </div>
-              <ul className="space-y-2 pt-2 text-xs text-[#d0d6e0]">
+              <ul className="space-y-2 pt-2 text-xs text-[var(--ink-secondary)]">
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-[#10b981]" />
                   <span>Autenticación robusta con Supabase Auth</span>
@@ -862,20 +866,20 @@ Recomendación: Ejecutar reanálisis con Gemini 3.1 Flash v2.`
               viewport={{ once: true, margin: '-50px' }}
               transition={{ duration: 0.5, delay: 0.12, ease: [0.22, 1, 0.36, 1] }}
               whileHover={{ y: -3 }}
-              className="p-6 sm:p-8 rounded-[20px] bg-[#0f1011] backdrop-blur-xl border border-[#23252a] hover:border-[#34343a] shadow-xs space-y-4 transition-all"
+              className="p-6 sm:p-8 rounded-[20px] bg-[var(--surface-1)] border border-[var(--hairline)] hover:border-[var(--hairline-strong)] shadow-xs space-y-4 transition-all"
             >
-              <div className="w-10 h-10 rounded-[10px] bg-[#10b981]/20 text-[#10b981] flex items-center justify-center">
+              <div className="w-10 h-10 rounded-[10px] bg-[#10b981]/20 text-[#047857] dark:text-[#10b981] flex items-center justify-center">
                 <FileCheck2 className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-base sm:text-lg font-bold text-[#f7f8f8]">
+                <h3 className="text-base sm:text-lg font-bold text-[var(--ink)]">
                   2. Entidad Jurídica Licitadora (Dossier & Tenant)
                 </h3>
-                <p className="text-xs text-[#8a8f98] mt-1 leading-relaxed">
+                <p className="text-xs text-[var(--ink-secondary)] mt-1 leading-relaxed">
                   Almacena el CIF empresarial, solvencia económica (cifra de negocios), solvencia técnica y certificaciones oficiales requeridas en los pliegos.
                 </p>
               </div>
-              <ul className="space-y-2 pt-2 text-xs text-[#d0d6e0]">
+              <ul className="space-y-2 pt-2 text-xs text-[var(--ink-secondary)]">
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-[#10b981]" />
                   <span>Certificaciones ENS Categoría Alta y Esquemas ISO 27001 / 9001</span>
@@ -904,48 +908,48 @@ Recomendación: Ejecutar reanálisis con Gemini 3.1 Flash v2.`
             whileInView={{ opacity: 1, y: 0, scale: 1 }}
             viewport={{ once: true, margin: '-50px' }}
             transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            className="p-8 sm:p-12 rounded-[24px] bg-gradient-to-br from-[#0f1011] via-[#141516] to-[#010102] text-white border border-[#23252a] shadow-[0_20px_50px_rgba(0,0,0,0.8)] space-y-10"
+            className="p-8 sm:p-12 rounded-[24px] bg-[var(--surface-1)] text-[var(--ink)] border border-[var(--hairline)] shadow-[0_20px_50px_rgba(0,0,0,0.1)] space-y-10"
           >
             <div className="max-w-2xl">
-              <span className="text-xs font-mono uppercase tracking-widest text-[#10b981] font-bold">
+              <span className="text-xs font-mono uppercase tracking-widest text-[#047857] dark:text-[#10b981] font-bold">
                 Cumplimiento Normativo y Garantías
               </span>
-              <h2 className="text-2xl sm:text-3xl font-bold text-[#f7f8f8] tracking-[-0.03em] mt-1.5">
+              <h2 className="text-2xl sm:text-3xl font-bold text-[var(--ink)] tracking-[-0.03em] mt-1.5">
                 Seguridad empresarial y alineación con el ENS y RGPD
               </h2>
-              <p className="text-xs sm:text-sm text-[#8a8f98] mt-2 leading-relaxed">
+              <p className="text-xs sm:text-sm text-[var(--ink-secondary)] mt-2 leading-relaxed">
                 Diseñado para organismos públicos y empresas licitadoras que manejan datos sensibles de contratación estatal.
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               
-              <div className="p-5 rounded-[16px] bg-[#010102] border border-[#23252a] space-y-2.5">
-                <div className="w-8 h-8 rounded-[10px] bg-[#10b981]/20 text-[#10b981] flex items-center justify-center font-bold">
+              <div className="p-5 rounded-[16px] bg-[var(--surface-2)] border border-[var(--hairline)] space-y-2.5">
+                <div className="w-8 h-8 rounded-[10px] bg-[#10b981]/20 text-[#047857] dark:text-[#10b981] flex items-center justify-center font-bold">
                   <Database className="w-4 h-4" />
                 </div>
-                <h4 className="text-sm font-bold text-[#f7f8f8]">Aislamiento Anti-BOLA & Anti-IDOR</h4>
-                <p className="text-xs text-[#8a8f98] leading-relaxed">
-                  Prohibición absoluta de consultar datos sin encadenar el <code className="text-[#10b981] font-mono">tenant_id</code>. Ningún usuario puede acceder a recursos de otra empresa licitadora.
+                <h4 className="text-sm font-bold text-[var(--ink)]">Aislamiento Anti-BOLA & Anti-IDOR</h4>
+                <p className="text-xs text-[var(--ink-secondary)] leading-relaxed">
+                  Prohibición absoluta de consultar datos sin encadenar el <code className="text-[#047857] dark:text-[#10b981] font-mono font-semibold">tenant_id</code>. Ningún usuario puede acceder a recursos de otra empresa licitadora.
                 </p>
               </div>
 
-              <div className="p-5 rounded-[16px] bg-[#010102] border border-[#23252a] space-y-2.5">
-                <div className="w-8 h-8 rounded-[10px] bg-[#5e6ad2]/20 text-[#828fff] flex items-center justify-center font-bold">
+              <div className="p-5 rounded-[16px] bg-[var(--surface-2)] border border-[var(--hairline)] space-y-2.5">
+                <div className="w-8 h-8 rounded-[10px] bg-[var(--primary)]/15 text-[var(--primary)] flex items-center justify-center font-bold">
                   <Lock className="w-4 h-4" />
                 </div>
-                <h4 className="text-sm font-bold text-[#f7f8f8]">100% SQL Parametrizado</h4>
-                <p className="text-xs text-[#8a8f98] leading-relaxed">
-                  Cero concatenación de cadenas en base de datos. Consultas preparadas e índices compuestos <code className="text-[#828fff] font-mono">(tenant_id, id)</code> para máxima velocidad y protección.
+                <h4 className="text-sm font-bold text-[var(--ink)]">100% SQL Parametrizado</h4>
+                <p className="text-xs text-[var(--ink-secondary)] leading-relaxed">
+                  Cero concatenación de cadenas en base de datos. Consultas preparadas e índices compuestos <code className="text-[var(--primary)] font-mono font-semibold">(tenant_id, id)</code> para máxima velocidad y protección.
                 </p>
               </div>
 
-              <div className="p-5 rounded-[16px] bg-[#010102] border border-[#23252a] space-y-2.5">
-                <div className="w-8 h-8 rounded-[10px] bg-[#f59e0b]/20 text-[#f59e0b] flex items-center justify-center font-bold">
+              <div className="p-5 rounded-[16px] bg-[var(--surface-2)] border border-[var(--hairline)] space-y-2.5">
+                <div className="w-8 h-8 rounded-[10px] bg-[#f59e0b]/20 text-[#b45309] dark:text-[#f59e0b] flex items-center justify-center font-bold">
                   <ShieldCheck className="w-4 h-4" />
                 </div>
-                <h4 className="text-sm font-bold text-[#f7f8f8]">Esquemas Zod Estrictos</h4>
-                <p className="text-xs text-[#8a8f98] leading-relaxed">
+                <h4 className="text-sm font-bold text-[var(--ink)]">Esquemas Zod Estrictos</h4>
+                <p className="text-xs text-[var(--ink-secondary)] leading-relaxed">
                   Validación defensiva con esquemas Zod en todas las capas. Se descarta automáticamente cualquier intento de inyección de campos no autorizados.
                 </p>
               </div>
@@ -985,18 +989,18 @@ Recomendación: Ejecutar reanálisis con Gemini 3.1 Flash v2.`
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: '-20px' }}
                   transition={{ duration: 0.35, delay: index * 0.06, ease: [0.22, 1, 0.36, 1] }}
-                  className="rounded-[16px] bg-[#0f1011] backdrop-blur-xl border border-[#23252a] hover:border-[#34343a] overflow-hidden transition-all"
+                  className="rounded-[16px] bg-[var(--surface-1)] border border-[var(--hairline)] hover:border-[var(--hairline-strong)] overflow-hidden transition-all shadow-xs"
                 >
                   <button
                     onClick={() => setOpenFaq(isOpen ? null : index)}
-                    className="w-full p-5 text-left flex items-center justify-between gap-4 cursor-pointer hover:bg-white/5 transition-colors"
+                    className="w-full p-5 text-left flex items-center justify-between gap-4 cursor-pointer hover:bg-[var(--surface-2)]/60 transition-colors"
                   >
-                    <span className="text-xs sm:text-sm font-bold text-[#f7f8f8]">
+                    <span className="text-xs sm:text-sm font-bold text-[var(--ink)]">
                       {faq.q}
                     </span>
                     <ChevronDown
-                      className={`w-4 h-4 text-[#8a8f98] shrink-0 transition-transform duration-200 ${
-                        isOpen ? 'rotate-180 text-[#828fff]' : ''
+                      className={`w-4 h-4 text-[var(--ink-secondary)] shrink-0 transition-transform duration-200 ${
+                        isOpen ? 'rotate-180 text-[var(--primary)]' : ''
                       }`}
                     />
                   </button>
@@ -1010,7 +1014,7 @@ Recomendación: Ejecutar reanálisis con Gemini 3.1 Flash v2.`
                         transition={{ duration: 0.2 }}
                         className="overflow-hidden"
                       >
-                        <div className="px-5 pb-5 text-xs text-[#8a8f98] leading-relaxed border-t border-[#23252a] pt-3">
+                        <div className="px-5 pb-5 text-xs text-[var(--ink-secondary)] leading-relaxed border-t border-[var(--hairline)] pt-3">
                           {faq.a}
                         </div>
                       </motion.div>
@@ -1032,18 +1036,18 @@ Recomendación: Ejecutar reanálisis con Gemini 3.1 Flash v2.`
             whileInView={{ opacity: 1, y: 0, scale: 1 }}
             viewport={{ once: true, margin: '-40px' }}
             transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-            className="p-8 sm:p-12 rounded-[24px] bg-gradient-to-b from-[#0f1011] to-[#010102] border border-[#23252a] shadow-[0_0_50px_rgba(94,106,210,0.12)] text-center space-y-6"
+            className="p-8 sm:p-12 rounded-[24px] bg-[var(--surface-1)] border border-[var(--hairline)] shadow-[0_0_50px_rgba(79,89,199,0.12)] text-center space-y-6"
           >
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#5e6ad2]/15 border border-[#5e6ad2]/30 text-[#828fff] text-[11px] font-semibold">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--primary)]/15 border border-[var(--primary)]/30 text-[var(--primary)] text-[11px] font-semibold">
               <Sparkles className="w-3.5 h-3.5" />
               <span>Acceso Inmediato sin Compromiso</span>
             </div>
 
-            <h2 className="text-3xl sm:text-4xl font-bold text-[#f7f8f8] tracking-[-0.03em] max-w-2xl mx-auto leading-tight">
+            <h2 className="text-3xl sm:text-4xl font-bold text-[var(--ink)] tracking-[-0.03em] max-w-2xl mx-auto leading-tight">
               Comienza hoy a precalificar licitaciones con la máxima solvencia técnica
             </h2>
 
-            <p className="text-xs sm:text-sm text-[#8a8f98] max-w-xl mx-auto leading-relaxed">
+            <p className="text-xs sm:text-sm text-[var(--ink-secondary)] max-w-xl mx-auto leading-relaxed">
               Explora el expediente de la DGT en la demo o da de alta a tu empresa para monitorizar el feed oficial de PLACSP.
             </p>
 
@@ -1058,9 +1062,9 @@ Recomendación: Ejecutar reanálisis con Gemini 3.1 Flash v2.`
               
               <button
                 onClick={handleLaunchDemo}
-                className="w-full sm:w-auto px-6 py-3.5 rounded-[12px] bg-[#141516] hover:bg-[#18191a] active:scale-98 border border-[#23252a] hover:border-[#34343a] text-[#f7f8f8] text-sm font-semibold shadow-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
+                className="w-full sm:w-auto px-6 py-3.5 rounded-[12px] bg-[var(--surface-2)] hover:bg-[var(--surface-3)] active:scale-98 border border-[var(--hairline)] text-[var(--ink)] text-sm font-semibold shadow-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
               >
-                <Sparkles className="w-4 h-4 text-[#828fff]" />
+                <Sparkles className="w-4 h-4 text-[var(--primary)]" />
                 <span>Probar Demo Guiada</span>
               </button>
             </div>
@@ -1069,26 +1073,26 @@ Recomendación: Ejecutar reanálisis con Gemini 3.1 Flash v2.`
       </section>
 
       {/* 10. PIE DE PÁGINA EDITORIAL */}
-      <footer className="py-8 z-10 relative border-t border-[#23252a] bg-[#010102] text-xs text-[#8a8f98]">
+      <footer className="py-8 z-10 relative border-t border-[var(--hairline)] bg-[var(--canvas)] text-xs text-[var(--ink-secondary)]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded-[6px] bg-[#5e6ad2] text-white flex items-center justify-center text-[10px] font-bold">
+            <div className="w-5 h-5 rounded-[6px] bg-[var(--primary)] text-white flex items-center justify-center text-[10px] font-bold">
               ✦
             </div>
-            <span className="font-semibold text-[#f7f8f8]">Pliego AI</span>
+            <span className="font-semibold text-[var(--ink)]">Pliego AI</span>
             <span>·</span>
             <span>Plataforma de Contratación Pública Inteligente</span>
           </div>
 
           <div className="flex items-center gap-4 text-[11px]">
-            <span className="flex items-center gap-1.5 text-[#10b981] font-medium font-mono">
+            <span className="flex items-center gap-1.5 text-[#047857] dark:text-[#10b981] font-medium font-mono">
               <span className="w-1.5 h-1.5 rounded-full bg-[#10b981]" />
               PLACSP Feed: Conectado
             </span>
             <span>·</span>
-            <Link to="/login" className="hover:text-[#f7f8f8] transition-colors">Iniciar sesión</Link>
+            <Link to="/login" className="hover:text-[var(--ink)] transition-colors">Iniciar sesión</Link>
             <span>·</span>
-            <Link to="/registro" className="hover:text-[#f7f8f8] transition-colors">Registrar Empresa</Link>
+            <Link to="/registro" className="hover:text-[var(--ink)] transition-colors">Registrar Empresa</Link>
           </div>
         </div>
       </footer>
