@@ -72,8 +72,8 @@ export const DossierPage: React.FC = () => {
 
   const handleOpenProfileDrawer = () => {
     setProfileDesc(profile?.description || '');
-    setProfileSolvency(profile?.maxEconomicSolvency || 1450000);
-    setProfileTeamSize(profile?.averageTeamSize || 28);
+    setProfileSolvency(profile?.maxEconomicSolvency ?? 0);
+    setProfileTeamSize(profile?.averageTeamSize ?? 1);
     setIsProfileDrawerOpen(true);
   };
 
@@ -175,7 +175,7 @@ export const DossierPage: React.FC = () => {
       case 'FINANCIAL_SOLVENCY':
         return { label: 'Solvencia económica', icon: Coins, color: 'text-[#ca8517] bg-[#fff3db]' };
       default:
-        return { label: 'Evidencia', icon: FileText, color: 'text-[#69666d] bg-[#f5f1ed]' };
+        return { label: 'Evidencia', icon: FileText, color: 'text-[var(--ink-secondary)] bg-[var(--surface-2)]' };
     }
   };
 
@@ -204,18 +204,18 @@ export const DossierPage: React.FC = () => {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           {/* Breadcrumb */}
-          <nav className="text-xs text-[#929097] flex items-center gap-1.5 mb-1.5">
-            <Link to="/app/inicio" className="hover:text-[#171719] transition-colors">
+          <nav className="text-xs text-[var(--ink-tertiary)] flex items-center gap-1.5 mb-1.5">
+            <Link to="/app/inicio" className="hover:text-[var(--ink)] transition-colors">
               Inicio
             </Link>
             <span>›</span>
-            <span className="text-[#171719] font-medium">Dossier</span>
+            <span className="text-[var(--ink)] font-medium">Dossier</span>
           </nav>
 
-          <h1 className="app-page-title text-[#171719]">
+          <h1 className="app-page-title text-[var(--ink)]">
             Dossier
           </h1>
-          <p className="text-xs sm:text-sm text-[#69666d] mt-1 max-w-xl">
+          <p className="text-xs sm:text-sm text-[var(--ink-secondary)] mt-1 max-w-xl">
             La información de tu organización utilizada para analizar los pliegos.
           </p>
         </div>
@@ -224,7 +224,7 @@ export const DossierPage: React.FC = () => {
         <div>
           <button
             onClick={handleOpenProfileDrawer}
-            className="px-4 py-2 rounded-[11px] bg-white hover:bg-[#f5f1ed] text-xs font-semibold text-[#171719] border border-[rgba(30,24,38,0.12)] transition-colors shadow-xs cursor-pointer"
+            className="px-4 py-2 rounded-[11px] bg-white hover:bg-[var(--surface-2)] text-xs font-semibold text-[var(--ink)] border border-[var(--hairline)] transition-colors shadow-xs cursor-pointer"
           >
             Editar perfil
           </button>
@@ -235,16 +235,16 @@ export const DossierPage: React.FC = () => {
       <section className="dossier-summary-strip" aria-label="Resumen del dossier">
         <div className="dossier-summary-piece">
           <div className="space-y-1">
-            <span className="text-[10px] font-mono uppercase tracking-wider text-[#929097]">
+            <span className="text-[10px] font-mono uppercase tracking-wider text-[var(--ink-tertiary)]">
               Organización autorizada
             </span>
-            <h2 className="text-lg font-bold text-[#171719] tracking-tight">
+            <h2 className="text-lg font-bold text-[var(--ink)] tracking-tight">
               {activeTenant?.name || 'Mi Organización Licitadora'}
             </h2>
-            <p className="text-xs text-[#69666d]">
+            <p className="text-xs text-[var(--ink-secondary)]">
               {profile?.description || 'Entidad licitadora en contratación pública'}
             </p>
-            <p className="text-xs text-[#929097] mt-0.5">
+            <p className="text-xs text-[var(--ink-tertiary)] mt-0.5">
               España · CIF: {activeTenant?.taxId || 'No asignado'}
             </p>
           </div>
@@ -256,18 +256,20 @@ export const DossierPage: React.FC = () => {
         {/* Fondo documental y acreditaciones: recuentos factuales, sin porcentajes inventados. */}
         <div className="dossier-summary-piece">
           <div className="space-y-1">
-            <span className="text-[10px] font-mono uppercase tracking-wider text-[#929097]">
+            <span className="text-[10px] font-mono uppercase tracking-wider text-[var(--ink-tertiary)]">
               Fondo Documental
             </span>
-            <div className="text-2xl sm:text-3xl font-bold text-[#171719] font-ui tabular-nums tracking-tight">
+            <div className="text-2xl sm:text-3xl font-bold text-[var(--ink)] font-ui tabular-nums tracking-tight">
               {certifications.length + evidences.length}{' '}
-              <span className="text-sm font-medium text-[#69666d]">acreditaciones</span>
+              <span className="text-sm font-medium text-[var(--ink-secondary)]">acreditaciones</span>
             </div>
-            <p className="text-xs text-[#69666d]">
+            <p className="text-xs text-[var(--ink-secondary)]">
               {certifications.length} certificaciones en vigor · {evidences.length} evidencias registradas
             </p>
-            <p className="text-xs text-[#929097] mt-0.5">
-              {certifications.filter((c) => c.status === 'EXPIRED').length > 0
+            <p className="text-xs text-[var(--ink-tertiary)] mt-0.5">
+              {certifications.length === 0
+                ? 'Sin acreditaciones registradas todavía. Añade certificaciones y solvencias para habilitar el cotejo con pliegos.'
+                : certifications.filter((c) => c.status === 'EXPIRED').length > 0
                 ? `${certifications.filter((c) => c.status === 'EXPIRED').length} certificación requiere renovación`
                 : 'Expediente documental completo para análisis de solvencia'}
             </p>
@@ -279,14 +281,14 @@ export const DossierPage: React.FC = () => {
       </section>
 
       {/* 44 & 56. NAVEGACIÓN INTERNA: 3 TABS REALES */}
-      <div className="border-b border-[rgba(30,24,38,0.08)] overflow-x-auto">
+      <div className="border-b border-[var(--hairline)] overflow-x-auto">
         <div className="dossier-tabs flex gap-7 min-h-[46px] whitespace-nowrap min-w-max">
           <button
             onClick={() => setActiveTab('perfil')}
             className={`dossier-tab text-xs sm:text-sm font-medium transition-colors cursor-pointer pb-2.5 relative ${
               activeTab === 'perfil'
-                ? 'text-[#171719] font-semibold active'
-                : 'text-[#69666d] hover:text-[#171719]'
+                ? 'text-[var(--ink)] font-semibold active'
+                : 'text-[var(--ink-secondary)] hover:text-[var(--ink)]'
             }`}
           >
             Perfil
@@ -296,8 +298,8 @@ export const DossierPage: React.FC = () => {
             onClick={() => setActiveTab('certificaciones')}
             className={`dossier-tab text-xs sm:text-sm font-medium transition-colors cursor-pointer pb-2.5 relative flex items-center gap-1.5 ${
               activeTab === 'certificaciones'
-                ? 'text-[#171719] font-semibold active'
-                : 'text-[#69666d] hover:text-[#171719]'
+                ? 'text-[var(--ink)] font-semibold active'
+                : 'text-[var(--ink-secondary)] hover:text-[var(--ink)]'
             }`}
           >
             <span>Certificaciones</span>
@@ -310,17 +312,122 @@ export const DossierPage: React.FC = () => {
             onClick={() => setActiveTab('evidencias')}
             className={`dossier-tab text-xs sm:text-sm font-medium transition-colors cursor-pointer pb-2.5 relative flex items-center gap-1.5 ${
               activeTab === 'evidencias'
-                ? 'text-[#171719] font-semibold active'
-                : 'text-[#69666d] hover:text-[#171719]'
+                ? 'text-[var(--ink)] font-semibold active'
+                : 'text-[var(--ink-secondary)] hover:text-[var(--ink)]'
             }`}
           >
             <span>Evidencias</span>
-            <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-[#f5f1ed] text-[#69666d]">
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-[var(--surface-2)] text-[var(--ink-secondary)]">
               {evidences.length}
             </span>
           </button>
         </div>
       </div>
+
+      {/* 43. TAB CONTENT: PERFIL CORPORATIVO DE LA ORGANIZACIÓN */}
+      {activeTab === 'perfil' && (
+        <div className="space-y-4">
+          <div className="surface p-6 sm:p-7 rounded-[18px] border border-[var(--hairline)] space-y-6 bg-[var(--surface-1)] shadow-xs">
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-5 border-b border-[var(--hairline)]">
+              <div>
+                <span className="text-[10px] font-mono uppercase tracking-wider text-[var(--primary)] font-semibold">
+                  Entidad Mercantil Licitadora
+                </span>
+                <h3 className="text-xl font-bold text-[var(--ink)] mt-1">
+                  {activeTenant?.name || profile?.companyName || 'Mi Organización'}
+                </h3>
+                <p className="text-xs text-[var(--ink-secondary)] mt-1 max-w-xl leading-relaxed">
+                  {profile?.description || 'Entidad licitadora en contratación pública española.'}
+                </p>
+              </div>
+
+              <button
+                onClick={handleOpenProfileDrawer}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-[11px] bg-[var(--primary)] text-white text-xs font-semibold hover:opacity-90 transition-all shadow-xs cursor-pointer shrink-0"
+              >
+                <span>Editar datos de solvencia</span>
+              </button>
+            </div>
+
+            {/* Grid de Atributos del Perfil */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="p-4 rounded-[12px] bg-[var(--surface-2)] border border-[var(--hairline)] space-y-1">
+                <span className="text-[10px] font-mono text-[var(--ink-tertiary)] uppercase tracking-wider">
+                  Identificador Fiscal (CIF/NIF)
+                </span>
+                <p className="text-sm font-bold text-[var(--ink)] font-mono">
+                  {activeTenant?.taxId || profile?.taxId || 'No asignado'}
+                </p>
+                <p className="text-[11px] text-[var(--ink-secondary)]">
+                  Registro oficial mercantil
+                </p>
+              </div>
+
+              <div className="p-4 rounded-[12px] bg-[var(--surface-2)] border border-[var(--hairline)] space-y-1">
+                <span className="text-[10px] font-mono text-[var(--ink-tertiary)] uppercase tracking-wider">
+                  Solvencia Económica Declarada
+                </span>
+                <p className="text-sm font-bold text-[var(--ink)] font-mono">
+                  {formatCurrency(profile?.maxEconomicSolvency || 0)}
+                </p>
+                <p className="text-[11px] text-[var(--ink-secondary)]">
+                  Facturación anual o volumen acumulado de negocio
+                </p>
+              </div>
+
+              <div className="p-4 rounded-[12px] bg-[var(--surface-2)] border border-[var(--hairline)] space-y-1">
+                <span className="text-[10px] font-mono text-[var(--ink-tertiary)] uppercase tracking-wider">
+                  Equipo Técnico en Plantilla
+                </span>
+                <p className="text-sm font-bold text-[var(--ink)] font-mono">
+                  {profile?.averageTeamSize || 1} profesionales
+                </p>
+                <p className="text-[11px] text-[var(--ink-secondary)]">
+                  Capacidad de asignación a proyectos
+                </p>
+              </div>
+
+              <div className="p-4 rounded-[12px] bg-[var(--surface-2)] border border-[var(--hairline)] space-y-1">
+                <span className="text-[10px] font-mono text-[var(--ink-tertiary)] uppercase tracking-wider">
+                  Ámbito Geográfico
+                </span>
+                <p className="text-sm font-semibold text-[var(--ink)]">
+                  {profile?.geographicalScope?.join(', ') || 'Ámbito Estatal'}
+                </p>
+                <p className="text-[11px] text-[var(--ink-secondary)]">
+                  Cobertura territorial de ejecución
+                </p>
+              </div>
+
+              <div className="p-4 rounded-[12px] bg-[var(--surface-2)] border border-[var(--hairline)] space-y-1 md:col-span-2">
+                <span className="text-[10px] font-mono text-[var(--ink-tertiary)] uppercase tracking-wider">
+                  Códigos CPV de Especialidad Principal
+                </span>
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {(profile?.primaryCpvCodes || ['72000000-5 · Servicios TIC']).map((cpv, idx) => (
+                    <span
+                      key={idx}
+                      className="px-2.5 py-1 rounded-[8px] bg-[var(--surface-1)] border border-[var(--hairline)] text-xs text-[var(--ink)] font-mono"
+                    >
+                      {cpv}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Aviso informativo si el dossier está vacío */}
+            {certifications.length === 0 && evidences.length === 0 && (
+              <div className="p-4 rounded-[12px] bg-[#fff3db] dark:bg-[#78350f]/20 border border-[#ca8517]/30 text-xs text-[#ca8517] dark:text-[#fbbf24] flex items-start gap-3">
+                <Building2 className="w-4 h-4 shrink-0 mt-0.5" />
+                <div>
+                  <strong className="font-semibold">Perfil recién creado:</strong> Completa tu dossier añadiendo certificaciones (ISO 27001, ENS) y contratos previos en las pestañas siguientes para habilitar la precalificación automática en el Catálogo de Licitaciones.
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* 45. TAB CONTENT: CERTIFICACIONES (Secciones 45, 46, 47) */}
       {activeTab === 'certificaciones' && (
@@ -328,13 +435,13 @@ export const DossierPage: React.FC = () => {
           {/* Toolbar de certificaciones */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="relative w-full sm:w-80">
-              <Search className="w-3.5 h-3.5 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#929097]" />
+              <Search className="w-3.5 h-3.5 absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--ink-tertiary)]" />
               <input
                 type="text"
                 placeholder="Buscar certificaciones..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full h-10 pl-9 pr-3 bg-white/80 focus:bg-white border border-[rgba(30,24,38,0.08)] focus:border-[#685cff] rounded-[11px] text-xs text-[#171719] placeholder-[#929097] focus:outline-none shadow-xs transition-all"
+                className="w-full h-10 pl-9 pr-3 bg-[var(--surface-1)] focus:bg-white border border-[var(--hairline)] focus:border-[#685cff] rounded-[11px] text-xs text-[var(--ink)] placeholder-[#929097] focus:outline-none shadow-xs transition-all"
               />
             </div>
 
@@ -350,13 +457,13 @@ export const DossierPage: React.FC = () => {
           {/* Lista de Certificaciones */}
           {filteredCertifications.length === 0 ? (
             <div className="surface p-10 rounded-[18px] text-center space-y-3 shadow-xs">
-              <div className="w-12 h-12 rounded-full bg-[#f5f1ed] text-[#69666d] flex items-center justify-center mx-auto text-xl">
+              <div className="w-12 h-12 rounded-full bg-[var(--surface-2)] text-[var(--ink-secondary)] flex items-center justify-center mx-auto text-xl">
                 <ShieldCheck className="w-6 h-6 text-[#685cff]" />
               </div>
-              <h3 className="font-editorial text-2xl text-[#171719]">
+              <h3 className="font-editorial text-2xl text-[var(--ink)]">
                 {searchTerm ? 'No hay certificaciones que coincidan' : 'Sin certificaciones registradas'}
               </h3>
-              <p className="text-xs text-[#69666d] max-w-md mx-auto leading-relaxed">
+              <p className="text-xs text-[var(--ink-secondary)] max-w-md mx-auto leading-relaxed">
                 {searchTerm
                   ? 'Prueba a cambiar el término de búsqueda para localizar tu acreditación.'
                   : `Añade las certificaciones oficiales de ${activeTenant?.name || 'tu empresa'} (como ISO/IEC 27001, Esquema Nacional de Seguridad ENS, ISO 9001 o certificaciones técnicas) para que el motor de precalificación las coteje automáticamente contra los pliegos.`}
@@ -383,21 +490,21 @@ export const DossierPage: React.FC = () => {
                   >
                     {/* Nombre y Emisor */}
                     <div className="flex items-start gap-3.5">
-                      <div className="w-10 h-10 rounded-[10px] bg-[#f5f1ed] border border-[rgba(30,24,38,0.06)] flex items-center justify-center text-[#685cff] shrink-0">
+                      <div className="w-10 h-10 rounded-[10px] bg-[var(--surface-2)] border border-[var(--hairline)] flex items-center justify-center text-[#685cff] shrink-0">
                         <FileText className="w-5 h-5" />
                       </div>
                       <div>
                         <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="text-sm font-semibold text-[#171719]">
+                          <h3 className="text-sm font-semibold text-[var(--ink)]">
                             {cert.name}
                           </h3>
                           <DossierStatusBadge status={cert.status} />
                         </div>
-                        <p className="text-xs text-[#69666d] mt-0.5">
-                          Emisor: <span className="text-[#171719]">{cert.issuer}</span>
+                        <p className="text-xs text-[var(--ink-secondary)] mt-0.5">
+                          Emisor: <span className="text-[var(--ink)]">{cert.issuer}</span>
                         </p>
                         {cert.certificateNumber && (
-                          <span className="text-[11px] text-[#929097] font-mono mt-1 block">
+                          <span className="text-[11px] text-[var(--ink-tertiary)] font-mono mt-1 block">
                             Nº Certificado: {cert.certificateNumber}
                           </span>
                         )}
@@ -407,12 +514,12 @@ export const DossierPage: React.FC = () => {
                     {/* Estado de Validez y Acciones */}
                     <div className="flex items-center justify-between sm:justify-end gap-5">
                       <div className="text-left sm:text-right">
-                        <span className="text-[11px] text-[#929097] block">
+                        <span className="text-[11px] text-[var(--ink-tertiary)] block">
                           {isExpired ? 'Caducada el' : 'Válida hasta'}
                         </span>
                         <span
                           className={`text-xs font-medium ${
-                            isExpired ? 'text-[#ca8517]' : 'text-[#171719]'
+                            isExpired ? 'text-[#ca8517]' : 'text-[var(--ink)]'
                           }`}
                         >
                           {cert.expiresAt
@@ -438,14 +545,14 @@ export const DossierPage: React.FC = () => {
 
                         <button
                           onClick={() => handleOpenDrawer(cert)}
-                          className="px-3 py-1.5 rounded-[9px] bg-white hover:bg-[#f5f1ed] text-[#171719] border border-[rgba(30,24,38,0.1)] text-xs font-medium transition-colors cursor-pointer"
+                          className="px-3 py-1.5 rounded-[9px] bg-white hover:bg-[var(--surface-2)] text-[var(--ink)] border border-[rgba(30,24,38,0.1)] text-xs font-medium transition-colors cursor-pointer"
                         >
                           Ver acreditación
                         </button>
 
                         <button
                           onClick={() => handleOpenDrawer(cert)}
-                          className="p-1.5 rounded-lg text-[#929097] hover:text-[#171719] hover:bg-black/[0.04] transition-colors cursor-pointer"
+                          className="p-1.5 rounded-lg text-[var(--ink-tertiary)] hover:text-[var(--ink)] hover:bg-black/[0.04] transition-colors cursor-pointer"
                           title="Opciones"
                         >
                           <MoreVertical className="w-4 h-4" />
@@ -463,25 +570,25 @@ export const DossierPage: React.FC = () => {
       {/* TAB PERFIL */}
       {activeTab === 'perfil' && (
         <div className="surface p-6 rounded-[20px] space-y-4 max-w-3xl">
-          <h3 className="text-sm font-semibold text-[#171719] pb-2 border-b border-[rgba(30,24,38,0.08)]">
+          <h3 className="text-sm font-semibold text-[var(--ink)] pb-2 border-b border-[var(--hairline)]">
             Datos Corporativos de la Organización
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
             <div>
-              <span className="text-[#929097] block">Razón Social</span>
-              <span className="font-semibold text-[#171719]">{activeTenant?.name}</span>
+              <span className="text-[var(--ink-tertiary)] block">Razón Social</span>
+              <span className="font-semibold text-[var(--ink)]">{activeTenant?.name}</span>
             </div>
             <div>
-              <span className="text-[#929097] block">Identificación Fiscal</span>
-              <span className="font-mono font-semibold text-[#171719]">{activeTenant?.taxId}</span>
+              <span className="text-[var(--ink-tertiary)] block">Identificación Fiscal</span>
+              <span className="font-mono font-semibold text-[var(--ink)]">{activeTenant?.taxId}</span>
             </div>
             <div>
-              <span className="text-[#929097] block">Sector de Actividad</span>
-              <span className="text-[#171719]">{profile?.description || 'Tecnología e Infraestructuras'}</span>
+              <span className="text-[var(--ink-tertiary)] block">Sector de Actividad</span>
+              <span className="text-[var(--ink)]">{profile?.description || 'Tecnología e Infraestructuras'}</span>
             </div>
             <div>
-              <span className="text-[#929097] block">Facturación Anual Auditada</span>
-              <span className="font-mono text-[#171719] tabular-nums">
+              <span className="text-[var(--ink-tertiary)] block">Facturación Anual Auditada</span>
+              <span className="font-mono text-[var(--ink)] tabular-nums">
                 {formatCurrency(profile?.maxEconomicSolvency || 1450000)}
               </span>
             </div>
@@ -495,13 +602,13 @@ export const DossierPage: React.FC = () => {
           {/* Toolbar de evidencias: Buscador y Botón Añadir */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="relative w-full sm:w-80">
-              <Search className="w-3.5 h-3.5 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#929097]" />
+              <Search className="w-3.5 h-3.5 absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--ink-tertiary)]" />
               <input
                 type="text"
                 placeholder="Buscar evidencias por título, descripción o archivo..."
                 value={evidenceSearchTerm}
                 onChange={(e) => setEvidenceSearchTerm(e.target.value)}
-                className="w-full h-10 pl-9 pr-3 bg-white/80 focus:bg-white border border-[rgba(30,24,38,0.08)] focus:border-[#685cff] rounded-[11px] text-xs text-[#171719] placeholder-[#929097] focus:outline-none shadow-xs transition-all"
+                className="w-full h-10 pl-9 pr-3 bg-[var(--surface-1)] focus:bg-white border border-[var(--hairline)] focus:border-[#685cff] rounded-[11px] text-xs text-[var(--ink)] placeholder-[#929097] focus:outline-none shadow-xs transition-all"
               />
             </div>
 
@@ -525,13 +632,13 @@ export const DossierPage: React.FC = () => {
                   className={`px-3 py-1.5 rounded-[8px] text-xs font-medium transition-colors cursor-pointer flex items-center gap-1.5 ${
                     isSelected
                       ? 'bg-[#eeeaff] text-[#685cff] font-semibold'
-                      : 'text-[#69666d] hover:text-[#171719] hover:bg-white/70'
+                      : 'text-[var(--ink-secondary)] hover:text-[var(--ink)] hover:bg-white/70'
                   }`}
                 >
                   <span>{filter.label}</span>
                   <span
                     className={`text-[10px] font-mono ${
-                      isSelected ? 'text-[#685cff]' : 'text-[#929097]'
+                      isSelected ? 'text-[#685cff]' : 'text-[var(--ink-tertiary)]'
                     }`}
                   >
                     {filter.count}
@@ -544,15 +651,15 @@ export const DossierPage: React.FC = () => {
           {/* Lista de Evidencias */}
           {filteredEvidences.length === 0 ? (
             <div className="surface p-10 rounded-[18px] text-center space-y-3 shadow-xs">
-              <div className="w-12 h-12 rounded-full bg-[#f5f1ed] text-[#69666d] flex items-center justify-center mx-auto text-xl">
+              <div className="w-12 h-12 rounded-full bg-[var(--surface-2)] text-[var(--ink-secondary)] flex items-center justify-center mx-auto text-xl">
                 <Briefcase className="w-6 h-6 text-[#10b981]" />
               </div>
-              <h3 className="font-editorial text-2xl text-[#171719]">
+              <h3 className="font-editorial text-2xl text-[var(--ink)]">
                 {evidenceSearchTerm || evidenceCategory !== 'ALL'
                   ? 'No hay evidencias que coincidan con estos filtros'
                   : 'Sin evidencias o solvencias registradas'}
               </h3>
-              <p className="text-xs text-[#69666d] max-w-md mx-auto leading-relaxed">
+              <p className="text-xs text-[var(--ink-secondary)] max-w-md mx-auto leading-relaxed">
                 {evidenceSearchTerm || evidenceCategory !== 'ALL'
                   ? 'Prueba a cambiar el filtro de categoría o limpiar el término de búsqueda.'
                   : `Registra contratos previos ejecutados, solvencia económica auditada o cualificaciones del equipo técnico para demostrar la solvencia de ${activeTenant?.name || 'tu empresa'}.`}
@@ -585,18 +692,18 @@ export const DossierPage: React.FC = () => {
                       </div>
                       <div className="space-y-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-[10px] font-mono uppercase tracking-wider text-[#929097]">
+                          <span className="text-[10px] font-mono uppercase tracking-wider text-[var(--ink-tertiary)]">
                             {meta.label}
                           </span>
-                          <h4 className="text-sm font-semibold text-[#171719]">
+                          <h4 className="text-sm font-semibold text-[var(--ink)]">
                             {ev.title}
                           </h4>
                           <DossierStatusBadge status={ev.status} />
                         </div>
-                        <p className="text-xs text-[#69666d] max-w-2xl">
+                        <p className="text-xs text-[var(--ink-secondary)] max-w-2xl">
                           {ev.description}
                         </p>
-                        <div className="flex items-center gap-3 text-[11px] text-[#929097] pt-0.5">
+                        <div className="flex items-center gap-3 text-[11px] text-[var(--ink-tertiary)] pt-0.5">
                           <span className="flex items-center gap-1 font-mono">
                             <FileText className="w-3 h-3" />
                             {ev.documentReference}
@@ -614,10 +721,10 @@ export const DossierPage: React.FC = () => {
                     <div className="dossier-evidence-value text-left sm:text-right shrink-0">
                       {ev.verifiedAmount && (
                         <div>
-                          <span className="text-[10px] font-mono uppercase text-[#929097] block">
+                          <span className="text-[10px] font-mono uppercase text-[var(--ink-tertiary)] block">
                             Importe acreditado
                           </span>
-                          <span className="text-sm font-mono font-bold text-[#171719] tabular-nums block">
+                          <span className="text-sm font-mono font-bold text-[var(--ink)] tabular-nums block">
                             {formatCurrency(ev.verifiedAmount)}
                           </span>
                         </div>
@@ -642,7 +749,7 @@ export const DossierPage: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsDrawerOpen(false)}
-              className="px-3.5 py-2 rounded-[10px] bg-white hover:bg-[#f5f1ed] text-xs font-medium text-[#171719] border border-[rgba(30,24,38,0.12)] transition-colors cursor-pointer"
+              className="px-3.5 py-2 rounded-[10px] bg-white hover:bg-[var(--surface-2)] text-xs font-medium text-[var(--ink)] border border-[var(--hairline)] transition-colors cursor-pointer"
             >
               Cancelar
             </button>
@@ -658,7 +765,7 @@ export const DossierPage: React.FC = () => {
       >
         <form onSubmit={handleSaveCertification} className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-[#171719] mb-1">
+            <label className="block text-xs font-medium text-[var(--ink)] mb-1">
               Nombre de la certificación
             </label>
             <input
@@ -667,12 +774,12 @@ export const DossierPage: React.FC = () => {
               value={formName}
               onChange={(e) => setFormName(e.target.value)}
               placeholder="Ej: ISO 27001 o ENS Nivel Medio"
-              className="w-full h-10 px-3 rounded-[11px] bg-[#f5f1ed]/80 focus:bg-white border border-[rgba(30,24,38,0.08)] focus:border-[#685cff] text-xs text-[#171719] focus:outline-none transition-all"
+              className="w-full h-10 px-3 rounded-[11px] bg-[var(--surface-2)]/80 focus:bg-white border border-[var(--hairline)] focus:border-[#685cff] text-xs text-[var(--ink)] focus:outline-none transition-all"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-[#171719] mb-1">
+            <label className="block text-xs font-medium text-[var(--ink)] mb-1">
               Entidad emisora
             </label>
             <input
@@ -681,24 +788,24 @@ export const DossierPage: React.FC = () => {
               value={formIssuer}
               onChange={(e) => setFormIssuer(e.target.value)}
               placeholder="Ej: AENOR, TÜV Rheinland, BSI"
-              className="w-full h-10 px-3 rounded-[11px] bg-[#f5f1ed]/80 focus:bg-white border border-[rgba(30,24,38,0.08)] focus:border-[#685cff] text-xs text-[#171719] focus:outline-none transition-all"
+              className="w-full h-10 px-3 rounded-[11px] bg-[var(--surface-2)]/80 focus:bg-white border border-[var(--hairline)] focus:border-[#685cff] text-xs text-[var(--ink)] focus:outline-none transition-all"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-[#171719] mb-1">
+            <label className="block text-xs font-medium text-[var(--ink)] mb-1">
               Fecha de caducidad / validez
             </label>
             <input
               type="date"
               value={formValidUntil}
               onChange={(e) => setFormValidUntil(e.target.value)}
-              className="w-full h-10 px-3 rounded-[11px] bg-[#f5f1ed]/80 focus:bg-white border border-[rgba(30,24,38,0.08)] focus:border-[#685cff] text-xs text-[#171719] focus:outline-none transition-all"
+              className="w-full h-10 px-3 rounded-[11px] bg-[var(--surface-2)]/80 focus:bg-white border border-[var(--hairline)] focus:border-[#685cff] text-xs text-[var(--ink)] focus:outline-none transition-all"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-[#171719] mb-1">
+            <label className="block text-xs font-medium text-[var(--ink)] mb-1">
               Referencia documental / Hash del archivo
             </label>
             <input
@@ -706,13 +813,13 @@ export const DossierPage: React.FC = () => {
               value={formDocRef}
               onChange={(e) => setFormDocRef(e.target.value)}
               placeholder="Ej: Certificado_ISO27001_2026.pdf"
-              className="w-full h-10 px-3 rounded-[11px] bg-[#f5f1ed]/80 focus:bg-white border border-[rgba(30,24,38,0.08)] focus:border-[#685cff] text-xs text-[#171719] focus:outline-none transition-all font-mono"
+              className="w-full h-10 px-3 rounded-[11px] bg-[var(--surface-2)]/80 focus:bg-white border border-[var(--hairline)] focus:border-[#685cff] text-xs text-[var(--ink)] focus:outline-none transition-all font-mono"
             />
           </div>
 
           {/* Nota de integridad y seguridad */}
-          <div className="p-3 rounded-[12px] bg-[#f5f1ed] border border-[rgba(30,24,38,0.06)] text-[11px] text-[#69666d] leading-relaxed">
-            <span className="font-semibold text-[#171719]">Aviso de Integridad:</span> Todas las nuevas acreditaciones se registran con estado <span className="font-mono text-[#685cff]">DECLARED</span> hasta su verificación documental. Los usuarios no pueden forzar unilateralmente el estado de verificación.
+          <div className="p-3 rounded-[12px] bg-[var(--surface-2)] border border-[var(--hairline)] text-[11px] text-[var(--ink-secondary)] leading-relaxed">
+            <span className="font-semibold text-[var(--ink)]">Aviso de Integridad:</span> Todas las nuevas acreditaciones se registran con estado <span className="font-mono text-[#685cff]">DECLARED</span> hasta su verificación documental. Los usuarios no pueden forzar unilateralmente el estado de verificación.
           </div>
         </form>
       </Drawer>
@@ -728,7 +835,7 @@ export const DossierPage: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsProfileDrawerOpen(false)}
-              className="px-3.5 py-2 rounded-[10px] bg-white hover:bg-[#f5f1ed] text-xs font-medium text-[#171719] border border-[rgba(30,24,38,0.12)] transition-colors cursor-pointer"
+              className="px-3.5 py-2 rounded-[10px] bg-white hover:bg-[var(--surface-2)] text-xs font-medium text-[var(--ink)] border border-[var(--hairline)] transition-colors cursor-pointer"
             >
               Cancelar
             </button>
@@ -744,19 +851,19 @@ export const DossierPage: React.FC = () => {
       >
         <form onSubmit={handleSaveProfile} className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-[#171719] mb-1">
+            <label className="block text-xs font-medium text-[var(--ink)] mb-1">
               Razón Social (Inmutable por Tenant)
             </label>
             <input
               type="text"
               disabled
               value={activeTenant?.name || ''}
-              className="w-full h-10 px-3 rounded-[11px] bg-stone-100 text-[#929097] border border-[rgba(30,24,38,0.08)] text-xs cursor-not-allowed font-medium"
+              className="w-full h-10 px-3 rounded-[11px] bg-stone-100 text-[var(--ink-tertiary)] border border-[var(--hairline)] text-xs cursor-not-allowed font-medium"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-[#171719] mb-1">
+            <label className="block text-xs font-medium text-[var(--ink)] mb-1">
               Sector / Descripción de Actividad
             </label>
             <input
@@ -765,12 +872,12 @@ export const DossierPage: React.FC = () => {
               value={profileDesc}
               onChange={(e) => setProfileDesc(e.target.value)}
               placeholder="Ej: Consultoría TI y Servicios Cloud"
-              className="w-full h-10 px-3 rounded-[11px] bg-[#f5f1ed]/80 focus:bg-white border border-[rgba(30,24,38,0.08)] focus:border-[#685cff] text-xs text-[#171719] focus:outline-none transition-all"
+              className="w-full h-10 px-3 rounded-[11px] bg-[var(--surface-2)]/80 focus:bg-white border border-[var(--hairline)] focus:border-[#685cff] text-xs text-[var(--ink)] focus:outline-none transition-all"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-[#171719] mb-1">
+            <label className="block text-xs font-medium text-[var(--ink)] mb-1">
               Solvencia Económica Máxima (€ / año)
             </label>
             <input
@@ -779,12 +886,12 @@ export const DossierPage: React.FC = () => {
               value={profileSolvency}
               onChange={(e) => setProfileSolvency(Number(e.target.value))}
               placeholder="Ej: 1450000"
-              className="w-full h-10 px-3 rounded-[11px] bg-[#f5f1ed]/80 focus:bg-white border border-[rgba(30,24,38,0.08)] focus:border-[#685cff] text-xs text-[#171719] focus:outline-none transition-all font-mono"
+              className="w-full h-10 px-3 rounded-[11px] bg-[var(--surface-2)]/80 focus:bg-white border border-[var(--hairline)] focus:border-[#685cff] text-xs text-[var(--ink)] focus:outline-none transition-all font-mono"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-[#171719] mb-1">
+            <label className="block text-xs font-medium text-[var(--ink)] mb-1">
               Plantilla media de profesionales
             </label>
             <input
@@ -793,7 +900,7 @@ export const DossierPage: React.FC = () => {
               value={profileTeamSize}
               onChange={(e) => setProfileTeamSize(Number(e.target.value))}
               placeholder="Ej: 28"
-              className="w-full h-10 px-3 rounded-[11px] bg-[#f5f1ed]/80 focus:bg-white border border-[rgba(30,24,38,0.08)] focus:border-[#685cff] text-xs text-[#171719] focus:outline-none transition-all font-mono"
+              className="w-full h-10 px-3 rounded-[11px] bg-[var(--surface-2)]/80 focus:bg-white border border-[var(--hairline)] focus:border-[#685cff] text-xs text-[var(--ink)] focus:outline-none transition-all font-mono"
             />
           </div>
         </form>
@@ -810,7 +917,7 @@ export const DossierPage: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsEvidenceDrawerOpen(false)}
-              className="px-3.5 py-2 rounded-[10px] bg-white hover:bg-[#f5f1ed] text-xs font-medium text-[#171719] border border-[rgba(30,24,38,0.12)] transition-colors cursor-pointer"
+              className="px-3.5 py-2 rounded-[10px] bg-white hover:bg-[var(--surface-2)] text-xs font-medium text-[var(--ink)] border border-[var(--hairline)] transition-colors cursor-pointer"
             >
               Cancelar
             </button>
@@ -826,13 +933,13 @@ export const DossierPage: React.FC = () => {
       >
         <form onSubmit={handleSaveEvidence} className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-[#171719] mb-1">
+            <label className="block text-xs font-medium text-[var(--ink)] mb-1">
               Categoría de la evidencia
             </label>
             <select
               value={evFormCategory}
               onChange={(e) => setEvFormCategory(e.target.value as BusinessEvidence['category'])}
-              className="w-full h-10 px-3 rounded-[11px] bg-[#f5f1ed]/80 focus:bg-white border border-[rgba(30,24,38,0.08)] focus:border-[#685cff] text-xs text-[#171719] focus:outline-none transition-all"
+              className="w-full h-10 px-3 rounded-[11px] bg-[var(--surface-2)]/80 focus:bg-white border border-[var(--hairline)] focus:border-[#685cff] text-xs text-[var(--ink)] focus:outline-none transition-all"
             >
               <option value="PREVIOUS_CONTRACTS">Contrato previo (experiencia pública/privada)</option>
               <option value="TEAM_QUALIFICATION">Cualificación de equipo técnico</option>
@@ -842,7 +949,7 @@ export const DossierPage: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-[#171719] mb-1">
+            <label className="block text-xs font-medium text-[var(--ink)] mb-1">
               Título de la evidencia
             </label>
             <input
@@ -851,12 +958,12 @@ export const DossierPage: React.FC = () => {
               value={evFormTitle}
               onChange={(e) => setEvFormTitle(e.target.value)}
               placeholder="Ej: Contrato de soporte cloud con la Agencia Tributaria"
-              className="w-full h-10 px-3 rounded-[11px] bg-[#f5f1ed]/80 focus:bg-white border border-[rgba(30,24,38,0.08)] focus:border-[#685cff] text-xs text-[#171719] focus:outline-none transition-all"
+              className="w-full h-10 px-3 rounded-[11px] bg-[var(--surface-2)]/80 focus:bg-white border border-[var(--hairline)] focus:border-[#685cff] text-xs text-[var(--ink)] focus:outline-none transition-all"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-[#171719] mb-1">
+            <label className="block text-xs font-medium text-[var(--ink)] mb-1">
               Descripción o alcance
             </label>
             <textarea
@@ -865,12 +972,12 @@ export const DossierPage: React.FC = () => {
               value={evFormDesc}
               onChange={(e) => setEvFormDesc(e.target.value)}
               placeholder="Detalla los servicios prestados, destinatario y certificados de buena ejecución asociados."
-              className="w-full p-3 rounded-[11px] bg-[#f5f1ed]/80 focus:bg-white border border-[rgba(30,24,38,0.08)] focus:border-[#685cff] text-xs text-[#171719] focus:outline-none transition-all resize-none"
+              className="w-full p-3 rounded-[11px] bg-[var(--surface-2)]/80 focus:bg-white border border-[var(--hairline)] focus:border-[#685cff] text-xs text-[var(--ink)] focus:outline-none transition-all resize-none"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-[#171719] mb-1">
+            <label className="block text-xs font-medium text-[var(--ink)] mb-1">
               Referencia documental / Nombre de archivo
             </label>
             <input
@@ -879,12 +986,12 @@ export const DossierPage: React.FC = () => {
               value={evFormDocRef}
               onChange={(e) => setEvFormDocRef(e.target.value)}
               placeholder="Ej: Certificado_Buena_Ejecucion_AEAT_2025.pdf"
-              className="w-full h-10 px-3 rounded-[11px] bg-[#f5f1ed]/80 focus:bg-white border border-[rgba(30,24,38,0.08)] focus:border-[#685cff] text-xs text-[#171719] focus:outline-none transition-all font-mono"
+              className="w-full h-10 px-3 rounded-[11px] bg-[var(--surface-2)]/80 focus:bg-white border border-[var(--hairline)] focus:border-[#685cff] text-xs text-[var(--ink)] focus:outline-none transition-all font-mono"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-[#171719] mb-1">
+            <label className="block text-xs font-medium text-[var(--ink)] mb-1">
               Importe acreditado (€ opcional)
             </label>
             <input
@@ -892,19 +999,19 @@ export const DossierPage: React.FC = () => {
               value={evFormAmount}
               onChange={(e) => setEvFormAmount(e.target.value)}
               placeholder="Ej: 350000"
-              className="w-full h-10 px-3 rounded-[11px] bg-[#f5f1ed]/80 focus:bg-white border border-[rgba(30,24,38,0.08)] focus:border-[#685cff] text-xs text-[#171719] focus:outline-none transition-all font-mono"
+              className="w-full h-10 px-3 rounded-[11px] bg-[var(--surface-2)]/80 focus:bg-white border border-[var(--hairline)] focus:border-[#685cff] text-xs text-[var(--ink)] focus:outline-none transition-all font-mono"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-[#171719] mb-1">
+            <label className="block text-xs font-medium text-[var(--ink)] mb-1">
               Fecha de validez (opcional)
             </label>
             <input
               type="date"
               value={evFormValidUntil}
               onChange={(e) => setEvFormValidUntil(e.target.value)}
-              className="w-full h-10 px-3 rounded-[11px] bg-[#f5f1ed]/80 focus:bg-white border border-[rgba(30,24,38,0.08)] focus:border-[#685cff] text-xs text-[#171719] focus:outline-none transition-all font-mono"
+              className="w-full h-10 px-3 rounded-[11px] bg-[var(--surface-2)]/80 focus:bg-white border border-[var(--hairline)] focus:border-[#685cff] text-xs text-[var(--ink)] focus:outline-none transition-all font-mono"
             />
           </div>
         </form>

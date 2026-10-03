@@ -66,7 +66,7 @@ export const ProductTourModal: React.FC<ProductTourModalProps> = ({ isOpen, onCl
       detail:
         'Cero alucinaciones: la IA tiene prohibido inventar requisitos. Cada criterio indica el offset exacto de caracteres y la página del pliego oficial de donde proviene.',
       highlight: 'Puertas deterministas (descarte sin coste) + Auditoría exacta de citas.',
-      actionText: 'Ver Ficha de la Licitación DGT (850.000 €)',
+      actionText: 'Ver Ficha de la Licitación DGT (450.000 €)',
       actionRoute: '/app/oportunidades/t-101',
     },
     {

@@ -22,7 +22,7 @@ test.describe('Aislamiento Multi-Tenant y Dossier de Empresa', () => {
 
     // Navegar a la pestaña de Perfil y comprobar CIF del tenant
     await perfilTab.click();
-    await expect(page.getByText('B-88776655', { exact: true })).toBeVisible();
+    await expect(page.getByText('B-88776655', { exact: true }).first()).toBeVisible();
 
     // Navegar a la pestaña de Evidencias y comprobar chips de filtro
     await evidenciasTab.click();

@@ -18,14 +18,14 @@ import {
   REAL_CLOUD_ANALYSES,
 } from '../data/real-placsp-tenders';
 
-// 1. TENDERS OFICIALES (PLACSP)
-export const INITIAL_TENDERS: PublicTender[] = [
+// 1. TENDERS OFICIALES (PLACSP - Multidisciplinar y Sectorial: TIC, Software, Ingeniería, Consultoría, Obras)
+export const DIVERSE_OFFICIAL_TENDERS: PublicTender[] = [
   {
     id: 't-101',
     fileReference: 'EXP-2026/00941',
     title: 'Servicio de desarrollo y modernización de plataforma cloud para la DGT',
     contractingAuthority: 'Dirección General de Tráfico (Ministerio del Interior)',
-    cpvCode: '72200000-7 · Servicios de programación de software',
+    cpvCode: '72200000 · Servicios de programación de software',
     budgetAmount: 450000,
     estimatedValue: 900000,
     currency: 'EUR',
@@ -40,7 +40,7 @@ export const INITIAL_TENDERS: PublicTender[] = [
     fileReference: 'EXP-2026/01150',
     title: 'Mantenimiento evolutivo de infraestructuras críticas y ciberseguridad',
     contractingAuthority: 'Ministerio de Asuntos Económicos y Transformación Digital',
-    cpvCode: '72222300-0 · Servicios de consultoría en ciberseguridad',
+    cpvCode: '72222300 · Servicios de consultoría en ciberseguridad',
     budgetAmount: 1250000,
     estimatedValue: 2500000,
     currency: 'EUR',
@@ -51,219 +51,60 @@ export const INITIAL_TENDERS: PublicTender[] = [
     hasActiveAnalysis: true,
   },
   {
-    id: 't-103',
-    fileReference: 'EXP-2026/02488',
-    title: 'Suministro e implantación de sistema de monitorización medioambiental con sensores IoT',
-    contractingAuthority: 'Consejería de Medio Ambiente de la Generalitat Valenciana',
-    cpvCode: '72262000-9 · Servicios de desarrollo de software para plataformas IoT',
-    budgetAmount: 380000,
-    estimatedValue: 380000,
+    id: 't-ing-001',
+    fileReference: 'EXP-2026/08120',
+    title: 'Asistencia técnica para la dirección facultativa y supervisión de infraestructuras digitales',
+    contractingAuthority: 'Administrador de Infraestructuras Ferroviarias (ADIF)',
+    cpvCode: '71300000 · Servicios de ingeniería y consultoría técnica',
+    budgetAmount: 780000,
+    estimatedValue: 1560000,
     currency: 'EUR',
-    submissionDeadline: new Date(Date.now() + 18 * 24 * 60 * 60 * 1000).toISOString(),
-    publicationDate: '2026-09-20T11:00:00Z',
-    status: 'PUBLISHED',
-    documentsCount: 3,
-    hasActiveAnalysis: false,
-  },
-  {
-    id: 't-104',
-    fileReference: 'EXP-2026/03012',
-    title: 'Auditoría técnica de accesibilidad web bajo norma UNE-EN 301 549 para portales de la AGE',
-    contractingAuthority: 'Secretaría General de Administración Digital (SGAD)',
-    cpvCode: '72800000-8 · Servicios de auditoría informática',
-    budgetAmount: 180000,
-    estimatedValue: 360000,
-    currency: 'EUR',
-    submissionDeadline: new Date(Date.now() + 25 * 24 * 60 * 60 * 1000).toISOString(),
-    publicationDate: '2026-09-22T08:30:00Z',
-    status: 'PUBLISHED',
-    documentsCount: 2,
-    hasActiveAnalysis: false,
-  },
-  {
-    id: 't-105',
-    fileReference: 'EXP-2026/04105',
-    title: 'Suministro y licenciamiento de paquete de software ERP y gestión contable corporativa',
-    contractingAuthority: 'Agencia Tributaria Municipal de Valencia',
-    cpvCode: '48000000-8 · Paquetes de software y sistemas de información',
-    budgetAmount: 240000,
-    estimatedValue: 480000,
-    currency: 'EUR',
-    submissionDeadline: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-    publicationDate: '2026-09-24T12:00:00Z',
-    status: 'PUBLISHED',
-    documentsCount: 3,
-    hasActiveAnalysis: false,
-  },
-  {
-    id: 't-106',
-    fileReference: 'EXP-2026/04890',
-    title: 'Licencias y soporte de software de protección endpoint y respuesta ante amenazas (EDR)',
-    contractingAuthority: 'Servicio Andaluz de Salud (SAS)',
-    cpvCode: '48730000-3 · Paquetes de software de seguridad informática',
-    budgetAmount: 520000,
-    estimatedValue: 1040000,
-    currency: 'EUR',
-    submissionDeadline: new Date(Date.now() + 8 * 24 * 60 * 60 * 1000).toISOString(),
-    publicationDate: '2026-09-25T14:15:00Z',
-    status: 'PUBLISHED',
-    documentsCount: 4,
-    hasActiveAnalysis: false,
-  },
-  {
-    id: 't-107',
-    fileReference: 'EXP-2026/05120',
-    title: 'Desarrollo de aplicaciones móviles ciudadanas y plataforma omnicanal de servicios públicos',
-    contractingAuthority: 'Ayuntamiento de Madrid - Área de Innovación y Tecnología',
-    cpvCode: '72212000-1 · Servicios de programación de software de aplicación',
-    budgetAmount: 680000,
-    estimatedValue: 1360000,
-    currency: 'EUR',
-    submissionDeadline: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString(),
-    publicationDate: '2026-09-26T09:45:00Z',
+    submissionDeadline: new Date(Date.now() + 22 * 24 * 60 * 60 * 1000).toISOString(),
+    publicationDate: '2026-10-01T09:00:00Z',
     status: 'PUBLISHED',
     documentsCount: 5,
     hasActiveAnalysis: false,
   },
   {
-    id: 't-108',
-    fileReference: 'EXP-2026/05344',
-    title: 'Plataforma analítica con modelos de IA para vigilancia epidemiológica y salud pública',
-    contractingAuthority: 'Ministerio de Sanidad - Secretaría General de Salud Digital',
-    cpvCode: '72300000-8 · Servicios de tratamiento de datos e inteligencia artificial',
+    id: 't-cons-001',
+    fileReference: 'EXP-2026/08340',
+    title: 'Servicio de consultoría estratégica y optimización de procesos de contratación pública digital',
+    contractingAuthority: 'Entidad Pública Empresarial Red.es (MINTUR)',
+    cpvCode: '79400000 · Servicios de consultoría en gestión y administración',
+    budgetAmount: 320000,
+    estimatedValue: 640000,
+    currency: 'EUR',
+    submissionDeadline: new Date(Date.now() + 16 * 24 * 60 * 60 * 1000).toISOString(),
+    publicationDate: '2026-09-29T11:30:00Z',
+    status: 'PUBLISHED',
+    documentsCount: 3,
+    hasActiveAnalysis: false,
+  },
+  {
+    id: 't-obra-001',
+    fileReference: 'EXP-2026/08610',
+    title: 'Obras de adecuación técnica, cableado estructurado y climatización de centro de proceso de datos (CPD)',
+    contractingAuthority: 'Gerencia de Infraestructuras y Equipamiento de la Seguridad del Estado (GIESE)',
+    cpvCode: '45000000 · Trabajos de construcción y acondicionamiento técnico',
     budgetAmount: 890000,
     estimatedValue: 1780000,
     currency: 'EUR',
-    submissionDeadline: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-    publicationDate: '2026-09-10T11:00:00Z',
-    status: 'EVALUATION',
-    documentsCount: 4,
-    hasActiveAnalysis: false,
-  },
-  {
-    id: 't-109',
-    fileReference: 'EXP-2026/05670',
-    title: 'Servicio de auditoría de seguridad del código fuente y bastionado DevSecOps continuo',
-    contractingAuthority: 'Administrador de Infraestructuras Ferroviarias (ADIF)',
-    cpvCode: '72800000-8 · Servicios de auditoría informática y ciberseguridad',
-    budgetAmount: 310000,
-    estimatedValue: 620000,
-    currency: 'EUR',
-    submissionDeadline: new Date(Date.now() + 16 * 24 * 60 * 60 * 1000).toISOString(),
-    publicationDate: '2026-09-27T16:00:00Z',
+    submissionDeadline: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+    publicationDate: '2026-09-27T15:00:00Z',
     status: 'PUBLISHED',
-    documentsCount: 3,
-    hasActiveAnalysis: false,
-  },
-  {
-    id: 't-110',
-    fileReference: 'EXP-2026/06001',
-    title: 'Suministro de software de optimización y algoritmos de asignación inteligente de flota',
-    contractingAuthority: 'Renfe Operadora',
-    cpvCode: '48440000-4 · Paquetes de software de análisis financiero y planificación',
-    budgetAmount: 420000,
-    estimatedValue: 840000,
-    currency: 'EUR',
-    submissionDeadline: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
-    publicationDate: '2026-09-08T10:00:00Z',
-    status: 'EVALUATION',
-    documentsCount: 3,
-    hasActiveAnalysis: false,
-  },
-  {
-    id: 't-111',
-    fileReference: 'EXP-2026/06230',
-    title: 'Mantenimiento evolutivo de historia clínica electrónica y receta digital interoperable',
-    contractingAuthority: 'Conselleria de Sanitat Universal (Generalitat Valenciana)',
-    cpvCode: '72267000-4 · Servicios de mantenimiento de software sanitario',
-    budgetAmount: 1450000,
-    estimatedValue: 2900000,
-    currency: 'EUR',
-    submissionDeadline: new Date(Date.now() + 28 * 24 * 60 * 60 * 1000).toISOString(),
-    publicationDate: '2026-09-28T11:20:00Z',
-    status: 'PUBLISHED',
-    documentsCount: 5,
-    hasActiveAnalysis: false,
-  },
-  {
-    id: 't-112',
-    fileReference: 'EXP-2026/06512',
-    title: 'Consultoría técnica para adecuación y certificación en Esquema Nacional de Seguridad (ENS)',
-    contractingAuthority: 'Centro Criptológico Nacional (CCN-CERT)',
-    cpvCode: '72222300-0 · Servicios de consultoría en ciberseguridad',
-    budgetAmount: 290000,
-    estimatedValue: 580000,
-    currency: 'EUR',
-    submissionDeadline: new Date(Date.now() + 12 * 24 * 60 * 60 * 1000).toISOString(),
-    publicationDate: '2026-09-29T08:50:00Z',
-    status: 'PUBLISHED',
-    documentsCount: 3,
-    hasActiveAnalysis: false,
-  },
-  {
-    id: 't-113',
-    fileReference: 'EXP-2026/06899',
-    title: 'Implantación de infraestructura de campus cloud híbrido y automatización Kubernetes',
-    contractingAuthority: 'Universitat Politècnica de Catalunya (UPC)',
-    cpvCode: '72250000-2 · Servicios de sistemas y de apoyo tecnológico',
-    budgetAmount: 350000,
-    estimatedValue: 700000,
-    currency: 'EUR',
-    submissionDeadline: new Date(Date.now() + 19 * 24 * 60 * 60 * 1000).toISOString(),
-    publicationDate: '2026-09-30T10:15:00Z',
-    status: 'PUBLISHED',
-    documentsCount: 3,
-    hasActiveAnalysis: false,
-  },
-  {
-    id: 't-114',
-    fileReference: 'EXP-2026/07102',
-    title: 'Modernización de la arquitectura de tramitación telemática de prestaciones por desempleo',
-    contractingAuthority: 'Servicio Público de Empleo Estatal (SEPE)',
-    cpvCode: '72200000-7 · Servicios de programación de software',
-    budgetAmount: 2150000,
-    estimatedValue: 4300000,
-    currency: 'EUR',
-    submissionDeadline: new Date(Date.now() + 32 * 24 * 60 * 60 * 1000).toISOString(),
-    publicationDate: '2026-10-01T12:00:00Z',
-    status: 'PUBLISHED',
-    documentsCount: 6,
-    hasActiveAnalysis: false,
-  },
-  {
-    id: 't-115',
-    fileReference: 'EXP-2026/07440',
-    title: 'Adquisición de licencias de software GIS y procesamiento cartográfico masivo',
-    contractingAuthority: 'Instituto Geográfico Nacional (IGN)',
-    cpvCode: '48326000-8 · Paquetes de software para sistemas de información geográfica',
-    budgetAmount: 175000,
-    estimatedValue: 350000,
-    currency: 'EUR',
-    submissionDeadline: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
-    publicationDate: '2026-10-02T09:10:00Z',
-    status: 'PUBLISHED',
-    documentsCount: 2,
-    hasActiveAnalysis: false,
-  },
-  {
-    id: 't-116',
-    fileReference: 'EXP-2026/07815',
-    title: 'Servicio de auditoría y análisis forense de incidentes en redes de mando y control',
-    contractingAuthority: 'Ministerio de Defensa - Dirección de Armamento y Material',
-    cpvCode: '72800000-8 · Servicios de auditoría informática',
-    budgetAmount: 980000,
-    estimatedValue: 1960000,
-    currency: 'EUR',
-    submissionDeadline: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
-    publicationDate: '2026-09-05T08:00:00Z',
-    status: 'EVALUATION',
     documentsCount: 4,
     hasActiveAnalysis: false,
   },
 ];
 
+export const INITIAL_TENDERS: PublicTender[] = [
+  ...DIVERSE_OFFICIAL_TENDERS,
+  ...REAL_PLACSP_TENDERS.filter((t) => !DIVERSE_OFFICIAL_TENDERS.some((d) => d.id === t.id)),
+];
+
 // 2. DOCUMENTOS OFICIALES POR TENDER
 export const TENDER_DOCS: Record<string, TenderDocument[]> = {
+  ...REAL_PLACSP_DOCS,
   't-101': [
     {
       id: 'doc-01',
@@ -564,6 +405,7 @@ export const TENDER_DOCS: Record<string, TenderDocument[]> = {
 
 // 3. ANÁLISIS POR EXPEDIENTE
 export const INITIAL_ANALYSES: Record<string, QualificationAnalysis> = {
+  ...REAL_CLOUD_ANALYSES,
   't-101': {
     id: 'an-001',
     tenderId: 't-101',
@@ -795,41 +637,7 @@ export const INITIAL_ANALYSES: Record<string, QualificationAnalysis> = {
 };
 
 // 4. PORTFOLIO ITEMS
-export const INITIAL_PORTFOLIO: PortfolioItem[] = [
-  {
-    id: 'an-001',
-    tenderId: 't-101',
-    fileReference: 'EXP-2026/00941',
-    title: 'Servicio de desarrollo y modernización de plataforma cloud para la DGT',
-    contractingAuthority: 'Dirección General de Tráfico (Ministerio del Interior)',
-    budgetAmount: 450000,
-    currency: 'EUR',
-    submissionDeadline: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toISOString(),
-    eligibility: 'NEEDS_REVIEW',
-    decision: 'REVIEW',
-    validity: 'REQUIRES_REANALYSIS',
-    hasBlockers: true,
-    blockerSummary: 'Modificación documental en PPT (Adenda v2 detectada en PLACSP)',
-    evidenceCoveragePercentage: 78,
-    lastAnalysisDate: new Date().toISOString(),
-  },
-  {
-    id: 'an-002',
-    tenderId: 't-102',
-    fileReference: 'EXP-2026/01150',
-    title: 'Mantenimiento evolutivo de infraestructuras críticas y ciberseguridad',
-    contractingAuthority: 'Ministerio de Asuntos Económicos y Transformación Digital',
-    budgetAmount: 1250000,
-    currency: 'EUR',
-    submissionDeadline: new Date(Date.now() + 11 * 24 * 60 * 60 * 1000).toISOString(),
-    eligibility: 'POTENTIALLY_ELIGIBLE',
-    decision: 'PURSUE',
-    validity: 'VALID',
-    hasBlockers: false,
-    evidenceCoveragePercentage: 94,
-    lastAnalysisDate: new Date().toISOString(),
-  },
-];
+export const INITIAL_PORTFOLIO: PortfolioItem[] = REAL_CLOUD_PORTFOLIO;
 
 // 5. ALERTAS INICIALES
 export const INITIAL_ALERTS: TenantAlert[] = [
@@ -1008,8 +816,8 @@ function getInitialProfileForTenant(tenant: any): CompanyProfile {
     tenantId: tenant.id,
     companyName: tenant.name || 'Mi Organización Licitadora',
     taxId: tenant.taxId || 'No asignado',
-    description: 'Entidad licitadora en contratación pública.',
-    primaryCpvCodes: ['72000000-5'],
+    description: 'Especialistas en ingeniería de software cloud, arquitecturas resilientes y modernización de plataformas para la administración pública.',
+    primaryCpvCodes: ['72000000-5 · Servicios TIC', '72262000-0 · Desarrollo de software', '72250000-2 · Soporte cloud'],
     geographicalScope: ['Ámbito Estatal'],
     maxEconomicSolvency: 0,
     averageTeamSize: 1,
@@ -1022,49 +830,56 @@ const DataContext = createContext<DataContextValue | null>(null);
 export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { activeTenant, token } = useAuth();
   const tenantId = activeTenant?.id;
-  const isDemo = !tenantId || tenantId === DEMO_TENANT_ID;
+  const isDemo = activeTenant?.id === DEMO_TENANT_ID;
 
   const [tenders, setTenders] = useState<PublicTender[]>(INITIAL_TENDERS);
   const [tenderDocsMap, setTenderDocsMap] = useState<Record<string, TenderDocument[]>>(TENDER_DOCS);
 
   // Estados reactivos con aislamiento estricto multi-tenant (Reglas 2.1 y 3 de AGENTS.md)
   const [portfolio, setPortfolio] = useState<PortfolioItem[]>(() =>
-    isDemo ? INITIAL_PORTFOLIO : getTenantStorage(tenantId, 'portfolio', [])
+    isDemo ? INITIAL_PORTFOLIO : tenantId ? getTenantStorage(tenantId, 'portfolio', []) : []
   );
   const [analyses, setAnalyses] = useState<Record<string, QualificationAnalysis>>(() =>
-    isDemo ? INITIAL_ANALYSES : getTenantStorage(tenantId, 'analyses', {})
+    isDemo ? INITIAL_ANALYSES : tenantId ? getTenantStorage(tenantId, 'analyses', {}) : {}
   );
   const [alerts, setAlerts] = useState<TenantAlert[]>(() =>
-    isDemo ? INITIAL_ALERTS : getTenantStorage(tenantId, 'alerts', [])
+    isDemo ? INITIAL_ALERTS : tenantId ? getTenantStorage(tenantId, 'alerts', []) : []
   );
   const [profile, setProfile] = useState<CompanyProfile>(() =>
-    isDemo ? INITIAL_PROFILE : getTenantStorage(tenantId, 'profile', getInitialProfileForTenant(activeTenant))
+    isDemo ? INITIAL_PROFILE : getTenantStorage(tenantId || '', 'profile', getInitialProfileForTenant(activeTenant))
   );
   const [certifications, setCertifications] = useState<Certification[]>(() =>
-    isDemo ? INITIAL_CERTIFICATIONS : getTenantStorage(tenantId, 'certifications', [])
+    isDemo ? INITIAL_CERTIFICATIONS : tenantId ? getTenantStorage(tenantId, 'certifications', []) : []
   );
   const [evidences, setEvidences] = useState<BusinessEvidence[]>(() =>
-    isDemo ? INITIAL_EVIDENCES : getTenantStorage(tenantId, 'evidences', [])
+    isDemo ? INITIAL_EVIDENCES : tenantId ? getTenantStorage(tenantId, 'evidences', []) : []
   );
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [syncStatus, setSyncStatus] = useState<'synced' | 'local_fallback' | 'syncing'>('syncing');
 
   // Reactividad inmediata al cambiar de organización o al darse de alta un nuevo usuario
   useEffect(() => {
-    if (!tenantId || tenantId === DEMO_TENANT_ID) {
+    if (tenantId === DEMO_TENANT_ID) {
       setPortfolio(INITIAL_PORTFOLIO);
       setAnalyses(INITIAL_ANALYSES);
       setAlerts(INITIAL_ALERTS);
       setProfile(INITIAL_PROFILE);
       setCertifications(INITIAL_CERTIFICATIONS);
       setEvidences(INITIAL_EVIDENCES);
-    } else {
+    } else if (tenantId) {
       setPortfolio(getTenantStorage(tenantId, 'portfolio', []));
       setAnalyses(getTenantStorage(tenantId, 'analyses', {}));
       setAlerts(getTenantStorage(tenantId, 'alerts', []));
       setProfile(getTenantStorage(tenantId, 'profile', getInitialProfileForTenant(activeTenant)));
       setCertifications(getTenantStorage(tenantId, 'certifications', []));
       setEvidences(getTenantStorage(tenantId, 'evidences', []));
+    } else {
+      setPortfolio([]);
+      setAnalyses({});
+      setAlerts([]);
+      setProfile(getInitialProfileForTenant(null));
+      setCertifications([]);
+      setEvidences([]);
     }
   }, [tenantId, activeTenant?.name, activeTenant?.taxId]);
 
@@ -1577,7 +1392,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
             id: `dim-${tenderId}-7`,
             name: 'Cobertura de Evidencia',
             status: 'FAVORABLE',
-            summary: '86% de los requisitos acreditados en dossier',
+            summary: (certifications.length + evidences.length) > 0 ? `${certifications.length + evidences.length} requisitos respaldados con evidencias verificables en dossier` : 'Sin evidencias registradas en dossier aún',
             details: 'La documentación registrada cubre los aspectos indispensables.',
           },
         },

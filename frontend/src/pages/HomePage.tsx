@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   ArrowRight,
@@ -31,6 +31,13 @@ export const HomePage: React.FC = () => {
   const { user, isDemoMode, activeTenant } = useAuth();
   const { portfolio, tenders, alerts, certifications, evidences } = useData();
   const [isTourModalOpen, setIsTourModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && sessionStorage.getItem('pliego_first_time_user') === 'true') {
+      setIsTourModalOpen(true);
+      sessionStorage.removeItem('pliego_first_time_user');
+    }
+  }, []);
 
   const firstName = user?.fullName === 'Operador Demo'
     ? 'Operador Demo (TechConsulting)'

@@ -5,11 +5,11 @@ import { useAuth } from '../lib/auth-context';
 import { Button } from '../components/ui/Button';
 import { SilkBackground } from '../components/layout/SilkBackground';
 import { ThemeToggle } from '../components/ui/ThemeToggle';
-import { ArrowRight, ShieldCheck, Sparkles } from 'lucide-react';
+import { ArrowRight, ShieldCheck, Sparkles, Building2 } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
-  const { login, loginAsDemo, isLoading, error } = useAuth();
-  const [email, setEmail] = useState('demo@techconsulting.es');
+  const { login, loginAsDemo, loginAsLuisArias, isLoading, error } = useAuth();
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
 
@@ -138,6 +138,19 @@ export const LoginPage: React.FC = () => {
                 O explorar plataforma
               </span>
             </div>
+
+                        <button
+              type="button"
+              onClick={() => {
+                loginAsLuisArias();
+                navigate('/app/inicio');
+              }}
+              className="w-full py-2.5 px-3 rounded-[8px] bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-[var(--ink)] text-xs font-medium border border-[var(--hairline)] transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer active:scale-[0.98]"
+            >
+              <Building2 className="w-3.5 h-3.5 text-[var(--primary)]" />
+              <span>Acceder como Luis Arias (CIF B123456789)</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
 
             <button
               type="button"
