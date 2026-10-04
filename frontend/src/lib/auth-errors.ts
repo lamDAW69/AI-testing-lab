@@ -23,6 +23,10 @@ export const toAuthErrorMessage = (error: unknown): string => {
     return 'Confirma tu correo electrónico antes de iniciar sesión.';
   }
 
+  if (normalized.includes('rate limit') || normalized.includes('too many requests')) {
+    return 'Se ha alcanzado temporalmente el límite de envío de correos. Espera unos minutos e inténtalo de nuevo.';
+  }
+
   if (normalized.includes('signups not allowed') || normalized.includes('signup is disabled')) {
     return 'El registro de nuevas cuentas no está disponible en este momento.';
   }
