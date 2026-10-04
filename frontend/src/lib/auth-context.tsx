@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { AuthState, SignupData, TenantMembership, UserProfile, UserRole } from '../types/auth';
 import { apiClient } from './api-client';
+import { toAuthErrorMessage } from './auth-errors';
 import { supabase, isSupabaseConfigured } from './supabase';
 
 export const DEMO_TENANT_ID = '018f4a12-892a-7921-98a1-2d4e8b1e4f1a';
@@ -188,7 +189,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw new Error('El inicio de sesión no está disponible hasta configurar Supabase Auth. Puedes usar la demo explícita para explorar el producto.');
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al autenticar');
+      setError(toAuthErrorMessage(err));
       throw err;
     } finally {
       setIsLoading(false);
@@ -238,7 +239,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setActiveTenant(membership);
       return 'provisioned';
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al registrar la empresa');
+      setError(toAuthErrorMessage(err));
       throw err;
     } finally {
       setIsLoading(false);
