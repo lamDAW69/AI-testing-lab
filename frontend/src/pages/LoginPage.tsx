@@ -88,7 +88,7 @@ export const LoginPage: React.FC = () => {
                 className="w-full px-3 py-2.5 bg-[var(--surface-2)] border border-[var(--hairline)] rounded-[8px] text-sm text-[var(--ink)] placeholder-[var(--ink-tertiary)] focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)]/50 focus:outline-none transition-all duration-200"
               />
               <div className="mt-2 text-right">
-                <Link to="/recuperar-contrasena" className="text-[11px] font-medium text-[var(--primary)] hover:underline">
+                <Link to="/forgot-password" className="text-[11px] font-medium text-[var(--primary)] hover:underline">
                   ¿Has olvidado tu contraseña?
                 </Link>
               </div>

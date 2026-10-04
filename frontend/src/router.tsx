@@ -63,11 +63,11 @@ export const router = createBrowserRouter([
     element: <LoginPage />,
   },
   {
-    path: '/recuperar-contrasena',
+    path: '/forgot-password',
     element: <PasswordRecoveryPage />,
   },
   {
-    path: '/restablecer-contrasena',
+    path: '/reset-password',
     element: <PasswordResetPage />,
   },
   {

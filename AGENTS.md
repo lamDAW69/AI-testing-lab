@@ -166,3 +166,37 @@ Cuando el usuario pida implementar una función, el agente debe seguir este fluj
    - Se debe escribir un archivo de script temporal (`.mjs` o `.js`) en el directorio de `scratch/` y ejecutarlo de forma limpia con `node <ruta_al_script>`.
 2. **Verificación de Consola y Rutas**:
    - Toda refactorización de frontend debe verificar que no se introducen `console.error` ni advertencias de React Router en consola (usar flags de futuro `v7_relativeSplatPath` y `v7_startTransition`).
+
+---
+
+## 12. PROTOCOLO OBLIGATORIO PARA AUTH, DEMO Y CORREO TRANSACCIONAL
+
+Estas reglas nacen de incidencias reales de login, demo, altas y recuperación de contraseña. Son obligatorias antes de declarar una entrega de autenticación como correcta.
+
+1. **Rutas y contratos canónicos**:
+   - Las rutas técnicas de autenticación se escriben en inglés: `/login`, `/signup`, `/forgot-password` y `/reset-password`.
+   - Todo valor usado como `redirectTo` debe corresponder exactamente a una ruta registrada en React Router y a una URL incluida en la allow-list de Supabase Auth. Verificar ambas cosas antes de desplegar.
+   - Los textos pueden estar en español, pero no se traducen las rutas, nombres de métodos de Supabase ni contratos técnicos.
+
+2. **Recuperación de contraseña segura**:
+   - La solicitud usa `supabase.auth.resetPasswordForEmail` con una URL de retorno permitida y siempre muestra una respuesta no enumerativa: nunca confirma si un correo existe.
+   - El cambio final sólo se hace en `/reset-password`, usando la sesión de recuperación validada por Supabase y `updateUser({ password })`. Exigir 12 caracteres como mínimo y confirmación local de la contraseña.
+   - Los errores del proveedor se traducen a mensajes accionables sin devolver texto crudo ni revelar usuarios, sesiones, tokens o configuración.
+
+3. **Demo aislada de Auth real**:
+   - La demo es una identidad efímera explícita, nunca un alias de credenciales arbitrarias ni de un usuario real.
+   - Un callback asíncrono de Supabase sin sesión no puede sobrescribir una identidad demo elegida explícitamente.
+   - Un `401` de la API para el token efímero de demo no puede cerrar la demo; el mismo `401` sí debe cerrar una sesión real. Cubrir ambos casos con pruebas.
+   - Las pruebas no pueden depender de `navigator.webdriver`: añadir al menos un caso que lo fuerce a `undefined` y reproduzca el comportamiento de un navegador real.
+
+4. **Correo transaccional y pruebas de producción**:
+   - Antes de probar confirmaciones o recuperación en producción, comprobar `Authentication > URL Configuration`, las plantillas, el proveedor SMTP y las cuotas de envío.
+   - El SMTP predeterminado de Supabase es sólo para pruebas, tiene entrega best-effort y una cuota muy baja. Está prohibido declararlo apto para producción. Configurar SMTP propio antes de habilitar flujos de alta o recuperación para usuarios reales.
+   - Usar una cuenta de prueba autorizada y un buzón accesible; no usar dominios ficticios ni asumir que el mensaje llegó. Verificar la recepción, el enlace de un solo uso, el cambio de contraseña y el login posterior.
+   - Si se alcanza una cuota, mostrar un mensaje explícito de límite temporal, no un error genérico. No reintentar automáticamente ni disparar múltiples correos.
+
+5. **Criterio de salida y despliegue**:
+   - Para cambios de Auth: ejecutar pruebas unitarias de utilidades/validación, E2E de rutas y formularios, chequeo de tipos y build.
+   - Las pruebas de integración de API requieren `TEST_ADMIN_DATABASE_URL` y `TEST_RUNTIME_DATABASE_URL` de una base de datos de pruebas aislada. Está prohibido sustituirlas por credenciales de producción, omitir el fallo o afirmar que integración pasó si esas variables no existen.
+   - Tras el CD, validar sobre `https://pliegoai.com` el bundle recién publicado y el flujo afectado. Un test local verde no sustituye esta comprobación.
+   - Si el cambio sólo toca frontend, el pipeline debe seguir informar del resultado de ambos jobs; no afirmar que backend cambió si no contiene modificación funcional.

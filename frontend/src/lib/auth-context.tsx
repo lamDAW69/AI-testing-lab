@@ -219,7 +219,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw new Error('La recuperación de contraseña no está disponible hasta configurar Supabase Auth.');
       }
 
-      const redirectTo = `${window.location.origin}/restablecer-contrasena`;
+      const redirectTo = `${window.location.origin}/reset-password`;
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
         redirectTo,
       });
