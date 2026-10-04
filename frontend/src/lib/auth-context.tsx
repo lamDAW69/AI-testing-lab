@@ -56,6 +56,8 @@ export const DEMO_USER: UserProfile = {
 interface AuthContextValue extends AuthState {
   login: (email: string, password: string) => Promise<void>;
   signup: (data: SignupData) => Promise<'provisioned' | 'confirmation_required'>;
+  requestPasswordReset: (email: string) => Promise<void>;
+  updatePassword: (password: string) => Promise<void>;
   loginAsDemo: () => void;
   logout: () => Promise<void>;
   switchTenant: (tenantId: string) => void;
@@ -209,6 +211,48 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const requestPasswordReset = async (email: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      if (!isSupabaseConfigured() || !supabase) {
+        throw new Error('La recuperación de contraseña no está disponible hasta configurar Supabase Auth.');
+      }
+
+      const redirectTo = `${window.location.origin}/restablecer-contrasena`;
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
+        redirectTo,
+      });
+      if (resetError) throw resetError;
+    } catch (err) {
+      setError(toAuthErrorMessage(err));
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const updatePassword = async (password: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      if (!isSupabaseConfigured() || !supabase) {
+        throw new Error('El cambio de contraseña no está disponible hasta configurar Supabase Auth.');
+      }
+      if (password.length < 12) {
+        throw new Error('La contraseña debe tener al menos 12 caracteres.');
+      }
+
+      const { error: updateError } = await supabase.auth.updateUser({ password });
+      if (updateError) throw updateError;
+    } catch (err) {
+      setError(toAuthErrorMessage(err));
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const signup = async (data: SignupData): Promise<'provisioned' | 'confirmation_required'> => {
     setIsLoading(true);
     setError(null);
@@ -302,6 +346,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         error,
         login,
         signup,
+        requestPasswordReset,
+        updatePassword,
         loginAsDemo,
         logout,
         switchTenant,

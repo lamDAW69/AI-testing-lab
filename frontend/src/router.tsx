@@ -4,6 +4,8 @@ import { AppShell } from './components/layout/AppShell';
 import { LandingPage } from './pages/LandingPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { LoginPage } from './pages/LoginPage';
+import { PasswordRecoveryPage } from './pages/PasswordRecoveryPage';
+import { PasswordResetPage } from './pages/PasswordResetPage';
 import { HomePage } from './pages/HomePage';
 import { CatalogPage } from './pages/CatalogPage';
 import { TenderDetailPage } from './pages/TenderDetailPage';
@@ -59,6 +61,14 @@ export const router = createBrowserRouter([
   {
     path: '/login',
     element: <LoginPage />,
+  },
+  {
+    path: '/recuperar-contrasena',
+    element: <PasswordRecoveryPage />,
+  },
+  {
+    path: '/restablecer-contrasena',
+    element: <PasswordResetPage />,
   },
   {
     path: '/demo',

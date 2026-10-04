@@ -5,7 +5,7 @@ import { useAuth } from '../lib/auth-context';
 import { Button } from '../components/ui/Button';
 import { SilkBackground } from '../components/layout/SilkBackground';
 import { ThemeToggle } from '../components/ui/ThemeToggle';
-import { ArrowRight, ShieldCheck, Sparkles } from 'lucide-react';
+import { ArrowRight, Sparkles } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
   const { login, loginAsDemo, isLoading, error } = useAuth();
@@ -60,15 +60,6 @@ export const LoginPage: React.FC = () => {
             </h2>
           </div>
 
-          <div className="relative z-10 pt-6 border-t border-[var(--hairline)] space-y-1.5">
-            <div className="flex items-center gap-2 text-[var(--ink-secondary)] text-xs">
-              <ShieldCheck className="w-3.5 h-3.5 text-[#047857] dark:text-[#10b981]" />
-              <span>Aislamiento multi-tenant por fila garantizado</span>
-            </div>
-            <p className="text-[11px] text-[var(--ink-tertiary)] font-mono">
-              Tokens criptográficos en memoria activa. Cero persistencia en localStorage.
-            </p>
-          </div>
         </div>
 
         {/* Panel derecho — formulario */}
@@ -96,6 +87,11 @@ export const LoginPage: React.FC = () => {
                 placeholder="ejemplo@empresa.es"
                 className="w-full px-3 py-2.5 bg-[var(--surface-2)] border border-[var(--hairline)] rounded-[8px] text-sm text-[var(--ink)] placeholder-[var(--ink-tertiary)] focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)]/50 focus:outline-none transition-all duration-200"
               />
+              <div className="mt-2 text-right">
+                <Link to="/recuperar-contrasena" className="text-[11px] font-medium text-[var(--primary)] hover:underline">
+                  ¿Has olvidado tu contraseña?
+                </Link>
+              </div>
             </div>
 
             <div>

@@ -98,6 +98,19 @@ test.describe('Landing Page y Flujo de Registro / Onboarding', () => {
     await expect(page.getByText('Operador Demo')).not.toBeVisible();
   });
 
+  test('debe ofrecer una recuperación de contraseña sin exponer el cambio de clave', async ({ page }) => {
+    await page.goto('/login');
+    await page.getByRole('link', { name: '¿Has olvidado tu contraseña?' }).click();
+    await expect(page).toHaveURL(/\/recuperar-contrasena/);
+    await expect(page.getByRole('heading', { name: 'Recupera tu contraseña' })).toBeVisible();
+
+    await page.goto('/restablecer-contrasena');
+    await page.getByLabel('Nueva contraseña', { exact: true }).fill('PruebaRecuperacion2026!');
+    await page.getByLabel('Repite la nueva contraseña').fill('DistintaRecuperacion2026!');
+    await page.getByRole('button', { name: 'Guardar nueva contraseña' }).click();
+    await expect(page.getByText('Las contraseñas no coinciden.')).toBeVisible();
+  });
+
   test('debe permitir navegar entre login, registro y la página principal', async ({ page }) => {
     await page.goto('/login');
 
