@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { AuthState, SignupData, TenantMembership, UserProfile, UserRole } from '../types/auth';
 import { apiClient } from './api-client';
 import { toAuthErrorMessage } from './auth-errors';
@@ -105,6 +105,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isDemoMode, setIsDemoMode] = useState<boolean>(() => {
     return isDemoExplicit();
   });
+  // El callback asíncrono de Supabase no debe invalidar la sesión efímera
+  // elegida expresamente por el usuario al abrir la demo.
+  const demoModeRef = useRef(isDemoExplicit());
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -115,6 +118,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session) {
+        demoModeRef.current = false;
         setToken(session.access_token);
         const mappedUser: UserProfile = {
           id: session.user.id,
@@ -126,9 +130,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setActiveTenant(null);
         setIsDemoMode(false);
       } else {
+        if (demoModeRef.current) return;
         setToken(null);
         setUser(null);
         setActiveTenant(null);
+        setIsDemoMode(false);
       }
     });
 
@@ -149,6 +155,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [token, activeTenant]);
 
   const loginAsDemo = () => {
+    demoModeRef.current = true;
     setIsDemoMode(true);
     const jwt = 'demo-in-memory-jwt-token-active';
     setToken(jwt);
@@ -247,6 +254,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = async () => {
+    demoModeRef.current = false;
     if (isSupabaseConfigured() && supabase) {
       try {
         await supabase.auth.signOut();
