@@ -29,7 +29,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
  * carrera entre setState() y navigate() que redirigía de vuelta a /login.
  */
 const DemoEntry: React.FC = () => {
-  const { loginAsDemo, isDemoMode } = useAuth();
+  const { loginAsDemo, isDemoMode, user } = useAuth();
 
   useEffect(() => {
     loginAsDemo();
@@ -37,7 +37,10 @@ const DemoEntry: React.FC = () => {
     // React StrictMode puede repetirlo en desarrollo, y ambas ejecuciones son idempotentes.
   }, []);
 
-  return isDemoMode ? <Navigate to="/app/inicio" replace /> : null;
+  // No atravesar la guarda hasta que la identidad y su marca de demo se hayan
+  // actualizado en el mismo render. De lo contrario, la guarda puede evaluar
+  // un `user` transitoriamente nulo y devolver a /login.
+  return isDemoMode && user ? <Navigate to="/app/inicio" replace /> : null;
 };
 
 export const router = createBrowserRouter([
