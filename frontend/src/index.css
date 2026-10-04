@@ -26,9 +26,10 @@
 
   /* ── Tipografía (Linear ink) ──────────────────────────────── */
   --ink:         #f7f8f8;
+  --ink-secondary: #b8bec9;
   --ink-muted:   #d0d6e0;
   --ink-subtle:  #8a8f98;
-  --ink-tertiary: #62666d;
+  --ink-tertiary: #9298a3;
 
   /* ── Acento principal (lavanda Linear) ───────────────────── */
   --primary:       #5e6ad2;
@@ -82,6 +83,7 @@ html.light,
 
   /* ── Tipografía (Alto contraste y máxima legibilidad) ─────── */
   --ink:         #0D0E12;
+  --ink-secondary: #4B5563;
   --ink-muted:   #374151;
   --ink-subtle:  #6B7280;
   --ink-tertiary: #9CA3AF;
