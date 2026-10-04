@@ -60,7 +60,7 @@ export const LandingPage: React.FC = () => {
 
   const handleLaunchDemo = () => {
     loginAsDemo();
-    navigate('/app/inicio');
+    navigate('/demo');
   };
 
   const handleCopyHash = () => {

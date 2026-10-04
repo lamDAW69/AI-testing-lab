@@ -29,6 +29,15 @@ test.describe('Landing Page y Flujo de Registro / Onboarding', () => {
     await expect(page.locator('h1.home-greeting')).toBeVisible();
   });
 
+  test('debe acceder a la empresa demo desde la pantalla de login', async ({ page }) => {
+    await page.goto('/login');
+
+    await page.getByRole('button', { name: /Acceder con Empresa Demo/ }).click();
+
+    await expect(page).toHaveURL(/\/app\/inicio/);
+    await expect(page.getByText('Modo Demo')).toBeVisible();
+  });
+
   test('debe rechazar el alta local en vez de inventar un tenant o una sesión', async ({ page }) => {
     await page.goto('/registro');
 

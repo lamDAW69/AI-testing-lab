@@ -143,7 +143,7 @@ export const LoginPage: React.FC = () => {
               type="button"
               onClick={() => {
                 loginAsDemo();
-                navigate('/app/inicio');
+                navigate('/demo');
               }}
               className="w-full py-2.5 px-3 rounded-[8px] bg-[var(--primary)]/10 hover:bg-[var(--primary)]/20 text-[var(--primary)] text-xs font-medium border border-[var(--primary)]/25 transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer active:scale-[0.98]"
             >

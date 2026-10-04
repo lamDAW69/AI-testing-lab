@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { AppShell } from './components/layout/AppShell';
 import { LandingPage } from './pages/LandingPage';
@@ -23,6 +23,23 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   return <>{children}</>;
 };
 
+/**
+ * Punto de entrada explícito para la demo. Primero establece la identidad
+ * efímera de demo y sólo después entra a una ruta protegida. Así evitamos una
+ * carrera entre setState() y navigate() que redirigía de vuelta a /login.
+ */
+const DemoEntry: React.FC = () => {
+  const { loginAsDemo, isDemoMode } = useAuth();
+
+  useEffect(() => {
+    loginAsDemo();
+    // loginAsDemo no depende de datos de ruta; se ejecuta una vez al montar la entrada.
+    // React StrictMode puede repetirlo en desarrollo, y ambas ejecuciones son idempotentes.
+  }, []);
+
+  return isDemoMode ? <Navigate to="/app/inicio" replace /> : null;
+};
+
 export const router = createBrowserRouter([
   {
     path: '/',
@@ -39,6 +56,10 @@ export const router = createBrowserRouter([
   {
     path: '/login',
     element: <LoginPage />,
+  },
+  {
+    path: '/demo',
+    element: <DemoEntry />,
   },
   {
     path: '/app',
