@@ -149,10 +149,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       getToken: () => token,
       getTenantId: () => activeTenant?.id || null,
       onUnauthorized: () => {
-        logout();
+        // La demo usa una identidad exclusivamente de cliente para mostrar
+        // datos de ejemplo; un 401 de la API no debe expulsarla. En una
+        // sesión real, en cambio, un 401 sigue cerrando la sesión para no
+        // conservar una credencial caducada o revocada.
+        if (!isDemoMode) {
+          logout();
+        }
       },
     });
-  }, [token, activeTenant]);
+  }, [token, activeTenant, isDemoMode]);
 
   const loginAsDemo = () => {
     demoModeRef.current = true;

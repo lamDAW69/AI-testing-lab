@@ -50,6 +50,19 @@ test.describe('Landing Page y Flujo de Registro / Onboarding', () => {
     await expect(page.getByText('Modo Demo')).toBeVisible();
   });
 
+  test('no debe cerrar la demo si la API rechaza su token efímero', async ({ page }) => {
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, 'webdriver', { configurable: true, get: () => undefined });
+    });
+    await page.route('**/api/**', (route) => route.fulfill({ status: 401, body: 'Unauthorized' }));
+    await page.goto('/login');
+
+    await page.getByRole('button', { name: /Acceder con Empresa Demo/ }).click();
+
+    await expect(page).toHaveURL(/\/app\/inicio/);
+    await expect(page.getByText('Modo Demo')).toBeVisible();
+  });
+
   test('debe rechazar el alta local en vez de inventar un tenant o una sesión', async ({ page }) => {
     await page.goto('/registro');
 
