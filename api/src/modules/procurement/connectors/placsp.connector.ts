@@ -610,7 +610,7 @@ export class PlacspConnector {
         const response = await fetch(url, {
           method: 'GET',
           headers: {
-            'User-Agent': 'LicitaIA-Official-Ingest/1.0 (+https://pliegoai.com)',
+            'User-Agent': 'PliegoAI-Official-Ingest/1.0 (+https://pliegoai.com)',
             Accept: 'application/atom+xml, application/xml, text/xml',
             'Accept-Encoding': 'gzip, deflate',
           },

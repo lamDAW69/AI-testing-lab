@@ -143,7 +143,7 @@ jobs:
           port: ${{ secrets.VPS_SSH_PORT || 22 }}
           script: |
             set -e
-            echo "🚀 Iniciando despliegue de LicitaIA en VPS..."
+            echo "🚀 Iniciando despliegue de PliegoAI en VPS..."
 
             APP_DIR="${{ secrets.VPS_APP_DIR || '/home/deployer/app' }}"
             cd "$APP_DIR"

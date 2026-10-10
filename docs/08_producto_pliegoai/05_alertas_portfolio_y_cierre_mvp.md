@@ -1,4 +1,4 @@
-# LicitaIA — Fase 5: Alertas, Portfolio y Cierre del MVP
+# PliegoAI — Fase 5: Alertas, Portfolio y Cierre del MVP
 
 > **Documento de Arquitectura y Operación de Producto**  
 > **Fecha**: Septiembre 2026  
@@ -9,10 +9,10 @@
 
 ## 1. Resumen Ejecutivo de la Fase 5
 
-La Fase 5 cierra el ciclo funcional del Producto Mínimo Viable (MVP) de **LicitaIA**, resolviendo el ciclo de vida documental y la explotación de negocio por parte de las empresas licitadoras:
+La Fase 5 cierra el ciclo funcional del Producto Mínimo Viable (MVP) de **PliegoAI**, resolviendo el ciclo de vida documental y la explotación de negocio por parte de las empresas licitadoras:
 
 1. **Invalidez por cambio documental**: Detección de nuevas versiones de pliegos, adendas o modificaciones de estado/plazo sin pérdida de histórico. Los análisis existentes pasan a `REQUIRES_REANALYSIS` o `STALE`.
-2. **Bandeja persistente de alertas**: Registro duradero de eventos dentro de LicitaIA, con deduplicación por hash criptográfico SHA-256 e idempotencia a nivel de base de datos (`ON CONFLICT DO NOTHING`). La entrega externa por email o push queda fuera de este primer canal.
+2. **Bandeja persistente de alertas**: Registro duradero de eventos dentro de PliegoAI, con deduplicación por hash criptográfico SHA-256 e idempotencia a nivel de base de datos (`ON CONFLICT DO NOTHING`). La entrega externa por email o push queda fuera de este primer canal.
 3. **Portfolio de oportunidades**: Vista agregada y determinista de todas las oportunidades analizadas y seguidas por cada tenant. **Cero consumo de tokens LLM al filtrar o consultar**.
 4. **Métricas y observabilidad**: Agregados estratégicos (distribución de decisiones, elegibilidad, top bloqueos, latencias y consumo de tokens/costes en USD) sin exponer información confidencial ni datos personales (PII).
 5. **Aislamiento multi-inquilino de nivel militar**: Todas las nuevas tablas y vistas operan bajo `ROW LEVEL SECURITY (RLS)` forzado con políticas estrictas basadas en `app.current_tenant_id`.

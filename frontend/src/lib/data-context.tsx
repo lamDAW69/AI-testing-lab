@@ -1236,7 +1236,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const newRecord = {
         id: `dec-${Date.now()}`,
         decision: existing.currentDecision,
-        decidedBy: 'Pipeline IA LicitaIA',
+        decidedBy: 'Pipeline IA PliegoAI',
         decidedAt: new Date().toISOString(),
         mandatoryReason: 'Reanálisis automático finalizado con éxito tras la publicación de la Adenda v2 en PLACSP.',
         analysisVersion: 2,

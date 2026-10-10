@@ -235,7 +235,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsDemoMode(false);
         const mappedUser: UserProfile = {
           id: session.user.id,
-          email: session.user.email || 'usuario@licitaia.es',
+          email: session.user.email || 'usuario@pliegoai.com',
           fullName: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Operador',
           memberships: [],
         };

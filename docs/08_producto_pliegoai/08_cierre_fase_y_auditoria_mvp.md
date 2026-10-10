@@ -1,6 +1,6 @@
 # Módulo 08.8 — Cierre de Fase, Auditoría del MVP y Guía de Operación en Producción
 
-> **Módulo:** Fase 8 — Cierre Integral de Producto LicitaIA  
+> **Módulo:** Fase 8 — Cierre Integral de Producto PliegoAI
 > **Estado:** MVP Certificado, Fusionado en `main` y Verificado en CI/CD  
 > **Repositorio:** `lamDAW69/AI-testing-lab`  
 > **Cumplimiento:** [AGENTS.md](../../AGENTS.md) — Seguridad Militar, Cero BOLA/IDOR, Cero Slop y Paridad Canónica.
@@ -9,7 +9,7 @@
 
 ## 1. Resumen Ejecutivo de Cierre de Fase
 
-El **Módulo 08 (Producto LicitaIA)** consolida la visión completa del SaaS B2B de inteligencia y precalificación de licitaciones públicas para empresas tecnológicas.
+El **Módulo 08 (Producto PliegoAI)** consolida la visión completa del SaaS B2B de inteligencia y precalificación de licitaciones públicas para empresas tecnológicas.
 
 A lo largo de los 8 sub-módulos, se ha construido un sistema de extremo a extremo que:
 1. **Monitoriza e ingesta la contratación pública española** a través del feed oficial ATOM / CODICE XML de la Plataforma de Contratación del Sector Público (PLACSP).
@@ -22,7 +22,7 @@ A lo largo de los 8 sub-módulos, se ha construido un sistema de extremo a extre
 
 ---
 
-## 2. Matriz de Arquitectura y Módulos de LicitaIA
+## 2. Matriz de Arquitectura y Módulos de PliegoAI
 
 ```
                                   [PLACSP - Ministerio de Hacienda]
@@ -144,4 +144,4 @@ Toda la base de código ha sido sometida a pruebas automatizadas reproducibles:
 
 ## 5. Conclusión
 
-Con la documentación de este documento, **el Módulo 08 queda formalmente concluido, indexado y certificado**, cerrando el alcance del Producto Mínimo Viable (MVP) y sentando las bases operativas de LicitaIA.
+Con la documentación de este documento, **el Módulo 08 queda formalmente concluido, indexado y certificado**, cerrando el alcance del Producto Mínimo Viable (MVP) y sentando las bases operativas de PliegoAI.

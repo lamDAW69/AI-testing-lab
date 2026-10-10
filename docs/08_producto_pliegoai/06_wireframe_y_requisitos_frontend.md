@@ -1,7 +1,7 @@
-# LicitaIA — Wireframe funcional y requisitos del frontend
+# PliegoAI — Wireframe funcional y requisitos del frontend
 
 > **Estado:** especificación previa a la implementación
-> **Ámbito:** aplicación privada de LicitaIA en Cloudflare Pages
+> **Ámbito:** aplicación privada de PliegoAI en Cloudflare Pages
 > **No es:** un diseño visual final, una guía de estilos ni una ampliación del contrato de API.
 
 ---
@@ -45,7 +45,7 @@ Este es el wireframe estructural de escritorio. En móvil, la barra lateral se c
 
 ```text
 ┌────────────────────────────────────────────────────────────────────────────┐
-│ Logo LicitaIA │ Organización activa ▾ │ Buscar… │ Alertas (n) │ Perfil ▾  │
+│ Logo PliegoAI │ Organización activa ▾ │ Buscar… │ Alertas (n) │ Perfil ▾  │
 ├───────────────┬────────────────────────────────────────────────────────────┤
 │ Inicio        │ Breadcrumb / título / estado de carga                       │
 │ Catálogo      ├────────────────────────────────────────────────────────────┤
@@ -72,7 +72,7 @@ Elementos obligatorios en todas las rutas autenticadas:
 ### 4.1 Acceso y selección de organización
 
 ```text
-┌──────────────────────── Acceso a LicitaIA ────────────────────────┐
+┌──────────────────────── Acceso a PliegoAI ────────────────────────┐
 │ Correo electrónico                                                  │
 │ Contraseña / enlace seguro de acceso                                │
 │ [Iniciar sesión]                                                    │

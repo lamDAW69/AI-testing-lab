@@ -35,7 +35,7 @@ Te recomendamos seguir los módulos en el siguiente orden:
 [Módulo 07: CI/CD y Automatización]
                  │
                  ▼
-[Módulo 08: Producto LicitaIA (PLACSP, Motor y Frontend)]
+[Módulo 08: Producto PliegoAI (PLACSP, Motor y Frontend)]
 ```
 
 ---
@@ -77,12 +77,12 @@ Te recomendamos seguir los módulos en el siguiente orden:
 * **[01_github_actions_ci_testing_linting.md](./07_cicd_automatizacion/01_github_actions_ci_testing_linting.md)**: Pipeline de integración continua: tests automatizados, verificación de tipos y auditoría de seguridad.
 * **[02_github_actions_cd_cloudflare_y_vps.md](./07_cicd_automatizacion/02_github_actions_cd_cloudflare_y_vps.md)**: Despliegue continuo hacia Cloudflare Pages y VPS propio mediante SSH seguro y Docker.
 
-### [08. Producto LicitaIA](./08_producto_licitaia/)
-* **[01_definicion_producto.md](./08_producto_licitaia/01_definicion_producto.md)**: Visión, problemas, modelo de entidades y principios rectores del SaaS B2B de licitaciones públicas.
-* **[02_fuente_datos_placsp.md](./08_producto_licitaia/02_fuente_datos_placsp.md)**: Especificación de la fuente oficial CODICE XML y la Plataforma de Contratación del Sector Público.
-* **[03_ingesta_sellado_jobs_y_seguridad.md](./08_producto_licitaia/03_ingesta_sellado_jobs_y_seguridad.md)**: Ingesta en background, hash dual SHA-256 de pliegos, control de cuotas y defensas anti-prompt injection.
-* **[04_precalificacion_oportunidades_y_reglas.md](./08_producto_licitaia/04_precalificacion_oportunidades_y_reglas.md)**: Motor de 7 dimensiones explicables y puertas deterministas de exclusión inmediata.
-* **[05_alertas_portfolio_y_cierre_mvp.md](./08_producto_licitaia/05_alertas_portfolio_y_cierre_mvp.md)**: Invalidez documental ante adendas, bandeja deduplicada de alertas y cartera de expedientes sin coste LLM.
-* **[06_wireframe_y_requisitos_frontend.md](./08_producto_licitaia/06_wireframe_y_requisitos_frontend.md)**: Requisitos del frontend en Cloudflare Pages, rutas seguras y jerarquía visual de riesgo.
-* **[07_guia_diseno_alertas.md](./08_producto_licitaia/07_guia_diseno_alertas.md)**: Guía de diseño visual para la bandeja de alertas con estilo editorial y glassmorphism.
-* **[08_cierre_fase_y_auditoria_mvp.md](./08_producto_licitaia/08_cierre_fase_y_auditoria_mvp.md)**: Certificación de cierre del MVP, matriz de trazabilidad y manual de operación.
+### [08. Producto PliegoAI](./08_producto_pliegoai/)
+* **[01_definicion_producto.md](./08_producto_pliegoai/01_definicion_producto.md)**: Visión, problemas, modelo de entidades y principios rectores del SaaS B2B de licitaciones públicas.
+* **[02_fuente_datos_placsp.md](./08_producto_pliegoai/02_fuente_datos_placsp.md)**: Especificación de la fuente oficial CODICE XML y la Plataforma de Contratación del Sector Público.
+* **[03_ingesta_sellado_jobs_y_seguridad.md](./08_producto_pliegoai/03_ingesta_sellado_jobs_y_seguridad.md)**: Ingesta en background, hash dual SHA-256 de pliegos, control de cuotas y defensas anti-prompt injection.
+* **[04_precalificacion_oportunidades_y_reglas.md](./08_producto_pliegoai/04_precalificacion_oportunidades_y_reglas.md)**: Motor de 7 dimensiones explicables y puertas deterministas de exclusión inmediata.
+* **[05_alertas_portfolio_y_cierre_mvp.md](./08_producto_pliegoai/05_alertas_portfolio_y_cierre_mvp.md)**: Invalidez documental ante adendas, bandeja deduplicada de alertas y cartera de expedientes sin coste LLM.
+* **[06_wireframe_y_requisitos_frontend.md](./08_producto_pliegoai/06_wireframe_y_requisitos_frontend.md)**: Requisitos del frontend en Cloudflare Pages, rutas seguras y jerarquía visual de riesgo.
+* **[07_guia_diseno_alertas.md](./08_producto_pliegoai/07_guia_diseno_alertas.md)**: Guía de diseño visual para la bandeja de alertas con estilo editorial y glassmorphism.
+* **[08_cierre_fase_y_auditoria_mvp.md](./08_producto_pliegoai/08_cierre_fase_y_auditoria_mvp.md)**: Certificación de cierre del MVP, matriz de trazabilidad y manual de operación.

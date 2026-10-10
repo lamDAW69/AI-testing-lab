@@ -1,54 +1,95 @@
-# AI Testing Lab — Arquitectura Multi-Tenant Segura y Guiada para IA
+# PliegoAI
 
-Bienvenido a **AI Testing Lab**. Este repositorio está especialmente diseñado para que puedas construir una aplicación web moderna, robusta, altamente segura y multi-inquilino (*multi-tenant*) trabajando en pareja con un agente de Inteligencia Artificial (OpenAI Codex, Claude Code, Cursor, Antigravity, etc.), asegurándote de que **tú aprendas en cada paso** y que la IA **nunca se salte las reglas de arquitectura ni cometa errores de seguridad**.
+[PliegoAI](https://pliegoai.com) is a public, actively developed B2B product for the early assessment of Spanish public procurement opportunities.
 
----
+It collects tender information, extracts requirements from source documents and compares them with a company's declared dossier. The result highlights potential eligibility risks, missing information and the evidence behind each conclusion so that a human can decide whether an opportunity deserves further review.
 
-## 🏗️ Pila Tecnológica del Proyecto (Stack)
+> PliegoAI supports an initial assessment. It does not provide legal advice, guarantee eligibility or eliminate the possibility of model errors.
 
-* **Autenticación y Credenciales**: [Supabase Auth](https://supabase.com/docs/guides/auth) (Manejo de usuarios, sesiones seguras, emisión de JWT con claves asimétricas JWKS).
-* **Backend, Base de Datos y Correo**: Alojados en **Hosting Propio** (VPS / Contenedor) mediante **Docker & Docker Compose**:
-  * **API**: Arquitectura limpia y modular (TypeScript con Hono/Fastify/Express o Python con FastAPI).
-  * **Base de Datos**: PostgreSQL con migraciones versionadas y Row Level Security (RLS).
-  * **Servidor de Correos**: Mailpit en desarrollo local y Docker Mailserver en VPS (evita el límite de 3 emails/hora de Supabase y ahorra costes en SaaS externos).
-* **Frontend**: Desplegado en el Edge con **Cloudflare Pages / Workers** (alto rendimiento, protección DDoS, CDN global y soporte SSR para indexación).
-* **Seguridad Defensiva**: Protección activa contra BOLA/IDOR, inyecciones, manipulación de JWT, Mass Assignment y OWASP API Top 10.
-* **Indexación & Rendimiento**: SEO técnico con SSR/SSG en Cloudflare e indexación avanzada en PostgreSQL mediante `EXPLAIN ANALYZE`.
-* **CI/CD**: Pipelines automatizados con **GitHub Actions** para pruebas, linters, escaneos de seguridad y despliegue continuo.
+## Product status
 
----
+- Public deployment: <https://pliegoai.com>
+- API health: <https://api.pliegoai.com/health>
+- Status: deployed and under active development
+- Adoption: personal testing only; no claim of established customers or commercial adoption
+- Product owner and developer: [Luis Arias Mendoza](https://www.linkedin.com/in/luisgam)
 
-## 🤖 Cómo Trabaja la IA en este Repositorio
+`AI-testing-lab` is the historical repository name. The product's final public name is **PliegoAI**.
 
-1. **Reglas Maestras (`AGENTS.md`)**:
-   El archivo [`AGENTS.md`](./AGENTS.md) es leído automáticamente por los agentes de IA (como OpenAI Codex). En él se fijan normas inviolables:
-   - Jamás ejecutar una consulta a la BD sin filtrar por `tenant_id`.
-   - Jamás confiar en IDs de URL sin validar propiedad (Anti-BOLA).
-   - Validar el 100% de los datos de entrada con esquemas estrictos.
-   - **Explicar siempre el porqué** de cada decisión técnica para que el desarrollador aprenda.
-2. **Configuración de Codex (`.codex/config.toml`)**:
-   Parámetros técnicos que obligan a Codex a cargar las guías como contexto prioritario.
+## What it does
 
----
+1. Ingests public procurement opportunities and their documents.
+2. Extracts structured requirements with Gemini.
+3. Anchors model-produced citations to the source document.
+4. Compares requirements with evidence declared in a company dossier.
+5. Applies deterministic gates for objective blocking or review conditions.
+6. Presents potential eligibility, uncertainty and evidence for human review.
 
-## 📚 Mapa de Guías Paso a Paso (`docs/`)
+## Evidence and model controls
 
-Toda la documentación técnica y pedagógica está organizada en la carpeta [`docs/`](./docs/README.md):
+The application does not treat model output as automatically true. The current pipeline includes:
 
-* **[00. Fundamentos y Arquitectura](./docs/00_fundamentos_y_arquitectura/01_arquitectura_del_sistema.md)**: Visión global del sistema y cómo aprender con IA sin copiar a ciegas.
-* **[01. Autenticación con Supabase](./docs/01_autenticacion_supabase/01_setup_supabase_auth.md)**: Integración de Supabase Auth y validación de tokens JWT en el backend propio.
-* **[02. API, Base de Datos y Correo en Hosting Propio](./docs/02_api_y_base_de_datos_hosting/01_diseno_api_dockerizada.md)**: Dockerización completa, PostgreSQL, migraciones, servidor de correos y despliegue en VPS.
-* **[03. Frontend en Cloudflare](./docs/03_frontend_cloudflare/01_cloudflare_pages_workers.md)**: Cloudflare Pages, Edge rendering y manejo seguro de sesiones.
-* **[04. Seguridad Extrema Anti-Hack](./docs/04_seguridad_extrema_antihack/01_prevencion_bola_idor.md)**: Defensa contra BOLA, OWASP API Top 10, prevención de bypass y auditoría.
-* **[05. Arquitectura Multi-Tenant](./docs/05_multitenancy/01_estrategia_multitenant_aislamiento.md)**: Estrategias de aislamiento estricto, contexto de inquilino y RLS.
-* **[06. Indexación y Rendimiento](./docs/06_indexacion_y_rendimiento/01_indexacion_seo_web_ssr.md)**: SEO técnico web (SSR/Sitemaps) e indexación en base de datos.
-* **[07. CI/CD y Automatización](./docs/07_cicd_automatizacion/01_github_actions_ci_testing_linting.md)**: Pipelines de GitHub Actions para testeo y despliegue continuo.
+- structured JSON output and strict Zod schema validation;
+- rejection of invalid JSON and unexpected output shapes;
+- exact citation checks against stored document text;
+- filtering of evidence references that do not exist in the supplied dossier;
+- deterministic eligibility gates outside the language model;
+- explicit `UNKNOWN`, `CONFLICTING` and expert-review states;
+- unit tests for fabricated citations, offset tampering and prompt injection.
 
----
+These controls reduce unsupported output and make failures visible; they do not make the system infallible.
 
-## 🚀 Cómo Empezar
+## Technology
 
-1. Abre este repositorio en tu editor (VS Code, Cursor, Windsurf, etc.) o lánzalo con OpenAI Codex CLI.
-2. Sigue la guía inicial en [`docs/00_fundamentos_y_arquitectura/02_guia_pedagogica_como_aprender_con_ia.md`](./docs/00_fundamentos_y_arquitectura/02_guia_pedagogica_como_aprender_con_ia.md).
-3. Pídele a tu IA:
-   > *"Por favor lee `AGENTS.md` y la guía `docs/01_autenticacion_supabase/01_setup_supabase_auth.md`. Vamos a comenzar configurando Supabase Auth siguiendo las normas de seguridad."*
+- Frontend: React, TypeScript, Vite and Cloudflare Pages
+- API: Node.js, Express and TypeScript
+- Data: PostgreSQL, Drizzle ORM and row-level tenant isolation
+- Authentication: Supabase Auth with verified JWTs
+- AI pipeline: Gemini `gemini-3.5-flash-lite`
+- Delivery: Docker, Docker Compose and GitHub Actions
+- Testing: Node test runner, Vitest and Playwright
+
+## Repository structure
+
+```text
+api/       Express API, persistence, extraction and qualification pipeline
+frontend/  React application deployed through Cloudflare Pages
+docs/      Architecture, product decisions and operational documentation
+.github/   CI/CD workflows
+```
+
+## Local development
+
+### API
+
+```bash
+cd api
+npm ci
+npm run typecheck
+npm run test:unit
+npm run dev
+```
+
+Copy the required variables into a local `.env` file. Never commit secrets or reuse production credentials for tests.
+
+### Frontend
+
+```bash
+cd frontend
+npm ci
+npm run lint
+npm run test:unit
+npm run dev
+```
+
+Integration tests require an isolated PostgreSQL test database and the test-only variables documented in the repository. Production credentials must not be used.
+
+## AI-first development approach
+
+PliegoAI was built with an AI-first workflow. Luis defined the product requirements, architecture, validation rules, tests and deployment decisions, using Codex, ChatGPT and Antigravity to help implement and review the code. Generated code is treated as untrusted until it is understood, tested and validated against the repository rules.
+
+See [`AGENTS.md`](./AGENTS.md) for the engineering constraints and [`docs/`](./docs/README.md) for the detailed technical documentation.
+
+## License
+
+No open-source license has been granted. The source is publicly visible, but all rights remain reserved unless a license is added later.

@@ -1,4 +1,4 @@
-# LicitaIA — Definición de producto
+# PliegoAI — Definición de producto
 
 > **Estado:** especificación funcional inicial  
 > **Versión:** 1.0  
@@ -8,9 +8,9 @@
 
 ---
 
-## 1. Qué es LicitaIA
+## 1. Qué es PliegoAI
 
-**LicitaIA monitoriza licitaciones públicas y contrasta sus requisitos con las capacidades y evidencias documentales de cada empresa.** El resultado es una precalificación explicable que permite decidir si una oportunidad debe perseguirse, revisarse o descartarse.
+**PliegoAI monitoriza licitaciones públicas y contrasta sus requisitos con las capacidades y evidencias documentales de cada empresa.** El resultado es una precalificación explicable que permite decidir si una oportunidad debe perseguirse, revisarse o descartarse.
 
 No es un buscador de PDFs, un chatbot aislado ni un generador automático de ofertas. El producto mantiene de forma persistente:
 
@@ -21,9 +21,9 @@ No es un buscador de PDFs, un chatbot aislado ni un generador automático de ofe
 
 La promesa de producto es:
 
-> **Antes de invertir horas en una licitación, LicitaIA muestra qué requisitos parece cumplir la empresa, cuáles no, qué información falta y en qué documento se apoya cada conclusión.**
+> **Antes de invertir horas en una licitación, PliegoAI muestra qué requisitos parece cumplir la empresa, cuáles no, qué información falta y en qué documento se apoya cada conclusión.**
 
-LicitaIA nunca garantizará que una empresa pueda presentarse o vaya a ganar; tampoco sustituirá la revisión jurídica, administrativa o técnica especializada.
+PliegoAI nunca garantizará que una empresa pueda presentarse o vaya a ganar; tampoco sustituirá la revisión jurídica, administrativa o técnica especializada.
 
 ---
 
@@ -31,7 +31,7 @@ LicitaIA nunca garantizará que una empresa pueda presentarse o vaya a ganar; ta
 
 La información sobre contratación pública es pública, pero convertirla en decisiones empresariales sigue siendo caro y lento. Una pyme debe localizar oportunidades, descargar anuncios, pliegos y anexos, interpretar requisitos dispersos y contrastarlos con datos internos normalmente repartidos entre personas, correos y carpetas.
 
-Las preguntas que LicitaIA debe ayudar a responder son:
+Las preguntas que PliegoAI debe ayudar a responder son:
 
 - ¿Esta oportunidad es compatible con nuestro negocio?
 - ¿Qué condiciones obligatorias cumplen nuestras evidencias?
@@ -60,7 +60,7 @@ El éxito no se mide por resúmenes producidos por IA, sino por el tiempo que un
 
 ### Asimetría de capacidad, no de acceso
 
-Las condiciones son públicas, pero una gran empresa suele tener más personal especializado que una pyme para interpretarlas. LicitaIA reduce esa desventaja organizando información; no modifica ni rebaja requisitos legales.
+Las condiciones son públicas, pero una gran empresa suele tener más personal especializado que una pyme para interpretarlas. PliegoAI reduce esa desventaja organizando información; no modifica ni rebaja requisitos legales.
 
 ### Racionalidad limitada
 
@@ -207,7 +207,7 @@ Los datos del expediente son globales y públicos. Las evaluaciones, notas, pref
 
 ### 7.1 Separación esencial
 
-LicitaIA no utilizará un único “score mágico”. Mostrará por separado:
+PliegoAI no utilizará un único “score mágico”. Mostrará por separado:
 
 | Dimensión | Pregunta que responde |
 |---|---|
@@ -444,7 +444,7 @@ No fijaremos una cifra de precisión sin un dataset etiquetado real. Sería una 
 ### Métricas de valor
 
 - Tiempo desde publicación a primera alerta relevante.
-- Tiempo de precalificación con y sin LicitaIA.
+- Tiempo de precalificación con y sin PliegoAI.
 - Porcentaje de recomendaciones aceptadas.
 - Descartes tempranos por requisito detectado.
 - Cobertura de evidencia en oportunidades activas.
@@ -534,6 +534,6 @@ Decisiones que requieren validación antes de implementar:
 
 ## 18. Definición final
 
-> **LicitaIA es un SaaS multi-tenant de precalificación de contratación pública. Monitoriza oportunidades oficiales, extrae requisitos verificables y los contrasta con el dossier privado de cada empresa. Produce una evaluación explicable de elegibilidad potencial, encaje y riesgo, con evidencia, incertidumbre visible y decisión humana final.**
+> **PliegoAI es un SaaS multi-tenant de precalificación de contratación pública. Monitoriza oportunidades oficiales, extrae requisitos verificables y los contrasta con el dossier privado de cada empresa. Produce una evaluación explicable de elegibilidad potencial, encaje y riesgo, con evidencia, incertidumbre visible y decisión humana final.**
 
 Será útil si reduce el tiempo invertido en oportunidades inadecuadas sin ocultar incertidumbre, comprometer datos entre tenants ni sustituir decisiones que requieren responsabilidad humana.

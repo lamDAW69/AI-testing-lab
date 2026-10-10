@@ -11,7 +11,7 @@
 
 La **Plataforma de Contratación del Sector Público (PLACSP)**, gestionada por la Dirección General del Patrimonio del Estado (Ministerio de Hacienda), constituye el nodo central y oficial de publicación de licitaciones públicas en España conforme a la Ley 9/2017 de Contratos del Sector Público (LCSP).
 
-### Ventajas Técnicas para LicitaIA:
+### Ventajas Técnicas para PliegoAI:
 1. **Publicación Centralizada**: Aglutina los anuncios de licitación y adjudicación de la Administración General del Estado, entidades locales, universidades públicas y comunidades autónomas que publican directamente o sincronizan sus perfiles de contratante.
 2. **Estándares Abiertos e Interoperables**: La información se estructura bajo el modelo de datos **CODICE**, basado en sintaxis XML conforme a las especificaciones europeas eForms y OASIS UBL (*Universal Business Language*).
 3. **Enlaces a Pliegos Originales**: Proporciona URLs canónicas a los documentos rectores de la licitación:

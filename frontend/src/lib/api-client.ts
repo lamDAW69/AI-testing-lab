@@ -1,5 +1,5 @@
 /**
- * Cliente HTTP Seguro para LicitaIA (Cloudflare Pages + BFF / API)
+ * Cliente HTTP Seguro para PliegoAI (Cloudflare Pages + BFF / API)
  *
  * Principios de seguridad aplicados:
  * 1. Tokens en memoria: El token JWT nunca se persiste en localStorage/sessionStorage (inmune a robo por XSS).
