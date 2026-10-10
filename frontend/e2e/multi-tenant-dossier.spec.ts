@@ -29,4 +29,21 @@ test.describe('Aislamiento Multi-Tenant y Dossier de Empresa', () => {
     await expect(page.locator('button:has-text("Todas")')).toBeVisible();
     await expect(page.locator('button:has-text("Contratos previos")')).toBeVisible();
   });
+
+  test('debe permitir declarar una nueva certificación y reflejarla en el dossier con estado DECLARED', async ({ page }) => {
+    await page.goto('/app/dossier');
+
+    // Pulsar botón de añadir certificación
+    await page.locator('button:has-text("Añadir certificación")').click();
+
+    // Rellenar formulario en el drawer
+    await page.fill('input[placeholder="Ej: ISO 27001 o ENS Nivel Medio"]', 'Certificación ISO 14001 Medioambiental');
+    await page.fill('input[placeholder="Ej: AENOR, TÜV Rheinland, BSI"]', 'TÜV Rheinland');
+    await page.click('button:has-text("Guardar declaración")');
+
+    // Comprobar que la nueva certificación aparece en la lista con estado DECLARED
+    await expect(page.getByText('Certificación ISO 14001 Medioambiental')).toBeVisible();
+    await expect(page.getByText('TÜV Rheinland')).toBeVisible();
+    await expect(page.getByText('DECLARED').first()).toBeVisible();
+  });
 });

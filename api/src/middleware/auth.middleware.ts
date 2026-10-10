@@ -17,6 +17,7 @@ export interface AuthenticatedUser {
 export interface AuthenticatedIdentity {
   readonly userId: string;
   readonly email?: string;
+  readonly userMetadata?: Record<string, unknown>;
 }
 
 declare global {
@@ -198,9 +199,14 @@ async function resolveAuthenticatedIdentity(req: Request, res: Response): Promis
     return null;
   }
 
+  const userMetadata = typeof payload['user_metadata'] === 'object' && payload['user_metadata'] !== null
+    ? (payload['user_metadata'] as Record<string, unknown>)
+    : undefined;
+
   return Object.freeze({
     userId: userId.data,
     email: typeof payload['email'] === 'string' ? payload['email'] : undefined,
+    userMetadata,
   });
 }
 

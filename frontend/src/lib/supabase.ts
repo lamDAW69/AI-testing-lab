@@ -7,11 +7,13 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
  * Comprueba si las variables de entorno de Supabase Auth están configuradas.
  */
 export const isSupabaseConfigured = (): boolean => {
-  return Boolean(
-    supabaseUrl &&
-    supabaseAnonKey &&
-    typeof supabaseUrl === 'string' &&
-    supabaseUrl.startsWith('https://')
+  if (!supabaseUrl || !supabaseAnonKey || typeof supabaseUrl !== 'string') {
+    return false;
+  }
+  return (
+    supabaseUrl.startsWith('https://') ||
+    supabaseUrl.startsWith('http://localhost') ||
+    supabaseUrl.startsWith('http://127.0.0.1')
   );
 };
 

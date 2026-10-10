@@ -305,7 +305,7 @@ Recomendación: Ejecutar reanálisis con Gemini 3.1 Flash v2.`
               Iniciar sesión
             </Link>
             <Link
-              to="/registro"
+              to="/signup"
               className="hidden sm:inline-flex px-4 py-2 rounded-[10px] bg-[#5e6ad2] hover:bg-[#4d59c7] text-white text-xs font-semibold shadow-[0_2px_10px_rgba(94,106,210,0.3)] transition-all items-center gap-1.5 active:scale-98 whitespace-nowrap"
             >
               <span>Registrar Empresa</span>
@@ -353,7 +353,7 @@ Recomendación: Ejecutar reanálisis con Gemini 3.1 Flash v2.`
             {/* Acciones Principales con estados táctiles */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
               <Link
-                to="/registro"
+                to="/signup"
                 className="px-6 py-3.5 rounded-[12px] bg-[#5e6ad2] hover:bg-[#828fff] active:scale-98 text-white text-sm font-semibold shadow-[0_0_24px_rgba(94,106,210,0.35)] flex items-center justify-center gap-2 transition-all group"
               >
                 <span>Comenzar Registro Corporativo</span>
@@ -1053,7 +1053,7 @@ Recomendación: Ejecutar reanálisis con Gemini 3.1 Flash v2.`
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
               <Link
-                to="/registro"
+                to="/signup"
                 className="w-full sm:w-auto px-6 py-3.5 rounded-[12px] bg-[#5e6ad2] hover:bg-[#828fff] active:scale-98 text-white text-sm font-semibold shadow-[0_0_24px_rgba(94,106,210,0.35)] flex items-center justify-center gap-2 transition-all"
               >
                 <span>Registrar Empresa Gratis</span>
@@ -1092,7 +1092,7 @@ Recomendación: Ejecutar reanálisis con Gemini 3.1 Flash v2.`
             <span>·</span>
             <Link to="/login" className="hover:text-[var(--ink)] transition-colors">Iniciar sesión</Link>
             <span>·</span>
-            <Link to="/registro" className="hover:text-[var(--ink)] transition-colors">Registrar Empresa</Link>
+            <Link to="/signup" className="hover:text-[var(--ink)] transition-colors">Registrar Empresa</Link>
           </div>
         </div>
       </footer>

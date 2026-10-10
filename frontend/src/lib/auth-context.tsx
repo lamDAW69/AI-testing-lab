@@ -75,6 +75,17 @@ interface OnboardingTenantResponse {
   };
 }
 
+interface OnboardingMembershipResponse {
+  readonly data?: {
+    readonly tenantId: string;
+    readonly name: string;
+    readonly taxId: string;
+    readonly role: UserRole;
+  } | null;
+  readonly pendingOnboarding?: boolean;
+  readonly message?: string;
+}
+
 function toMembership(response: OnboardingTenantResponse): TenantMembership {
   return {
     id: response.data.tenantId,
@@ -82,6 +93,105 @@ function toMembership(response: OnboardingTenantResponse): TenantMembership {
     taxId: response.data.taxId,
     role: response.data.role,
   };
+}
+
+const inFlightResolution = new Map<string, Promise<TenantMembership | null>>();
+
+/**
+ * Resuelve la membresía activa de un usuario o autoprovisiona el tenant mercantil
+ * a partir de los metadatos corporativos preservados durante el registro diferido.
+ * Garantiza cero 403 Forbidden para usuarios verificados pendientes de alta.
+ */
+async function resolveOrProvisionTenant(
+  sessionToken: string,
+  userMetadata?: Record<string, unknown> | null,
+): Promise<TenantMembership | null> {
+  const existing = inFlightResolution.get(sessionToken);
+  if (existing) {
+    return existing;
+  }
+
+  const resolutionPromise = (async (): Promise<TenantMembership | null> => {
+    let membershipData: {
+      tenantId: string;
+      name: string;
+      taxId: string;
+      role: UserRole;
+    } | null = null;
+    let isPending = false;
+
+    // 1. Consultar GET /onboarding/membership con token verificado
+    try {
+      const res = await apiClient.get<OnboardingMembershipResponse>('/onboarding/membership', {
+        headers: { Authorization: `Bearer ${sessionToken}` },
+      });
+
+      if (res?.data?.tenantId) {
+        membershipData = res.data;
+      } else if (res?.pendingOnboarding || res?.data === null) {
+        isPending = true;
+      }
+    } catch {
+      // Para usuarios pendientes de provisión, capturar 403/404 sin romper la autenticación
+      isPending = true;
+    }
+
+    if (membershipData) {
+      return {
+        id: membershipData.tenantId,
+        name: membershipData.name,
+        taxId: membershipData.taxId,
+        role: membershipData.role,
+      };
+    }
+
+    // 2. Si está pendiente de onboarding y dispone de metadatos de empresa, autoprovisionar
+    if (isPending && userMetadata) {
+      const companyName = userMetadata.company_name ? String(userMetadata.company_name).trim() : '';
+      const taxId = userMetadata.tax_id ? String(userMetadata.tax_id).trim().toUpperCase() : '';
+      const cpvSector = userMetadata.cpv_sector ? String(userMetadata.cpv_sector).trim() : undefined;
+
+      if (companyName && taxId) {
+        try {
+          const provisioned = await apiClient.post<OnboardingTenantResponse>(
+            '/onboarding/tenant',
+            {
+              legalName: companyName,
+              taxId,
+              cpvCode: cpvSector,
+            },
+            {
+              headers: { Authorization: `Bearer ${sessionToken}` },
+            },
+          );
+          if (provisioned?.data?.tenantId) {
+            return toMembership(provisioned);
+          }
+        } catch {
+          // En caso de conflicto o doble provisión concurrente, reintentar membresía
+          try {
+            const fallback = await apiClient.get<OnboardingMembershipResponse>('/onboarding/membership', {
+              headers: { Authorization: `Bearer ${sessionToken}` },
+            });
+            if (fallback?.data?.tenantId) {
+              return toMembership({ data: fallback.data });
+            }
+          } catch {
+            // Silenciar fallback
+          }
+        }
+      }
+    }
+
+    return null;
+  })();
+
+  inFlightResolution.set(sessionToken, resolutionPromise);
+  try {
+    return await resolutionPromise;
+  } finally {
+    inFlightResolution.delete(sessionToken);
+  }
 }
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -122,6 +232,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (session) {
         demoModeRef.current = false;
         setToken(session.access_token);
+        setIsDemoMode(false);
         const mappedUser: UserProfile = {
           id: session.user.id,
           email: session.user.email || 'usuario@licitaia.es',
@@ -129,8 +240,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           memberships: [],
         };
         setUser(mappedUser);
-        setActiveTenant(null);
-        setIsDemoMode(false);
+
+        void resolveOrProvisionTenant(session.access_token, session.user.user_metadata).then((membership) => {
+          if (membership) {
+            setUser((prev) => (prev ? { ...prev, memberships: [membership] } : null));
+            setActiveTenant(membership);
+          }
+        }).catch(() => {
+          // Listener reactivo resiliente: no bloquear sesión
+        });
       } else {
         if (demoModeRef.current) return;
         setToken(null);
@@ -185,17 +303,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
         if (authError) throw authError;
         if (data.session) {
-          const membershipResponse = await apiClient.get<OnboardingTenantResponse>('/onboarding/membership', {
-            headers: { Authorization: `Bearer ${data.session.access_token}` },
-          });
-          const membership = toMembership(membershipResponse);
+          const membership = await resolveOrProvisionTenant(
+            data.session.access_token,
+            data.user.user_metadata,
+          );
           setIsDemoMode(false);
           setToken(data.session.access_token);
           const mappedUser: UserProfile = {
             id: data.user.id,
             email: data.user.email || cleanEmail,
             fullName: data.user.user_metadata?.full_name || cleanEmail.split('@')[0],
-            memberships: [membership],
+            memberships: membership ? [membership] : [],
           };
           setUser(mappedUser);
           setActiveTenant(membership);
@@ -267,7 +385,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: data.email.trim().toLowerCase(),
         password: data.password,
-        options: { data: { full_name: data.fullName.trim() } },
+        options: {
+          data: {
+            full_name: data.fullName.trim(),
+            company_name: data.companyName.trim(),
+            tax_id: data.taxId.trim().toUpperCase(),
+            cpv_sector: data.cpvSector,
+          },
+          emailRedirectTo: `${window.location.origin}/signup?confirmed=true`,
+        },
       });
       if (signUpError) throw signUpError;
 

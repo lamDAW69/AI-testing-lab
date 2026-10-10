@@ -1,9 +1,14 @@
-import { sql } from 'drizzle-orm';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { withAuthenticatedUserTransaction, withTenantTransaction } from '../../db/client.js';
-import { companyProfiles, tenants } from '../../db/schema.js';
+import { companyProfiles, tenantMemberships, tenants } from '../../db/schema.js';
+import type { AuthenticatedIdentity } from '../../middleware/auth.middleware.js';
 import { AppError } from '../../middleware/error.middleware.js';
-import { ProvisionedTenantSchema, type ProvisionedTenant, type ProvisionTenantInput } from './onboarding.schema.js';
+import {
+  ProvisionedTenantSchema,
+  ProvisionTenantSchema,
+  type ProvisionedTenant,
+  type ProvisionTenantInput,
+} from './onboarding.schema.js';
 
 export class OnboardingService {
   async provisionFirstTenant(
@@ -37,6 +42,64 @@ export class OnboardingService {
     }
   }
 
+  async getOrProvisionMembership(
+    identity: AuthenticatedIdentity,
+    requestId: string,
+  ): Promise<ProvisionedTenant | null> {
+    const userId = identity.userId;
+
+    // 1. Comprobar si ya existe una membresía activa para este usuario
+    const rows = await withAuthenticatedUserTransaction(userId, (tx) => tx
+      .select({ tenantId: tenantMemberships.tenantId, role: tenantMemberships.role })
+      .from(tenantMemberships)
+      .where(eq(tenantMemberships.userId, userId))
+      .limit(1));
+
+    if (rows.length > 0 && rows[0]) {
+      return await this.getMembership(rows[0].tenantId, rows[0].role);
+    }
+
+    // 2. Si no tiene membresía, comprobar si el JWT verificado contiene metadatos corporativos para autoprovisión
+    const meta = identity.userMetadata;
+    const rawLegalName = meta?.['company_name'] ?? meta?.['companyName'] ?? meta?.['legalName'];
+    const rawTaxId = meta?.['tax_id'] ?? meta?.['taxId'];
+    const rawCpvCode = meta?.['cpv_code'] ?? meta?.['cpvCode'] ?? meta?.['cpv_sector'] ?? meta?.['cpvSector'];
+
+    if (typeof rawLegalName === 'string' && typeof rawTaxId === 'string') {
+      const cpvCode = typeof rawCpvCode === 'string' && rawCpvCode.trim().length > 0
+        ? rawCpvCode.trim()
+        : undefined;
+
+      const parseResult = ProvisionTenantSchema.safeParse({
+        legalName: rawLegalName,
+        taxId: rawTaxId,
+        cpvCode,
+      });
+
+      if (parseResult.success) {
+        try {
+          return await this.provisionFirstTenant(userId, requestId, parseResult.data);
+        } catch (error) {
+          // Si otra llamada concurrente lo provisionó en paralelo, recuperar la membresía existente
+          if (isProvisioningConflict(error)) {
+            const recheck = await withAuthenticatedUserTransaction(userId, (tx) => tx
+              .select({ tenantId: tenantMemberships.tenantId, role: tenantMemberships.role })
+              .from(tenantMemberships)
+              .where(eq(tenantMemberships.userId, userId))
+              .limit(1));
+            if (recheck.length > 0 && recheck[0]) {
+              return await this.getMembership(recheck[0].tenantId, recheck[0].role);
+            }
+          }
+          throw error;
+        }
+      }
+    }
+
+    // 3. Usuario sin organización y sin metadatos válidos de empresa
+    return null;
+  }
+
   async getMembership(tenantId: string, role: string): Promise<ProvisionedTenant> {
     const rows = await withTenantTransaction(tenantId, (tx) => tx
       .select({
@@ -64,6 +127,9 @@ export class OnboardingService {
 }
 
 function isProvisioningConflict(error: unknown): boolean {
+  if (error instanceof AppError && error.statusCode === 409) {
+    return true;
+  }
   return typeof error === 'object' && error !== null && 'code' in error
     && (error as { readonly code?: unknown }).code === 'P0001';
 }

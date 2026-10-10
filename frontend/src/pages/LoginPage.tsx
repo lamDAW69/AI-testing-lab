@@ -151,7 +151,7 @@ export const LoginPage: React.FC = () => {
             <div className="text-center pt-2 space-y-2">
               <p className="text-xs text-[var(--ink-secondary)]">
                 ¿Aún no tienes cuenta?{' '}
-                <Link to="/registro" className="font-semibold text-[var(--primary)] hover:underline transition-colors">
+                <Link to="/signup" className="font-semibold text-[var(--primary)] hover:underline transition-colors">
                   Registra tu empresa gratis
                 </Link>
               </p>

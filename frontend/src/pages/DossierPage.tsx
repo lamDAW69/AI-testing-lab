@@ -567,34 +567,6 @@ export const DossierPage: React.FC = () => {
         </div>
       )}
 
-      {/* TAB PERFIL */}
-      {activeTab === 'perfil' && (
-        <div className="surface p-6 rounded-[20px] space-y-4 max-w-3xl">
-          <h3 className="text-sm font-semibold text-[var(--ink)] pb-2 border-b border-[var(--hairline)]">
-            Datos Corporativos de la Organización
-          </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-            <div>
-              <span className="text-[var(--ink-tertiary)] block">Razón Social</span>
-              <span className="font-semibold text-[var(--ink)]">{activeTenant?.name}</span>
-            </div>
-            <div>
-              <span className="text-[var(--ink-tertiary)] block">Identificación Fiscal</span>
-              <span className="font-mono font-semibold text-[var(--ink)]">{activeTenant?.taxId}</span>
-            </div>
-            <div>
-              <span className="text-[var(--ink-tertiary)] block">Sector de Actividad</span>
-              <span className="text-[var(--ink)]">{profile?.description || 'Tecnología e Infraestructuras'}</span>
-            </div>
-            <div>
-              <span className="text-[var(--ink-tertiary)] block">Facturación Anual Auditada</span>
-              <span className="font-mono text-[var(--ink)] tabular-nums">
-                {formatCurrency(profile?.maxEconomicSolvency || 1450000)}
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* TAB EVIDENCIAS CON FILTRADO POR CATEGORÍA (Opción A) */}
       {activeTab === 'evidencias' && (

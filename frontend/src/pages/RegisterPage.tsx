@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../lib/auth-context';
@@ -27,9 +27,19 @@ export const RegisterPage: React.FC = () => {
   const [taxId, setTaxId] = useState('');
   const [cpvSector, setCpvSector] = useState('72000000');
   const [confirmationRequired, setConfirmationRequired] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = setInterval(() => {
+      setCooldown((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [cooldown]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (cooldown > 0) return;
     try {
       const result = await signup({
         fullName,
@@ -41,12 +51,21 @@ export const RegisterPage: React.FC = () => {
       });
       if (result === 'confirmation_required') {
         setConfirmationRequired(true);
+        setCooldown(60);
         return;
       }
       sessionStorage.setItem('pliego_first_time_user', 'true');
       navigate('/app/inicio');
-    } catch {
-      // Manejado en el contexto
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message.toLowerCase() : '';
+      if (
+        errMsg.includes('rate') ||
+        errMsg.includes('límite') ||
+        errMsg.includes('security') ||
+        (typeof err === 'object' && err !== null && 'status' in err && (err as { status?: unknown }).status === 429)
+      ) {
+        setCooldown(60);
+      }
     }
   };
 
@@ -217,8 +236,13 @@ export const RegisterPage: React.FC = () => {
             )}
 
             {confirmationRequired && (
-              <div className="p-3 rounded-[8px] bg-[#047857]/10 text-[#047857] dark:text-[#10b981] border border-[#047857]/30 text-xs">
-                Revisa tu correo y confírmalo. La organización se provisionará de forma segura al iniciar sesión por primera vez.
+              <div className="p-3 rounded-[8px] bg-[#047857]/10 text-[#047857] dark:text-[#10b981] border border-[#047857]/30 text-xs space-y-1">
+                <p>Revisa tu correo y confírmalo. La organización se provisionará de forma segura al iniciar sesión por primera vez.</p>
+                {cooldown > 0 && (
+                  <p className="text-[11px] font-mono opacity-80">
+                    Podrás reenviar el registro en {cooldown}s para evitar bloqueos por límite de envío.
+                  </p>
+                )}
               </div>
             )}
 
@@ -226,11 +250,16 @@ export const RegisterPage: React.FC = () => {
               type="submit"
               variant="primary"
               size="lg"
-              className="w-full mt-1 bg-[var(--primary)] hover:opacity-90 text-white font-semibold"
+              disabled={isLoading || cooldown > 0}
+              className="w-full mt-1 bg-[var(--primary)] hover:opacity-90 text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
               isLoading={isLoading}
               icon={<ArrowRight className="w-4 h-4" />}
             >
-              Registrar Empresa y Comenzar
+              {cooldown > 0
+                ? `Reintentar en ${cooldown}s`
+                : confirmationRequired
+                  ? 'Reenviar confirmación de registro'
+                  : 'Registrar Empresa y Comenzar'}
             </Button>
 
             <div className="text-center pt-1">

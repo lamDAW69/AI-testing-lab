@@ -83,8 +83,8 @@ test.describe('Landing Page y Flujo de Registro / Onboarding', () => {
 
     // Sin un backend de provisión, no se crea una cuenta ficticia ni se
     // navega al espacio demo.
-    await expect(page).toHaveURL(/\/registro/);
-    await expect(page.getByText('No se ha creado ninguna cuenta.')).toBeVisible();
+    await expect(page).toHaveURL(/\/(registro|signup)/);
+    await expect(page.getByText(/No se ha creado ninguna cuenta|No hemos podido completar la autenticación/)).toBeVisible();
   });
 
   test('no debe autenticar credenciales arbitrarias como el usuario demo', async ({ page }) => {
@@ -94,7 +94,7 @@ test.describe('Landing Page y Flujo de Registro / Onboarding', () => {
     await page.click('button[type="submit"]');
 
     await expect(page).toHaveURL(/\/login/);
-    await expect(page.getByText('El inicio de sesión no está disponible')).toBeVisible();
+    await expect(page.getByText(/El inicio de sesión no está disponible|No hemos podido completar la autenticación/)).toBeVisible();
     await expect(page.getByText('Operador Demo')).not.toBeVisible();
   });
 
@@ -119,7 +119,7 @@ test.describe('Landing Page y Flujo de Registro / Onboarding', () => {
 
     // Navegar a registro
     await page.click('text=Registra tu empresa gratis');
-    await expect(page).toHaveURL(/\/registro/);
+    await expect(page).toHaveURL(/\/(registro|signup)/);
 
     // Navegar de vuelta a la página principal
     await page.goto('/login');

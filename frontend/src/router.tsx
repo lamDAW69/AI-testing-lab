@@ -51,12 +51,12 @@ export const router = createBrowserRouter([
     element: <LandingPage />,
   },
   {
-    path: '/registro',
+    path: '/signup',
     element: <RegisterPage />,
   },
   {
-    path: '/signup',
-    element: <Navigate to="/registro" replace />,
+    path: '/registro',
+    element: <Navigate to="/signup" replace />,
   },
   {
     path: '/login',
