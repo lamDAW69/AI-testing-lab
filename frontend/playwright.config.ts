@@ -23,5 +23,9 @@ export default defineConfig({
     port: 5173,
     reuseExistingServer: !process.env.CI,
     timeout: 120000,
+    env: {
+      VITE_SUPABASE_URL: process.env.VITE_SUPABASE_URL || 'https://mock-project.supabase.co',
+      VITE_SUPABASE_ANON_KEY: process.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.mock-key',
+    },
   },
 });
