@@ -92,7 +92,7 @@ jobs:
           port: ${{ secrets.VPS_SSH_PORT || 22 }}
           script: |
             set -e
-            echo "🚀 Iniciando despliegue de LicitaIA en VPS..."
+            echo "🚀 Iniciando despliegue de PliegoAI en VPS..."
 
             # 1. Directorio de la aplicación en el servidor
             APP_DIR="${{ secrets.VPS_APP_DIR || '/home/deployer/app' }}"
@@ -102,9 +102,9 @@ jobs:
             echo "📥 Obteniendo cambios de git (rama main)..."
             git pull origin main
 
-            # 3. Reconstruir contenedores de aplicación y worker
+            # 3. Reconstruir contenedores de migración, aplicación y worker
             echo "🐳 Construyendo imágenes Docker de producción..."
-            docker compose -f docker-compose.prod.yml build api extraction-worker
+            docker compose -f docker-compose.prod.yml build migrate api extraction-worker
 
             # 4. Asegurar arranque de base de datos y ejecución de migraciones versionadas
             echo "🔄 Ejecutando migraciones de base de datos..."

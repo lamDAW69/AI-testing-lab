@@ -152,7 +152,7 @@ jobs:
             git pull origin main
 
             echo "🐳 Construyendo imágenes Docker de producción..."
-            docker compose -f docker-compose.prod.yml build api extraction-worker
+            docker compose -f docker-compose.prod.yml build migrate api extraction-worker
 
             echo "🔄 Ejecutando migraciones de base de datos..."
             docker compose -f docker-compose.prod.yml up -d postgres
