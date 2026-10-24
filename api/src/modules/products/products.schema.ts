@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from 'zod/v3';
 
 // Esquema para creación de un nuevo producto dentro de un tenant
 export const CreateProductSchema = z

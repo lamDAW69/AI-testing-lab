@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from 'zod/v3';
 
 const RequirementCategorySchema = z.enum(['ADMINISTRATIVE', 'TECHNICAL', 'ECONOMIC', 'LEGAL', 'OTHER']);
 const RequirementTypeSchema = z.enum(['MANDATORY', 'SCORABLE', 'INFORMATIONAL', 'UNKNOWN']);

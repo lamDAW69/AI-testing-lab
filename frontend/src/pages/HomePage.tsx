@@ -235,7 +235,7 @@ export const HomePage: React.FC = () => {
       )}
 
       {/* 1. HERO DE INICIO: EDITORIAL + DOT-MATRIX + ACCESO OPERATIVO */}
-      <section className="home-hero grid grid-cols-1 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] gap-8 lg:gap-10 items-center">
+      <section className="home-hero overflow-hidden grid grid-cols-1 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] gap-8 lg:gap-10 items-center">
         {/* Lado Izquierdo: Saludo editorial + oportunidades en Dot-Matrix */}
         <div className="min-w-0">
           <p className="text-xs font-mono uppercase tracking-widest text-[#929097] mb-2 flex items-center gap-2">

@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response, Router } from 'express';
-import { z } from 'zod';
+import { z } from 'zod/v3';
 import { authMiddleware, requireTenantRole } from '../../middleware/auth.middleware.js';
 import { alertsService } from './alerts.service.js';
 import {

@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from 'zod/v3';
 import { env } from '../../config/env.js';
 import { AppError } from '../../middleware/error.middleware.js';
 import { calculateGeminiCostMicrounits } from '../requirements/gemini-requirements-extractor.js';

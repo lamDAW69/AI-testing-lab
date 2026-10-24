@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 import { Router, type NextFunction, type Request, type Response } from 'express';
-import { z } from 'zod';
+import { z } from 'zod/v3';
 import { env } from '../../config/env.js';
 import { AppError } from '../../middleware/error.middleware.js';
 import { documentContentService } from './document-content.service.js';

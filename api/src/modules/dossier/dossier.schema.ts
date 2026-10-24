@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from 'zod/v3';
 
 const EvidenceStatusSchema = z.enum(['VERIFIED', 'DECLARED', 'EXPIRED', 'PENDING_REVIEW', 'REJECTED']);
 const ShortTextSchema = z.string().trim().min(1).max(255);

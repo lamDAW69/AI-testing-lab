@@ -1,5 +1,5 @@
 import { and, eq, inArray, sql } from 'drizzle-orm';
-import { z } from 'zod';
+import { z } from 'zod/v3';
 import { db, type TenantTransaction } from '../../db/client.js';
 import { extractionJobs, type ExtractionJob, type NewExtractionJob } from '../../db/schema.js';
 import type { CreateExtractionJobInput } from './requirements.schema.js';

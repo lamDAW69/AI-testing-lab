@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { and, eq } from 'drizzle-orm';
 import { createRemoteJWKSet, jwtVerify } from 'jose';
-import { z } from 'zod';
+import { z } from 'zod/v3';
 import { env } from '../config/env.js';
 import { withAuthenticatedUserTransaction } from '../db/client.js';
 import { tenantMemberships } from '../db/schema.js';

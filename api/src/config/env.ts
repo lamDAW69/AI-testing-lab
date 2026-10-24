@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from 'zod/v3';
 import dotenv from 'dotenv';
 
 // Carga las variables de entorno desde .env si existe

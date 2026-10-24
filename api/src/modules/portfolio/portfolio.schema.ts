@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from 'zod/v3';
 
 export const DecisionFilterEnum = z.enum(['UNDECIDED', 'PURSUE', 'REVIEW', 'DISCARD']);
 export type DecisionFilter = z.infer<typeof DecisionFilterEnum>;

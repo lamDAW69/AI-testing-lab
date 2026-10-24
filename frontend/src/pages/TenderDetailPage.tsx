@@ -38,7 +38,8 @@ export const TenderDetailPage: React.FC = () => {
 
   // Consulta al endpoint oficial /api/public/tenders/:id para recuperar pliegos y documentos reales con SHA-256
   useEffect(() => {
-    if (!tenderId) return;
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(tenderId);
+    if (!tenderId || !isUuid) return;
     let isMounted = true;
     setIsLoadingDetail(true);
 

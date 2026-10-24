@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import crypto from 'node:crypto';
-import { z } from 'zod';
+import { z } from 'zod/v3';
 import { env } from '../../config/env.js';
 import { AppError } from '../../middleware/error.middleware.js';
 import { procurementService } from './procurement.service.js';
