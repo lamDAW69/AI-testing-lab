@@ -167,7 +167,7 @@ const DEMO_ANALYSIS: QualificationAnalysis = {
     {
       id: 'dec-1',
       decision: 'REVIEW',
-      decidedBy: 'Luis Méndez (TechConsulting)',
+      decidedBy: 'Operador Demo',
       decidedAt: '2026-09-27T18:20:00Z',
       mandatoryReason:
         'Se decide mantener en revisión técnica debido a la publicación de la Adenda v2 por la DGT. Es necesario comprobar si nuestra UTE con CiberNorte cubre el requisito del ENS Medio.',

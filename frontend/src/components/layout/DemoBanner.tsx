@@ -31,7 +31,7 @@ export const DemoBanner: React.FC<DemoBannerProps> = ({ onOpenTour }) => {
           Modo Demostración
         </span>
         <span className="text-[var(--ink-secondary)] hidden sm:inline">
-          Empresa simulada: <strong className="text-[var(--ink)]">TechConsulting Soluciones S.L.</strong> (CIF B-88776655)
+          Entorno interactivo con dossier corporativo y licitaciones de prueba precargadas
         </span>
       </div>
 

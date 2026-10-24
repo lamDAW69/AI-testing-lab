@@ -144,7 +144,7 @@ export const LoginPage: React.FC = () => {
               className="w-full py-2.5 px-3 rounded-[8px] bg-[var(--primary)]/10 hover:bg-[var(--primary)]/20 text-[var(--primary)] text-xs font-medium border border-[var(--primary)]/25 transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer active:scale-[0.98]"
             >
               <Sparkles className="w-3.5 h-3.5" />
-              <span>Acceder con Empresa Demo (TechConsulting S.L.)</span>
+              <span>Acceder con Empresa Demo</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
 

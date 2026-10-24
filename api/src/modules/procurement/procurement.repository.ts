@@ -516,7 +516,11 @@ export class ProcurementRepository {
         .from(tenders)
         .leftJoin(contractingAuthorities, eq(tenders.authorityId, contractingAuthorities.id))
         .where(whereClause)
-        .orderBy(desc(tenders.publicationDate), desc(tenders.submissionDeadline), desc(tenders.createdAt))
+        .orderBy(
+          sql`${tenders.publicationDate} DESC NULLS LAST`,
+          sql`${tenders.submissionDeadline} DESC NULLS LAST`,
+          desc(tenders.createdAt),
+        )
         .limit(filters.limit)
         .offset(offset),
     ]);

@@ -89,7 +89,7 @@ export const LandingPage: React.FC = () => {
       chipColor: '#218a58',
       pageRef: 'PCAP Pág. 14, caracteres 4210-4380',
       pliegoQuote: '...el adjudicatario deberá acreditar que los sistemas ofertados disponen de certificación en el Esquema Nacional de Seguridad (ENS) en categoría ALTA conforme al RD 311/2022...',
-      dossierProof: 'TechConsulting Soluciones S.L. dispone de Certificado ENS-2024-9912 emitido por CCN-CERT. Válido hasta 2027.',
+      dossierProof: 'Dossier corporativo acreditado con Certificado ENS-2024-9912 emitido por CCN-CERT. Válido hasta 2027.',
       status: 'SUPPORTED',
       statusLabel: 'Cumple al 100%',
       confidence: 99,
@@ -248,7 +248,7 @@ Recomendación: Ejecutar reanálisis con Gemini 3.1 Flash v2.`
     },
     {
       q: '¿Puedo probar la plataforma antes de conectar los datos de mi empresa?',
-      a: 'Por supuesto. Al pulsar en "Explorar Demo en Vivo" accedes a un entorno de demostración completamente funcional con la empresa simulada TechConsulting Soluciones S.L. (CIF B-88776655), donde podrás explorar expedientes reales, el sellado SHA-256 y la precalificación con IA.'
+      a: 'Por supuesto. Al pulsar en "Explorar Demo en Vivo" accedes a un entorno de demostración completamente funcional con un dossier corporativo precargado, donde podrás explorar expedientes reales, el sellado SHA-256 y la precalificación con IA.'
     }
   ];
 

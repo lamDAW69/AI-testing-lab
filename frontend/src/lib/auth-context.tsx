@@ -22,33 +22,26 @@ export const LUIS_ARIAS_USER: UserProfile = {
     LUIS_ARIAS_MEMBERSHIP,
     {
       id: DEMO_TENANT_ID,
-      name: 'TechConsulting Soluciones S.L.',
+      name: 'Organización Demo',
       taxId: 'B-88776655',
       role: 'viewer',
     },
   ],
 };
 
-// Membresías estructuradas para validar multi-tenant e impersonación
+// Membresías de demostración para entorno interactivo
 export const DEMO_MEMBERSHIPS: TenantMembership[] = [
   {
     id: DEMO_TENANT_ID, // UUIDv7
-    name: 'TechConsulting Soluciones S.L.',
+    name: 'Organización Demo',
     taxId: 'B-88776655',
     role: 'owner',
   },
-  {
-    id: '018f4a12-892a-7921-98a1-2d4e8b1e4f2b', // UUIDv7 Tenant B
-    name: 'Infraestructuras y Obras del Norte S.A.',
-    taxId: 'A-11223344',
-    role: 'analyst',
-  },
-  LUIS_ARIAS_MEMBERSHIP,
 ];
 
 export const DEMO_USER: UserProfile = {
   id: '018f4a12-892a-7921-98a1-2d4e8b1e4fff',
-  email: 'demo@techconsulting.es',
+  email: 'demo@pliegoai.com',
   fullName: 'Operador Demo',
   memberships: DEMO_MEMBERSHIPS,
 };
@@ -199,7 +192,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (typeof window === 'undefined') return false;
     return window.navigator.webdriver
       || new URLSearchParams(window.location.search).get('demo') === 'true'
-      || window.location.search.includes('e2e=true');
+      || window.location.search.includes('e2e=true')
+      || window.sessionStorage.getItem('pliego_demo_active') === 'true';
   };
 
   const [token, setToken] = useState<string | null>(() => {
@@ -231,6 +225,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session) {
         demoModeRef.current = false;
+        if (typeof window !== 'undefined') {
+          window.sessionStorage.removeItem('pliego_demo_active');
+        }
         setToken(session.access_token);
         setIsDemoMode(false);
         const mappedUser: UserProfile = {
@@ -282,6 +279,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const loginAsDemo = () => {
     demoModeRef.current = true;
+    if (typeof window !== 'undefined') {
+      window.sessionStorage.setItem('pliego_demo_active', 'true');
+    }
     setIsDemoMode(true);
     const jwt = 'demo-in-memory-jwt-token-active';
     setToken(jwt);
@@ -307,6 +307,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             data.session.access_token,
             data.user.user_metadata,
           );
+          if (typeof window !== 'undefined') {
+            window.sessionStorage.removeItem('pliego_demo_active');
+          }
           setIsDemoMode(false);
           setToken(data.session.access_token);
           const mappedUser: UserProfile = {
@@ -431,6 +434,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     demoModeRef.current = false;
+    if (typeof window !== 'undefined') {
+      window.sessionStorage.removeItem('pliego_demo_active');
+    }
     if (isSupabaseConfigured() && supabase) {
       try {
         await supabase.auth.signOut();

@@ -175,7 +175,7 @@ export const TenderDetailPage: React.FC = () => {
                 </span>
               )}
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#161616] tracking-tight leading-snug">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#161616] tracking-tight leading-snug break-words">
               {tender.title}
             </h1>
             <p className="text-xs text-[#68656A] font-medium">{tender.contractingAuthority}</p>
@@ -311,11 +311,6 @@ export const TenderDetailPage: React.FC = () => {
             <div className="flex items-center justify-between py-1 border-b border-[rgba(20,20,20,0.04)]">
               <span className="text-[#68656A]">Expediente</span>
               <span className="font-mono font-bold text-[#161616]">{tender.fileReference}</span>
-            </div>
-
-            <div className="flex items-center justify-between py-1 border-b border-[rgba(20,20,20,0.04)]">
-              <span className="text-[#68656A]">Dossier verificado</span>
-              <span className="font-mono font-bold text-[#137A43]">{activeTenant?.name || 'Mi Organización'}</span>
             </div>
 
             <div className="flex items-center justify-between py-1 border-b border-[rgba(20,20,20,0.04)]">

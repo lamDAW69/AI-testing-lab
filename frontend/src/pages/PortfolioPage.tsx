@@ -305,7 +305,7 @@ export const PortfolioPage: React.FC = () => {
       ) : (
         <div className="space-y-2">
           {/* Encabezado visible en desktop idéntico a Catálogo */}
-          <div className="hidden lg:grid grid-cols-[76px_minmax(260px,1.8fr)_100px_110px_125px_135px_90px_90px_120px] gap-3.5 px-3.5 text-[11px] font-mono uppercase text-[#929097] select-none">
+          <div className="hidden lg:grid grid-cols-[56px_minmax(0,1.8fr)_88px_90px_108px_114px_80px_82px_102px] gap-2.5 px-3 text-[11px] font-mono uppercase text-[#929097] select-none">
             <span>Expediente</span>
             <span>Objeto / Entidad</span>
             <span>Importe</span>
@@ -339,8 +339,8 @@ export const PortfolioPage: React.FC = () => {
                     isCritical ? 'critical' : ''
                   }`}
                 >
-                  {/* 1. Thumbnail 76x54px con degradado arquitectónico suave (Idéntico a Catálogo) */}
-                  <div className="w-[76px] h-[54px] rounded-[10px] bg-gradient-to-br from-[#f8f5f2] via-[#eee9f2] to-[#e7e1ff] border border-[rgba(30,24,38,0.06)] flex items-center justify-center text-[#685cff] shrink-0 relative">
+                  {/* 1. Thumbnail 56x54px con degradado arquitectónico suave */}
+                  <div className="w-[56px] h-[54px] rounded-[10px] bg-gradient-to-br from-[#f8f5f2] via-[#eee9f2] to-[#e7e1ff] border border-[rgba(30,24,38,0.06)] flex items-center justify-center text-[#685cff] shrink-0 relative">
                     <FileText className="w-5 h-5 opacity-70" />
                     {isCritical && (
                       <span

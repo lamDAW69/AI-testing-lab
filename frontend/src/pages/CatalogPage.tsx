@@ -55,9 +55,17 @@ export const CatalogPage: React.FC = () => {
     })
     .sort((a, b) => {
       if (sortBy === 'deadline') {
-        const timeA = a.submissionDeadline ? new Date(a.submissionDeadline).getTime() : 0;
-        const timeB = b.submissionDeadline ? new Date(b.submissionDeadline).getTime() : 0;
-        return timeA - timeB;
+        const now = Date.now();
+        const timeA = a.submissionDeadline ? new Date(a.submissionDeadline).getTime() : null;
+        const timeB = b.submissionDeadline ? new Date(b.submissionDeadline).getTime() : null;
+        if (timeA === null && timeB === null) return 0;
+        if (timeA === null) return 1;
+        if (timeB === null) return -1;
+        const activeA = timeA >= now;
+        const activeB = timeB >= now;
+        if (activeA && !activeB) return -1;
+        if (!activeA && activeB) return 1;
+        return activeA ? timeA - timeB : timeB - timeA;
       }
       if (sortBy === 'amount') {
         return b.budgetAmount - a.budgetAmount;

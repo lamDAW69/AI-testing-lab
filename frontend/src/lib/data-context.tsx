@@ -532,7 +532,7 @@ export const INITIAL_ANALYSES: Record<string, QualificationAnalysis> = {
       {
         id: 'dec-1',
         decision: 'REVIEW',
-        decidedBy: 'Luis Méndez (TechConsulting)',
+        decidedBy: 'Operador Demo',
         decidedAt: '2026-09-27T18:20:00Z',
         mandatoryReason:
           'Se decide mantener en revisión técnica debido a la publicación de la Adenda v2 por la DGT. Es necesario comprobar si nuestra UTE con CiberNorte cubre el requisito del ENS Medio.',
@@ -624,7 +624,7 @@ export const INITIAL_ANALYSES: Record<string, QualificationAnalysis> = {
       {
         id: 'dec-102-1',
         decision: 'PURSUE',
-        decidedBy: 'Luis Méndez (TechConsulting)',
+        decidedBy: 'Operador Demo',
         decidedAt: '2026-09-27T14:30:00Z',
         mandatoryReason: 'Oportunidad estratégica prioritaria con margen estimado del 26%. Se aprueba la preparación inmediata.',
         analysisVersion: 1,
@@ -689,7 +689,7 @@ export const INITIAL_ALERTS: TenantAlert[] = [
 export const INITIAL_PROFILE: CompanyProfile = {
   id: 'prof-01',
   tenantId: '018f4a12-892a-7921-98a1-2d4e8b1e4f1a',
-  companyName: 'TechConsulting Soluciones S.L.',
+  companyName: 'Organización Demo',
   taxId: 'B-88776655',
   description:
     'Especialistas en ingeniería de software cloud, arquitecturas resilientes y modernización de plataformas para la administración pública.',
@@ -889,9 +889,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // 1. Siempre consultamos el catálogo público oficial de licitaciones (acceso abierto para catálogo público)
       const publicTendersPromise = apiClient.get<any>('/public/tenders?limit=250');
 
-      // 2. Si hay sesión activa en un tenant, consultamos concurrentemente los recursos privados protegidos
+      // 2. Si hay sesión real activa en un tenant (no Demo en memoria), consultamos concurrentemente los recursos privados protegidos
       const privatePromises: Promise<any>[] =
-        token && activeTenant
+        token && activeTenant && !isDemo
           ? [
               apiClient.get<{ data: any[] }>('/portfolio'),
               apiClient.get<{ data: any[] }>('/alerts'),
@@ -915,42 +915,57 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (Array.isArray(rawTenders) && rawTenders.length > 0) {
           backendConnected = true;
-          setTenders(
-            rawTenders.map((t: any) => ({
-              id: t.id,
-              fileReference: t.fileReference || t.sourceTenderId || t.id,
-              title: t.title,
-              contractingAuthority:
-                t.contractingAuthority ||
-                t.authority?.name ||
-                t.authorityName ||
-                'Órgano oficial',
-              cpvCode: t.cpvCode || t.mainCpvCode || '',
-              budgetAmount:
-                typeof t.budgetAmount === 'number'
-                  ? t.budgetAmount
-                  : typeof t.budgetAmountCents === 'number'
-                  ? t.budgetAmountCents / 100
-                  : 0,
-              estimatedValue:
-                typeof t.estimatedValue === 'number'
-                  ? t.estimatedValue
-                  : typeof t.estimatedValueCents === 'number'
-                  ? t.estimatedValueCents / 100
-                  : (typeof t.budgetAmount === 'number' ? t.budgetAmount : 0),
-              currency: t.currency || 'EUR',
-              submissionDeadline: t.submissionDeadline,
-              publicationDate: t.publicationDate || t.sourceUpdatedAt || t.createdAt,
-              status: t.status,
-              documentsCount: typeof t.documentsCount === 'number' ? t.documentsCount : 0,
-              hasActiveAnalysis: Boolean(t.hasActiveAnalysis),
-            }))
-          );
+          const mappedTenders: PublicTender[] = rawTenders.map((t: any) => ({
+            id: t.id,
+            fileReference: t.fileReference || t.sourceTenderId || t.id,
+            title: t.title,
+            contractingAuthority:
+              t.contractingAuthority ||
+              t.authority?.name ||
+              t.authorityName ||
+              'Órgano oficial',
+            cpvCode: t.cpvCode || t.mainCpvCode || '',
+            budgetAmount:
+              typeof t.budgetAmount === 'number'
+                ? t.budgetAmount
+                : typeof t.budgetAmountCents === 'number'
+                ? t.budgetAmountCents / 100
+                : 0,
+            estimatedValue:
+              typeof t.estimatedValue === 'number'
+                ? t.estimatedValue
+                : typeof t.estimatedValueCents === 'number'
+                ? t.estimatedValueCents / 100
+                : (typeof t.budgetAmount === 'number' ? t.budgetAmount : 0),
+            currency: t.currency || 'EUR',
+            submissionDeadline: t.submissionDeadline,
+            publicationDate: t.publicationDate || t.sourceUpdatedAt || t.createdAt,
+            status: t.status,
+            documentsCount: typeof t.documentsCount === 'number' ? t.documentsCount : 0,
+            hasActiveAnalysis: Boolean(t.hasActiveAnalysis),
+          }));
+
+          const seenIds = new Set<string>();
+          const seenRefs = new Set<string>();
+          const mergedTenders: PublicTender[] = [];
+
+          for (const item of [...DIVERSE_OFFICIAL_TENDERS, ...mappedTenders, ...INITIAL_TENDERS]) {
+            if (seenIds.has(item.id) || (item.fileReference && seenRefs.has(item.fileReference))) {
+              continue;
+            }
+            seenIds.add(item.id);
+            if (item.fileReference) {
+              seenRefs.add(item.fileReference);
+            }
+            mergedTenders.push(item);
+          }
+
+          setTenders(mergedTenders);
         }
       }
 
-      // 2. Recursos privados del tenant (solo se consultan y procesan si el usuario tiene sesión activa)
-      if (token && activeTenant && privateResults.length >= 5) {
+      // 2. Recursos privados del tenant (solo se consultan y procesan si el usuario tiene sesión real activa)
+      if (token && activeTenant && !isDemo && privateResults.length >= 5) {
         const [portfolioRes, alertsRes, profileRes, certsRes, evidencesRes] = privateResults as [
           PromiseSettledResult<{ data: any[] }>,
           PromiseSettledResult<{ data: any[] }>,
@@ -1034,7 +1049,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
           });
         }
 
-        // Certificaciones oficiales (fidelidad estricta: si backend devuelve [], no mostrar las de TechConsulting)
+        // Certificaciones oficiales (fidelidad estricta: si backend devuelve [], no mostrar las de otro tenant)
         if (certsRes.status === 'fulfilled' && Array.isArray(certsRes.value?.data)) {
           backendConnected = true;
           const mappedCerts: Certification[] = certsRes.value.data.map((c) => ({
@@ -1052,7 +1067,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         }
 
-        // Evidencias y solvencias (fidelidad estricta: si backend devuelve [], no mostrar las de TechConsulting)
+        // Evidencias y solvencias (fidelidad estricta: si backend devuelve [], no mostrar las de otro tenant)
         if (evidencesRes.status === 'fulfilled' && Array.isArray(evidencesRes.value?.data)) {
           backendConnected = true;
           const mappedEvidences: BusinessEvidence[] = evidencesRes.value.data.map((ev) => ({
@@ -1078,7 +1093,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch {
       setSyncStatus('local_fallback');
     }
-  }, [token, activeTenant]);
+  }, [token, activeTenant, isDemo]);
 
   useEffect(() => {
     refreshData();
@@ -1194,9 +1209,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return next;
     });
 
-    // 2. Sincronización con backend si existe análisis asociado
+    // 2. Sincronización con backend si existe análisis asociado y sesión real
     const current = analyses[tenderId];
-    if (current?.id) {
+    if (current?.id && !isDemo) {
       try {
         await apiClient.post(`/qualification/analyses/${current.id}/decision`, {
           decision,
@@ -1291,9 +1306,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return next;
     });
 
-    // 4. Intentar ejecutar reanálisis en el backend si está activo
+    // 4. Intentar ejecutar reanálisis en el backend si está activo en sesión real
     const current = analyses[tenderId];
-    if (current?.id) {
+    if (current?.id && !isDemo) {
       try {
         await apiClient.post(`/qualification/analyses/${current.id}/run`);
       } catch {
@@ -1449,7 +1464,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       return updated;
     });
-    apiClient.patch(`/alerts/${id}/read`).catch(() => {});
+    if (!isDemo) {
+      apiClient.patch(`/alerts/${id}/read`).catch(() => {});
+    }
   };
 
   const markAllAlertsAsRead = () => {
@@ -1460,7 +1477,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       return updated;
     });
-    apiClient.post('/alerts/mark-all-read').catch(() => {});
+    if (!isDemo) {
+      apiClient.post('/alerts/mark-all-read').catch(() => {});
+    }
   };
 
   const addEvidence = async (evidence: Omit<BusinessEvidence, 'id' | 'status'>) => {
@@ -1478,6 +1497,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       return updated;
     });
+
+    if (isDemo) return;
 
     try {
       const res = await apiClient.post<{ data: any }>('/qualification/dossier', {
@@ -1517,6 +1538,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return updated;
     });
 
+    if (isDemo) return;
+
     try {
       const res = await apiClient.post<{ data: any }>('/dossier/certifications', {
         name: certification.name,
@@ -1548,15 +1571,17 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       return updated;
     });
-    apiClient
-      .patch(`/dossier/certifications/${id}`, {
-        name: updatedFields.name,
-        issuer: updatedFields.issuer,
-        certificateNumber: updatedFields.certificateNumber,
-        validFrom: updatedFields.issuedAt,
-        validUntil: updatedFields.expiresAt,
-      })
-      .catch(() => {});
+    if (!isDemo) {
+      apiClient
+        .patch(`/dossier/certifications/${id}`, {
+          name: updatedFields.name,
+          issuer: updatedFields.issuer,
+          certificateNumber: updatedFields.certificateNumber,
+          validFrom: updatedFields.issuedAt,
+          validUntil: updatedFields.expiresAt,
+        })
+        .catch(() => {});
+    }
   };
 
   const updateProfile = (updatedFields: Partial<CompanyProfile>) => {
@@ -1567,18 +1592,20 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       return updated;
     });
-    apiClient
-      .put('/dossier/profile', {
-        legalName: updatedFields.companyName || profile.companyName,
-        taxId: updatedFields.taxId || profile.taxId,
-        description: updatedFields.description || profile.description,
-        cpvCodes: updatedFields.primaryCpvCodes || profile.primaryCpvCodes,
-        territories: updatedFields.geographicalScope || profile.geographicalScope,
-        maxContractCents: updatedFields.maxEconomicSolvency
-          ? Math.round(updatedFields.maxEconomicSolvency * 100)
-          : undefined,
-      })
-      .catch(() => {});
+    if (!isDemo) {
+      apiClient
+        .put('/dossier/profile', {
+          legalName: updatedFields.companyName || profile.companyName,
+          taxId: updatedFields.taxId || profile.taxId,
+          description: updatedFields.description || profile.description,
+          cpvCodes: updatedFields.primaryCpvCodes || profile.primaryCpvCodes,
+          territories: updatedFields.geographicalScope || profile.geographicalScope,
+          maxContractCents: updatedFields.maxEconomicSolvency
+            ? Math.round(updatedFields.maxEconomicSolvency * 100)
+            : undefined,
+        })
+        .catch(() => {});
+    }
   };
 
   return (

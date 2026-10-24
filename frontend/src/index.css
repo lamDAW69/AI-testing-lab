@@ -184,11 +184,11 @@ html.light,
 .portfolio-row {
   position: relative;
   display: grid;
-  grid-template-columns: 76px minmax(240px, 1.8fr) 100px 110px 125px 135px 90px 90px 120px;
-  gap: 14px;
+  grid-template-columns: 56px minmax(0, 1.8fr) 88px 90px 108px 114px 80px 82px 102px;
+  gap: 10px;
   align-items: center;
   min-height: 68px;
-  padding: 10px 16px;
+  padding: 10px 12px;
   background: var(--surface-1);
   border-bottom: 1px solid var(--hairline);
   transition: background 150ms ease;

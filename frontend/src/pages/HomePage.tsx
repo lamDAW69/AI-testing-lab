@@ -40,7 +40,7 @@ export const HomePage: React.FC = () => {
   }, []);
 
   const firstName = user?.fullName === 'Operador Demo'
-    ? 'Operador Demo (TechConsulting)'
+    ? 'Operador Demo'
     : user?.fullName
     ? user.fullName.split(' ')[0]
     : 'Operador';
@@ -63,12 +63,21 @@ export const HomePage: React.FC = () => {
   ).length;
   const totalDossierAccreditations = certifications.length + evidences.length;
 
-  // Oportunidades prioritarias (las que tienen bloqueos o fecha límite más próxima)
+  // Oportunidades prioritarias (priorizar plazos vigentes y con bloqueos primero)
+  const nowMs = Date.now();
   const priorityOpportunities = [...portfolio]
     .sort((a, b) => {
-      if ((a.hasBlockers || a.validity === 'REQUIRES_REANALYSIS') && !(b.hasBlockers || b.validity === 'REQUIRES_REANALYSIS')) return -1;
-      if (!(a.hasBlockers || a.validity === 'REQUIRES_REANALYSIS') && (b.hasBlockers || b.validity === 'REQUIRES_REANALYSIS')) return 1;
-      return new Date(a.submissionDeadline).getTime() - new Date(b.submissionDeadline).getTime();
+      const aTime = a.submissionDeadline ? new Date(a.submissionDeadline).getTime() : 0;
+      const bTime = b.submissionDeadline ? new Date(b.submissionDeadline).getTime() : 0;
+      const aActive = aTime > nowMs;
+      const bActive = bTime > nowMs;
+      if (aActive && !bActive) return -1;
+      if (!aActive && bActive) return 1;
+      const aBlocker = a.hasBlockers || a.validity === 'REQUIRES_REANALYSIS';
+      const bBlocker = b.hasBlockers || b.validity === 'REQUIRES_REANALYSIS';
+      if (aBlocker && !bBlocker) return -1;
+      if (!aBlocker && bBlocker) return 1;
+      return aTime - bTime;
     })
     .slice(0, 3);
 
@@ -81,7 +90,7 @@ export const HomePage: React.FC = () => {
   const recentAlerts = alerts.slice(0, 4);
 
   return (
-    <div className="space-y-6 select-none">
+    <div className="space-y-6 select-none min-w-0">
       {/* Modal interactivo de Tour bajo demanda */}
       <ProductTourModal
         isOpen={isTourModalOpen}
@@ -105,7 +114,7 @@ export const HomePage: React.FC = () => {
                 </span>
               </div>
               <p className="text-xs text-[var(--ink-secondary)] mt-1 leading-relaxed max-w-2xl">
-                Has entrado con la empresa de prueba <strong>TechConsulting Soluciones S.L.</strong>. La IA monitoriza el feed de PLACSP, sella pliegos con hash SHA-256 y precalifica solvencia técnica y económica frente a tu dossier.
+                Estás explorando el <strong>Entorno de Demostración</strong> con un dossier empresarial precargado. La IA monitoriza el feed de PLACSP, sella pliegos con hash SHA-256 y precalifica solvencia técnica y económica frente a tu dossier.
               </p>
             </div>
           </div>
@@ -226,9 +235,9 @@ export const HomePage: React.FC = () => {
       )}
 
       {/* 1. HERO DE INICIO: EDITORIAL + DOT-MATRIX + ACCESO OPERATIVO */}
-      <section className="home-hero grid grid-cols-1 lg:grid-cols-[minmax(400px,0.95fr)_minmax(480px,1.05fr)] gap-8 lg:gap-10 items-center">
+      <section className="home-hero grid grid-cols-1 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] gap-8 lg:gap-10 items-center">
         {/* Lado Izquierdo: Saludo editorial + oportunidades en Dot-Matrix */}
-        <div>
+        <div className="min-w-0">
           <p className="text-xs font-mono uppercase tracking-widest text-[#929097] mb-2 flex items-center gap-2">
             <span>{capitalizedDate}</span>
           </p>
@@ -243,7 +252,7 @@ export const HomePage: React.FC = () => {
         </div>
 
         {/* Lado Derecho: Acceso Rápido y Panel Operativo */}
-        <aside className="ai-command">
+        <aside className="ai-command min-w-0">
           <div className="flex items-center justify-between mb-3">
             <div className="w-7 h-7 rounded-full bg-[#685cff]/10 flex items-center justify-center text-[#685cff]">
               <span className="text-sm font-bold">◈</span>
@@ -370,10 +379,10 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* 3. BLOQUE CENTRAL: PRIORIDADES, ESTADO DE ANÁLISIS, ACTIVIDAD */}
-      <section className="grid grid-cols-1 lg:grid-cols-[1.55fr_1fr_0.95fr] gap-4 items-stretch">
+      <section className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)_minmax(0,0.95fr)] gap-4 items-stretch">
         {/* Columna 1: Oportunidades prioritarias */}
-        <div className="surface p-5 flex flex-col justify-between">
-          <div>
+        <div className="surface p-5 flex flex-col justify-between min-w-0 overflow-hidden">
+          <div className="min-w-0">
             <div className="flex items-center justify-between pb-3 border-b border-[rgba(30,24,38,0.06)]">
               <h2 className="text-sm font-semibold text-[#171719]">
                 Oportunidades prioritarias
@@ -403,19 +412,22 @@ export const HomePage: React.FC = () => {
                   <div
                     key={item.id}
                     onClick={() => navigate(`/app/portfolio/${item.tenderId}`)}
-                    className="py-3 px-2 rounded-[14px] hover:bg-white/70 transition-all cursor-pointer group flex items-center gap-3.5"
+                    className="py-3 px-2 rounded-[14px] hover:bg-white/70 transition-all cursor-pointer group flex items-center gap-3 min-w-0"
                   >
-                    <div className="w-12 h-12 rounded-[12px] bg-[#eeeaff] text-[#685cff] flex items-center justify-center shrink-0 border border-white/80 shadow-2xs font-mono font-bold text-[10px]">
-                      {item.fileReference.length > 12 ? item.fileReference.slice(0, 12) : item.fileReference}
+                    <div className="w-10 h-10 rounded-[11px] bg-[#eeeaff] text-[#685cff] flex items-center justify-center shrink-0 border border-white/80 shadow-2xs">
+                      <FileText className="w-4 h-4" />
                     </div>
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-0 overflow-hidden">
                       <h3 className="text-xs sm:text-sm font-semibold text-[#171719] truncate group-hover:text-[#685cff] transition-colors">
                         {item.title}
                       </h3>
                       <p className="text-[11px] text-[#69666d] truncate">
                         {item.contractingAuthority}
                       </p>
-                      <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                      <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-black/[0.04] text-[#69666d] border border-black/[0.05] truncate max-w-[130px]">
+                          {item.fileReference}
+                        </span>
                         {item.hasBlockers ? (
                           <StatusBadge tone="danger" icon="warning">
                             Bloqueo crítico
@@ -457,8 +469,8 @@ export const HomePage: React.FC = () => {
         </div>
 
         {/* Columna 2: Estado de análisis y salud de la cartera */}
-        <div className="surface p-5 flex flex-col justify-between">
-          <div>
+        <div className="surface p-5 flex flex-col justify-between min-w-0 overflow-hidden">
+          <div className="min-w-0">
             <div className="flex items-center justify-between pb-3 border-b border-[rgba(30,24,38,0.06)]">
               <h2 className="text-sm font-semibold text-[#171719]">
                 Salud de la cartera
@@ -543,8 +555,8 @@ export const HomePage: React.FC = () => {
         </div>
 
         {/* Columna 3: Alertas recientes dinámicas */}
-        <div className="surface p-5 flex flex-col justify-between">
-          <div>
+        <div className="surface p-5 flex flex-col justify-between min-w-0 overflow-hidden">
+          <div className="min-w-0">
             <div className="flex items-center justify-between pb-3 border-b border-[rgba(30,24,38,0.06)]">
               <h2 className="text-sm font-semibold text-[#171719]">
                 Alertas recientes

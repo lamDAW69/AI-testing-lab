@@ -35,11 +35,11 @@ export const ProductTourModal: React.FC<ProductTourModalProps> = ({ isOpen, onCl
       description:
         'En Pliego AI no hay preguntas genéricas. El sistema necesita conocer qué solvencia y certificaciones tiene tu empresa para evaluar si cumples con las condiciones del pliego.',
       detail: isDemoMode
-        ? 'Para esta demo hemos precargado TechConsulting Soluciones S.L., con acreditación ISO 27001, ENS de categoría Alta y proyectos cloud ejecutados para clientes públicos.'
+        ? 'Para esta demo hemos precargado un dossier corporativo de ejemplo con acreditación ISO 27001, ENS de categoría Media y proyectos cloud ejecutados para clientes públicos.'
         : `Para tu entidad (${activeTenant?.name || 'tu empresa'}), debes registrar en el Dossier tus solvencias técnicas, certificaciones (ISO, ENS) y contratos previos para que la IA disponga de tu base de acreditaciones verificables.`,
       highlight: 'Dossier centralizado: Solvencia económica, técnica y certificaciones ENS / ISO.',
       actionText: isDemoMode
-        ? 'Ver Dossier de TechConsulting'
+        ? 'Ver Dossier de Demostración'
         : `Configurar Dossier de ${activeTenant?.name || 'mi empresa'}`,
       actionRoute: '/app/dossier',
     },
@@ -128,7 +128,7 @@ export const ProductTourModal: React.FC<ProductTourModalProps> = ({ isOpen, onCl
               </h2>
               <p className="text-[11px] text-[var(--ink-tertiary)] mt-0.5">
                 {isDemoMode
-                  ? 'Empresa simulada: TechConsulting Soluciones S.L. (CIF B-88776655)'
+                  ? 'Entorno de demostración interactivo (Dossier precargado)'
                   : `Entidad activa: ${activeTenant?.name || 'Organización Licitadora'} (CIF: ${activeTenant?.taxId || 'No asignado'})`}
               </p>
             </div>
