@@ -777,7 +777,7 @@ Recomendación: Ejecutar reanálisis con Gemini 3.1 Flash v2.`
                         <span className="text-[10px] text-[var(--ink-secondary)] font-medium block">
                           {m.label}
                         </span>
-                        <span className="text-xs font-bold text-[var(--ink)] mt-0.5 block tabular-nums font-mono">
+                        <span className="text-xs font-bold text-[var(--ink)] mt-0.5 block tabular-nums">
                           {m.value}
                         </span>
                       </div>

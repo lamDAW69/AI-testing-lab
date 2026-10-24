@@ -182,7 +182,7 @@ export const TenderDetailPage: React.FC = () => {
             <p className="text-xs text-[#68656A] font-medium">{tender.contractingAuthority}</p>
 
             <div className="flex items-center gap-4 text-xs font-mono text-[#68656A] pt-1 flex-wrap">
-              <span className="text-[#161616] font-bold">{formatCurrency(tender.budgetAmount)}</span>
+              <span className="text-[var(--ink)] font-bold font-sans tabular-nums">{formatCurrency(tender.budgetAmount)}</span>
               <span>·</span>
               <span>Plazo: {formatDate(tender.submissionDeadline)} ({deadline})</span>
               <span>·</span>

@@ -326,7 +326,7 @@ export const CatalogPage: React.FC = () => {
 
               <div className="pt-3 border-t border-[var(--hairline)] flex items-center justify-between">
                 <div>
-                  <span className="text-xs font-bold text-[var(--ink)] tabular-nums font-mono block">
+                  <span className="text-xs font-bold text-[var(--ink)] tabular-nums block">
                     {formatCurrency(tender.budgetAmount)}
                   </span>
                   <span className="text-[11px] text-[var(--ink-secondary)] block">
@@ -404,7 +404,7 @@ export const CatalogPage: React.FC = () => {
 
                   {/* Importe en tabular-nums */}
                   <div className="hidden lg:block">
-                    <span className="text-xs sm:text-sm font-semibold text-[var(--ink)] tabular-nums font-mono">
+                    <span className="text-xs sm:text-sm font-semibold text-[var(--ink)] tabular-nums">
                       {formatCurrency(tender.budgetAmount)}
                     </span>
                     <span className="block text-[10px] text-[var(--ink-tertiary)]">

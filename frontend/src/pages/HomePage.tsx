@@ -453,7 +453,7 @@ export const HomePage: React.FC = () => {
                       </div>
                     </div>
                     <div className="text-right shrink-0">
-                      <span className="text-xs font-bold text-[#171719] tabular-nums font-mono block">
+                      <span className="text-xs font-bold text-[var(--ink)] tabular-nums block">
                         {formatCurrency(item.budgetAmount)}
                       </span>
                       <span className="text-[11px] text-[#69666d] block">

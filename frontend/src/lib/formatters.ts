@@ -6,14 +6,14 @@
  */
 
 export function formatCurrency(amount: number, currency = 'EUR'): string {
-  const formatted = new Intl.NumberFormat('es-ES', {
+  if (typeof amount !== 'number' || isNaN(amount)) return '—';
+  const hasDecimals = amount % 1 !== 0;
+  return new Intl.NumberFormat('es-ES', {
     style: 'currency',
     currency,
-    minimumFractionDigits: 2,
+    minimumFractionDigits: hasDecimals ? 2 : 0,
     maximumFractionDigits: 2,
   }).format(amount);
-
-  return formatted;
 }
 
 export function formatDate(dateString: string): string {

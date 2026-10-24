@@ -305,9 +305,9 @@ export const PortfolioPage: React.FC = () => {
       ) : (
         <div className="space-y-2">
           {/* Encabezado visible en desktop idéntico a Catálogo */}
-          <div className="hidden lg:grid grid-cols-[56px_minmax(0,1.8fr)_88px_90px_108px_114px_80px_82px_102px] gap-2.5 px-3 text-[11px] font-mono uppercase text-[#929097] select-none">
-            <span>Expediente</span>
-            <span>Objeto / Entidad</span>
+          <div className="hidden lg:grid grid-cols-[56px_minmax(0,1.8fr)_100px_92px_104px_112px_76px_76px_98px] gap-2.5 px-3 text-[11px] font-mono uppercase text-[var(--ink-tertiary)] select-none">
+            <span></span>
+            <span>Licitación / Organismo</span>
             <span>Importe</span>
             <span>Plazo Límite</span>
             <span>Estado</span>
@@ -374,9 +374,9 @@ export const PortfolioPage: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* 3. Importe en tabular-nums (Idéntico a Catálogo) */}
+                  {/* 3. Importe en tabular-nums sin font-mono */}
                   <div className="hidden lg:block">
-                    <span className="text-xs sm:text-sm font-semibold text-[#171719] tabular-nums font-mono">
+                    <span className="text-xs sm:text-sm font-semibold text-[var(--ink)] tabular-nums">
                       {formatCurrency(item.budgetAmount)}
                     </span>
                     <span className="block text-[10px] text-[#929097]">
