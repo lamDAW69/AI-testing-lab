@@ -5,7 +5,7 @@ import { useAuth } from '../lib/auth-context';
 import { Button } from '../components/ui/Button';
 import { SilkBackground } from '../components/layout/SilkBackground';
 import { ThemeToggle } from '../components/ui/ThemeToggle';
-import { ArrowRight, Building2, User, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, Building2, User } from 'lucide-react';
 
 const inputClass =
   'w-full px-3 py-2.5 bg-[var(--surface-1)] border border-[var(--hairline)] rounded-[8px] text-sm text-[var(--ink)] placeholder-[var(--ink-tertiary)] focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)]/50 focus:outline-none transition-all duration-200';
@@ -110,17 +110,6 @@ export const RegisterPage: React.FC = () => {
             <p className="text-xs text-[var(--ink-secondary)] leading-relaxed max-w-xs pt-2">
               Monitoriza el feed oficial de PLACSP, sella pliegos con hash SHA-256 y precalifica solvencia en segundos.
             </p>
-          </div>
-
-          <div className="relative z-10 pt-6 border-t border-[var(--hairline)] space-y-2.5">
-            <div className="flex items-start gap-2.5 text-xs text-[var(--ink-secondary)]">
-              <CheckCircle2 className="w-3.5 h-3.5 text-[#047857] dark:text-[#10b981] shrink-0 mt-0.5" />
-              <span>Aislamiento estricto multi-tenant por fila (RLS en PostgreSQL).</span>
-            </div>
-            <div className="flex items-start gap-2.5 text-xs text-[var(--ink-secondary)]">
-              <CheckCircle2 className="w-3.5 h-3.5 text-[#047857] dark:text-[#10b981] shrink-0 mt-0.5" />
-              <span>Cero alucinaciones: citas auditables con offsets exactos en PDFs.</span>
-            </div>
           </div>
         </div>
 
